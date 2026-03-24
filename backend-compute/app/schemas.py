@@ -1,5 +1,7 @@
 """Esquemas Pydantic v2 compartidos por la API (demo)."""
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -25,3 +27,12 @@ class KpiSummary(BaseModel):
         default="",
         description="Aclaración de que los datos son sintéticos para demo.",
     )
+
+
+class IngestResult(BaseModel):
+    batch_id: str
+    rows_valid: int
+    inserted: int
+    skipped_duplicate_policy_id: int
+    errors: list[dict[str, Any]] = Field(default_factory=list)
+    error_truncated: bool = False

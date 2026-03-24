@@ -1,51 +1,68 @@
-# Despliegue en tier gratuito (demo pública)
+# Despliegue en tier gratuito (demo completa)
 
-Objetivo: **URL de la API** (Render) + **URL del tablero** (Streamlit Community Cloud), sin coste para enseñar el flujo end-to-end.
+Objetivo: **Supabase (Postgres)** + **API (Render)** + **Django Admin (Render)** + **Streamlit Cloud** + (opcional) **Reflex Cloud**, con el flujo carga → BD → KPIs.
 
-## 1. API en Render
+Resumen del encaje entre piezas: [`ecosystem.md`](ecosystem.md).
 
-1. Cuenta en [Render](https://render.com).
-2. **New** → **Blueprint** → conecta el repo de GitHub y selecciona `render.yaml`, o **Web Service** manual:
-   - **Root Directory**: `backend-compute`
-   - **Build**: `pip install --upgrade pip && pip install -r requirements.txt`
-   - **Start**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - **Instance**: Free
-3. Variable opcional: `CORS_ALLOW_ORIGINS` = `*` (ya va en el blueprint) o lista de orígenes separados por coma.
-4. Copia la URL pública (p. ej. `https://insurance-hub-api.onrender.com`).
+## 0. Supabase
 
-**Nota:** el plan gratuito **duerme** tras unos minutos sin tráfico; la primera petición puede tardar ~30–60 s en despertar. Para una demo en vivo, abre primero `/health` en el navegador o avisa a la audiencia.
+1. Crea un proyecto en [Supabase](https://supabase.com).
+2. **SQL Editor** → pega y ejecuta `supabase/migrations/001_initial.sql`.
+3. **Settings → Database** → copia la URI (modo *Transaction* o *Session*). La usarás como `DATABASE_URL` en Render (API y Admin).
 
-Comprobación:
+## 1. API y Django en Render (Blueprint)
 
-- `GET https://TU-URL/health`
-- `GET https://TU-URL/api/v1/kpi/summary`
+1. [Render](https://render.com) → **New** → **Blueprint** → conecta el repo y el archivo [`render.yaml`](../render.yaml).
+2. Al crear el blueprint, Render pedirá valores para variables con `sync: false`:
+   - **`DATABASE_URL`**: la misma en **insurance-hub-api** e **insurance-hub-admin**.
+   - **`INGEST_API_KEY`**: la misma cadena secreta en ambos servicios (la API la exige en `X-API-Key` para ingestión; Django y Streamlit la usan al subir archivos).
+   - **`COMPUTE_API_URL`** (solo Admin): URL pública del servicio API, p. ej. `https://insurance-hub-api-xxxx.onrender.com` (sin barra final).
+   - **`SENTRY_DSN`** (opcional, solo API).
 
-## 2. Tablero en Streamlit Community Cloud
+3. Orden práctico: despliega primero la **API**; cuando tenga URL, edita el servicio **Admin** y asigna `COMPUTE_API_URL`.
 
-1. Cuenta en [Streamlit Community Cloud](https://streamlit.io/cloud).
-2. **New app** → repo → rama `main`.
-3. **Main file path**: `lab-streamlit/app.py`
-4. **Advanced settings** → **Python version** 3.11 (o la que use el app).
-5. **Requirements file**: `lab-streamlit/requirements.txt`
-6. **Secrets** (pegar):
+4. **Admin (Django)** tras el primer arranque: en el shell de Render o local con las mismas variables, ejecuta `python manage.py createsuperuser` (o usa la consola de Render → Shell).
+
+**Nota:** el tier gratuito **duerme**; la primera petición puede tardar ~30–60 s.
+
+Comprobaciones API:
+
+- `GET .../health`
+- `GET .../api/v1/health/db` → `database_configured: true`
+- `GET .../api/v1/kpi/summary?cohort_year=2022`
+- Tras subir CSV: mismos KPI con `use_db=true` deben reflejar tus filas.
+
+## 2. Streamlit Community Cloud
+
+1. [Streamlit Community Cloud](https://streamlit.io/cloud) → **New app**.
+2. **Main file path**: `lab-streamlit/app.py`
+3. **Requirements**: `lab-streamlit/requirements.txt`
+4. **Secrets**:
 
 ```toml
-COMPUTE_API_URL = "https://TU-URL-DE-RENDER.onrender.com"
+COMPUTE_API_URL = "https://TU-API.onrender.com"
+INGEST_API_KEY = "la-misma-clave-que-en-render"
 ```
 
-7. Deploy. La app llamará a la API al cargar (tras el cold start de Render, puede fallar una vez; recargar suele bastar).
+5. Deploy. Usa la pestaña **Carga de pólizas** para probar el flujo (columnas según `docs/sample-policies.csv`).
 
-Referencia local: `lab-streamlit/.streamlit/secrets.toml.example`.
+Plantilla local: `lab-streamlit/.streamlit/secrets.toml.example`.
 
-## 3. Alternativas gratuitas (opcional)
+## 3. Reflex (portal)
+
+1. Cuenta en [Reflex Cloud](https://reflex.dev/) o despliega el contenido de `portal-reflex/` en un host con Node/Bun (ver documentación de tu versión de Reflex).
+2. Variable de entorno **`COMPUTE_API_URL`** apuntando a la API pública.
+3. `pip install -r requirements.txt` y comando de despliegue según la guía oficial (`reflex deploy`, etc.).
+
+## 4. Alternativas gratuitas (opcional)
 
 | Plataforma | Uso típico |
 |------------|------------|
-| [Railway](https://railway.app) | Crédito mensual limitado; API o todo-en-uno. |
-| [Fly.io](https://fly.io) | Máquinas free tier; requiere CLI y algo más de setup. |
-| [Hugging Face Spaces](https://huggingface.co/spaces) | Docker/SDK; buen plan B si quieres la API en un Space. |
+| [Railway](https://railway.app) | API / Django con crédito mensual. |
+| [Fly.io](https://fly.io) | Contenedores; más setup. |
+| [Hugging Face Spaces](https://huggingface.co/spaces) | Plan B para demos con Docker. |
 
-## 4. Qué decir en una entrevista
+## 5. Mensaje para stakeholders
 
-- Excel y Power BI siguen siendo el día a día; este demo muestra **automatización y trazabilidad** (Pydantic + API + export CSV para PBI).
-- Los datos son **sintéticos**; en producción se conectaría a la misma gobernanza que ya tengan (SQL, lake, etc.).
+- Excel / Power BI siguen siendo el día a día; el CSV exportable en Streamlit enlaza con ese flujo.
+- La **validación** y la **trazabilidad** de cargas están centralizadas en la API (Pydantic + tablas `upload_batches` / `policies`).

@@ -1,17 +1,56 @@
-"""API mínima neutra: ampliar con routers y lógica actuarial."""
+"""API: KPIs, ingestión y observabilidad (Loguru / Sentry opcional)."""
 
+from __future__ import annotations
+
+import logging
 import os
+import sys
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+from sqlalchemy.orm import Session
 
-from app.demo_engine import compute_kpi_summary
-from app.schemas import KpiSummary
+from app.config import get_settings
+from app.database import get_engine, init_engine
+from app.deps import get_db, verify_ingest_key
+from app.ingest_service import ingest_policies_bytes
+from app.kpi_service import kpi_summary_payload
+from app.schemas import IngestResult, KpiSummary
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    settings = get_settings()
+    logger.remove()
+    logger.add(sys.stderr, level="INFO")
+    if settings.sentry_dsn:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            integrations=[
+                FastApiIntegration(),
+                LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
+            ],
+            traces_sample_rate=0.1,
+        )
+    init_engine()
+    if get_engine():
+        logger.info("Motor SQLAlchemy listo (DATABASE_URL)")
+    else:
+        logger.warning("Sin DATABASE_URL: ingestión vía API deshabilitada; KPI puede ser sintético")
+    yield
+
 
 app = FastAPI(
     title="Insurance Intelligence Hub API",
-    description="Capa de cómputo y endpoints (demo base).",
-    version="0.1.0",
+    description="Cómputo, KPIs, ingestión a PostgreSQL (Supabase) y validación Pydantic.",
+    version="0.2.0",
+    lifespan=lifespan,
 )
 
 _origins = os.environ.get("CORS_ALLOW_ORIGINS", "*").strip()
@@ -20,7 +59,6 @@ if _origins == "*":
 else:
     _cors = [o.strip() for o in _origins.split(",") if o.strip()]
 
-# allow_credentials=True no es compatible con allow_origins=["*"] en Starlette.
 _creds = False if _cors == ["*"] else True
 app.add_middleware(
     CORSMiddleware,
@@ -36,6 +74,11 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api/v1/health/db")
+def health_db() -> dict[str, bool]:
+    return {"database_configured": get_engine() is not None}
+
+
 @app.get("/api/v1/info")
 def info() -> dict[str, str]:
     return {
@@ -49,7 +92,37 @@ def kpi_summary(
     cohort_year: int = 2022,
     seed: int = 42,
     n_policies: int = 8000,
+    use_db: bool = True,
+    db: Session | None = Depends(get_db),
 ) -> KpiSummary:
-    """KPIs agregados en DuckDB sobre cartera sintética (demo)."""
-    raw = compute_kpi_summary(seed=seed, n_policies=n_policies, cohort_year=cohort_year)
+    """KPIs desde PostgreSQL + DuckDB si hay datos; si no, cartera sintética."""
+    raw = kpi_summary_payload(
+        session=db,
+        cohort_year=cohort_year,
+        seed=seed,
+        n_policies=n_policies,
+        prefer_db=use_db and db is not None,
+    )
     return KpiSummary.model_validate(raw)
+
+
+@app.post("/api/v1/ingest/policies", response_model=IngestResult, dependencies=[Depends(verify_ingest_key)])
+async def ingest_policies(
+    file: UploadFile = File(...),
+    db: Session | None = Depends(get_db),
+) -> IngestResult:
+    """Carga CSV/XLSX de pólizas validadas. Requiere `X-API-Key` si `INGEST_API_KEY` está definida."""
+    if db is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Base de datos no configurada (defina DATABASE_URL)",
+        )
+    name = file.filename or "upload"
+    data = await file.read()
+    try:
+        result = ingest_policies_bytes(db, data, name, source="api")
+    except ValueError as e:
+        logger.warning("Ingesta rechazada: {}", e)
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    logger.info("Ingesta {}: insertadas {}", name, result.get("inserted"))
+    return IngestResult.model_validate(result)

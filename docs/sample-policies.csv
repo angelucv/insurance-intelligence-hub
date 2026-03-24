@@ -1,0 +1,6 @@
+policy_id,cohort_year,issue_age,annual_premium,status
+DEMO-001,2022,35,2500.50,active
+DEMO-002,2022,42,3100.00,active
+DEMO-003,2022,28,1800.75,lapsed
+DEMO-004,2022,55,4200.00,active
+DEMO-005,2022,31,2200.00,lapsed

@@ -1,15 +1,23 @@
-# Contratos compartidos
+# Contratos compartidos (`hub-contracts`)
 
-Aquí viven **modelos Pydantic**, **enums** y definiciones de columnas que deben coincidir entre:
+Paquete instalable (`pyproject.toml`) con modelos **Pydantic v2** usados por `backend-compute` (ingesta).
 
-- `backend-ingest` (validación al cargar),
-- `backend-compute` (entrada/salida de API),
-- opcionalmente clientes en `lab-streamlit` y `portal-reflex`.
+## Instalación
 
-## Uso
+Desde la raíz del repo o desde `backend-compute`:
 
-1. Crear un paquete instalable (`pyproject.toml` en `shared/`) **o**
-2. Añadir `shared` al `PYTHONPATH` en desarrollo **o**
-3. Publicar un paquete interno privado.
+```bash
+pip install ./shared
+# o
+pip install ../shared
+```
 
-Ejemplo de evolución: `shared/contracts/policy_master.py` con modelos de póliza maestra neutros.
+Importación:
+
+```python
+from contracts.policy import PolicyRow
+```
+
+## Contenido
+
+- `contracts/policy.py` — `PolicyRow` para filas CSV/XLSX de pólizas (edad 0–110, prima &gt; 0, estados `active` / `lapsed`).

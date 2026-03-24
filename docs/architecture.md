@@ -1,5 +1,7 @@
 # Arquitectura (vista neutra)
 
+Implementación actual del demo y conexión entre servicios: [`ecosystem.md`](ecosystem.md).
+
 Tabla de referencia para alinear **componente**, **herramienta típica** y **dónde suele desplegarse**. Ajusta celdas a tu proveedor real; los nombres aquí son orientativos.
 
 | Capa / componente | Herramienta (referencia) | Despliegue típico | Valor (genérico) |

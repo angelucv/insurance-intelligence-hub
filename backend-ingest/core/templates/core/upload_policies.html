@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Carga de pólizas</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; }
+    pre { background: #f4f4f4; padding: 1rem; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Carga de maestro de pólizas</h1>
+  <p>El archivo se valida en la API (<code>hub-contracts</code> / Pydantic) y se persiste en PostgreSQL.</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Subir</button>
+  </form>
+  {% if error %}
+    <p style="color: crimson;"><strong>Error:</strong> {{ error }}</p>
+  {% endif %}
+  {% if result %}
+    <p>HTTP {{ result.status_code }}</p>
+    <pre>{{ result.text }}</pre>
+  {% endif %}
+  <p><a href="/admin/">Volver al admin</a></p>
+</body>
+</html>

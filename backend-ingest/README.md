@@ -1,22 +1,37 @@
-# Backend — Ingesta y administración
+# Backend — Ingesta y administración (Django)
 
-Responsabilidad: **usuarios**, **autenticación/autorización** y **carga de maestros** (pólizas, productos, tablas de referencia) hacia la base de datos.
+## Rol
 
-## Stack sugerido
+- **Usuarios y sesiones** vía Django Admin (`/admin/`).
+- **Listado de pólizas** (modelo no gestionado sobre la tabla `policies` creada en Supabase).
+- **Carga de CSV/XLSX** en `/admin/upload-policies/`: el archivo se reenvía a **FastAPI** `POST /api/v1/ingest/policies` para reutilizar la validación **Pydantic** (`hub-contracts`).
 
-- Django + Django Admin (o alternativa equivalente).
-- Despliegue: servicio web persistente (p. ej. Render, Fly, Railway).
+## Variables de entorno
 
-## Integración
+| Variable | Descripción |
+|----------|-------------|
+| `DATABASE_URL` | Misma base PostgreSQL que la API (Supabase). |
+| `COMPUTE_API_URL` | URL base de `backend-compute` (p. ej. `https://...onrender.com`). |
+| `INGEST_API_KEY` | Opcional pero recomendado en público; debe coincidir con la API. |
+| `DJANGO_SECRET_KEY` | Secreto de Django. |
+| `DEBUG` | `false` en producción. |
+| `ALLOWED_HOSTS` | Hosts permitidos (p. ej. `.onrender.com`). |
 
-- Validar payloads con esquemas alineados a `../shared/contracts/` (importar como paquete local o publicar paquete interno).
-- Escribir en la misma base PostgreSQL que consuma `backend-compute` (o vía API interna, según diseño).
-
-## Inicialización (cuando implementes Django)
+## Local
 
 ```bash
-django-admin startproject config .
-python manage.py startapp core
+pip install -r requirements.txt
+set DATABASE_URL=postgresql://...
+set COMPUTE_API_URL=http://127.0.0.1:8000
+set INGEST_API_KEY=tu-clave
+set DJANGO_SECRET_KEY=dev
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver 8080
 ```
 
-Añadir aquí `requirements.txt` y `Dockerfile` cuando definas versiones.
+**Nota:** el modelo `Policy` es `managed = False`. La tabla debe existir (script SQL en `../supabase/migrations/`). Sin esa tabla, el listado de pólizas en Admin fallará.
+
+## Despliegue
+
+Ver [`../docs/deploy-free-tier.md`](../docs/deploy-free-tier.md) y el servicio `insurance-hub-admin` en [`../render.yaml`](../render.yaml).

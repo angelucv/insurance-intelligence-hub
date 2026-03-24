@@ -1,58 +1,98 @@
 # Insurance Intelligence Hub
 
-Demo de referencia **neutra**: arquitectura por capas para ingestión, validación, cómputo actuarial, APIs y portales. Los despliegues y nombres comerciales se configuran por entorno (véase `.env.example`).
+Arquitectura por capas: **ingesta (Django)**, **PostgreSQL (Supabase)**, **validación (Pydantic en `hub-contracts`)**, **API (FastAPI + DuckDB)**, **portal (Reflex)** y **laboratorio (Streamlit)**. Vista del flujo: [`docs/ecosystem.md`](docs/ecosystem.md).
 
 ## Mapa del repositorio
 
 | Capa | Carpeta | Rol |
 |------|---------|-----|
-| Ingesta y administración | `backend-ingest/` | Admin, usuarios, carga de maestros (p. ej. Django). |
-| API y cómputo | `backend-compute/` | Validación (Pydantic), análisis rápido (DuckDB), endpoints (FastAPI). |
-| Laboratorio exploratorio | `lab-streamlit/` | Prototipos e interactivos para equipos técnicos. |
-| Portal analítico | `portal-reflex/` | UI tipo SPA para KPIs y tableros (Reflex). |
-| Contratos compartidos | `shared/` | Esquemas y tipos reutilizables entre servicios. |
+| Ingesta y administración | `backend-ingest/` | Django Admin, usuarios, carga CSV/XLSX → API. |
+| API y cómputo | `backend-compute/` | Ingesta a Postgres, KPIs (DuckDB + SQL), Loguru/Sentry. |
+| Base de datos (SQL) | `supabase/migrations/` | Script inicial para Postgres/Supabase. |
+| Contratos | `shared/` | Paquete instalable `hub-contracts` (`PolicyRow`, etc.). |
+| Portal | `portal-reflex/` | KPIs vía `COMPUTE_API_URL`. |
+| Laboratorio | `lab-streamlit/` | Dashboard + pestaña de carga hacia la API. |
 
-Detalle de despliegue sugerido y decisiones de diseño: [`docs/architecture.md`](docs/architecture.md).
+## Requisitos
 
-## Requisitos previos
+- Python 3.11+.
+- Proyecto **Supabase** (gratis) o cualquier Postgres con el SQL aplicado.
+- Cuentas **Render** / **Streamlit Cloud** / **Reflex Cloud** (u homólogos) para demo pública.
 
-- Python 3.11+ (por servicio; ver `requirements.txt` en cada carpeta).
-- Cuentas y proyectos según destino (p. ej. base de datos gestionada, hosting de API y front).
+## Arranque local rápido
 
-## Arranque rápido (API de ejemplo)
+### 1. Base de datos
+
+Ejecuta `supabase/migrations/001_initial.sql` en tu instancia. Copia `DATABASE_URL`.
+
+### 2. API (`backend-compute`)
 
 ```bash
 cd backend-compute
 python -m venv .venv
-.venv\Scripts\activate   # Windows
+.venv\Scripts\activate
+pip install ..\shared
 pip install -r requirements.txt
+set DATABASE_URL=postgresql+psycopg://...   # o postgresql:// (se normaliza)
+set INGEST_API_KEY=tu-clave   # opcional en local
 uvicorn app.main:app --reload --port 8000
 ```
 
-Abrir `http://127.0.0.1:8000/health` y `http://127.0.0.1:8000/api/v1/kpi/summary`.
+- `GET /health`, `GET /api/v1/health/db`
+- `GET /api/v1/kpi/summary?cohort_year=2022&use_db=true`
+- `POST /api/v1/ingest/policies` (multipart `file`) + `X-API-Key` si configuraste clave
 
-**Laboratorio Streamlit** (requiere API en marcha):
+### 3. Django Admin (`backend-ingest`)
+
+```bash
+cd backend-ingest
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+set DATABASE_URL=postgresql://...   # misma BD
+set COMPUTE_API_URL=http://127.0.0.1:8000
+set INGEST_API_KEY=tu-clave
+set DJANGO_SECRET_KEY=dev
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver 8080
+```
+
+- Admin: `http://127.0.0.1:8080/admin/`
+- Carga: `http://127.0.0.1:8080/admin/upload-policies/`
+
+### 4. Streamlit
 
 ```bash
 cd lab-streamlit
-python -m venv .venv
-.venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Opcional: en `lab-streamlit/.streamlit/secrets.toml` define `COMPUTE_API_URL` si la API no está en localhost.
+### 5. Reflex
 
-## Demo en vivo (gratis)
+```bash
+cd portal-reflex
+pip install -r requirements.txt
+reflex run
+```
 
-Guía paso a paso: **[`docs/deploy-free-tier.md`](docs/deploy-free-tier.md)** — API en **Render** + tablero en **Streamlit Community Cloud**.
+Define `COMPUTE_API_URL` en el entorno del proceso.
 
-## Próximos pasos
+## Datos de ejemplo
 
-1. Definir variables en `.env` (copiar desde `.env.example`).
-2. Implementar modelos en `shared/contracts/` y consumirlos desde ingest y compute.
-3. Conectar base de datos y observabilidad según `docs/architecture.md`.
+CSV de prueba: [`docs/sample-policies.csv`](docs/sample-policies.csv).
 
-## Relación futura con otros productos
+## Demo en la nube (gratis)
 
-Este repo puede enlazarse desde sitios o suites corporativas (p. ej. documentación o demos públicas) sin acoplar el código a una marca concreta: usar configuración y documentación externa para el relato comercial.
+- **[`docs/deploy-free-tier.md`](docs/deploy-free-tier.md)** — Render (API + Django), Streamlit Cloud, variables y orden de despliegue.
+- Blueprint: [`render.yaml`](render.yaml) (dos servicios web).
+
+## Documentación
+
+- [`docs/architecture.md`](docs/architecture.md) — vista neutra por componente.
+- [`docs/ecosystem.md`](docs/ecosystem.md) — cómo se conectan Django, API, Supabase, Reflex y Streamlit.
+
+## Relación con marca / cliente
+
+Configuración y narrativa comercial fuera del código; este repo permanece reutilizable y configurable por entorno.

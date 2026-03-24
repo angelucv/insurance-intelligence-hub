@@ -1,21 +1,25 @@
 # Portal (Reflex)
 
-Interfaz tipo SPA para KPIs y tableros. Reflex genera su propia estructura de proyecto.
+SPA en Python que consume la API de cómputo (`GET /api/v1/kpi/summary`).
 
-## Crear el esqueleto Reflex (cuando vayas a implementarlo)
+## Configuración
 
-Desde esta carpeta:
+- Variable de entorno **`COMPUTE_API_URL`** (URL pública de `backend-compute`, sin barra final).
+
+## Local
 
 ```bash
-cd portal-reflex
-pip install reflex
-reflex init
+pip install -r requirements.txt
+set COMPUTE_API_URL=http://127.0.0.1:8000
+reflex run
 ```
 
-Luego añade llamadas a `backend-compute` vía `httpx` o similar, usando URL base desde variables de entorno.
+Requiere **Node/Bun** instalado (Reflex compila el frontend). Si falta, instala según [documentación Reflex](https://reflex.dev/docs/getting-started/installation/).
 
-## Despliegue típico
+## Nube
 
-- Vercel u otro host compatible con Reflex (según versión y guía oficial).
+- [Reflex Cloud](https://reflex.dev/) o contenedor propio (Render/Fly) con el mismo comando de arranque que indique la versión de Reflex.
 
-No se incluye el árbol generado por `reflex init` para mantener el repo ligero hasta que decidas la versión de Reflex.
+## Estructura
+
+Generada con `reflex init --name iihub_portal --template blank`. Lógica principal en `iihub_portal/iihub_portal.py`.

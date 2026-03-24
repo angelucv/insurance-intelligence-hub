@@ -1,11 +1,15 @@
-# Blueprint Render: despliega la API en tier gratuito (servicio puede dormir tras inactividad).
+# Blueprint Render (tier gratuito; servicios pueden dormir).
 # https://render.com/docs/blueprint-spec
+#
+# Tras el primer deploy, define en el panel: DATABASE_URL, INGEST_API_KEY (misma en API y Admin),
+# y en Admin: COMPUTE_API_URL = URL pública del servicio insurance-hub-api.
+
 services:
   - type: web
     name: insurance-hub-api
     runtime: python
     rootDir: backend-compute
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install ../shared && pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     plan: free
     envVars:
@@ -13,3 +17,32 @@ services:
         value: "3.11.8"
       - key: CORS_ALLOW_ORIGINS
         value: "*"
+      - key: DATABASE_URL
+        sync: false
+      - key: INGEST_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+  - type: web
+    name: insurance-hub-admin
+    runtime: python
+    rootDir: backend-ingest
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.8"
+      - key: DEBUG
+        value: "false"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: COMPUTE_API_URL
+        sync: false
+      - key: INGEST_API_KEY
+        sync: false

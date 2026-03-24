@@ -30,6 +30,9 @@ Info/
 # DuckDB / datos locales
 *.duckdb
 *.duckdb.wal
+
+# Django local (sin Postgres)
+**/db.sqlite3
 data/raw/
 data/tmp/
 

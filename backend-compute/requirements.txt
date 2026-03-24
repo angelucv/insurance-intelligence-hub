@@ -1,5 +1,14 @@
+# Instalar contratos locales: desde la raíz del repo o con:
+#   pip install ../shared
 fastapi>=0.109,<1
 uvicorn[standard]>=0.27,<1
 pydantic>=2.5,<3
+pydantic-settings>=2.2,<3
 duckdb>=0.10,<2
 pandas>=2.1,<3
+sqlalchemy>=2.0,<3
+psycopg[binary]>=3.1,<4
+python-multipart>=0.0.9,<1
+openpyxl>=3.1,<4
+loguru>=0.7,<1
+sentry-sdk[fastapi]>=1.39,<3
