@@ -1,5 +1,6 @@
 # Hoja de ruta (borrador)
 
+- [x] Demo KPI sintéticos: API `/api/v1/kpi/summary` + tablero Streamlit + guía [`docs/deploy-free-tier.md`](docs/deploy-free-tier.md).
 - [ ] Contratos Pydantic iniciales en `shared/contracts/`.
 - [ ] Persistencia: esquema SQL y conexión desde ingest + compute.
 - [ ] Endpoints de negocio en `backend-compute` (lecturas DuckDB + escrituras vía API si aplica).

@@ -29,7 +29,23 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Abrir `http://127.0.0.1:8000/health`.
+Abrir `http://127.0.0.1:8000/health` y `http://127.0.0.1:8000/api/v1/kpi/summary`.
+
+**Laboratorio Streamlit** (requiere API en marcha):
+
+```bash
+cd lab-streamlit
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Opcional: en `lab-streamlit/.streamlit/secrets.toml` define `COMPUTE_API_URL` si la API no está en localhost.
+
+## Demo en vivo (gratis)
+
+Guía paso a paso: **[`docs/deploy-free-tier.md`](docs/deploy-free-tier.md)** — API en **Render** + tablero en **Streamlit Community Cloud**.
 
 ## Próximos pasos
 

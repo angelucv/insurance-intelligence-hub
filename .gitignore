@@ -24,11 +24,17 @@ build/
 .DS_Store
 Thumbs.db
 
+# Datos locales / assets pesados (no versionar)
+Info/
+
 # DuckDB / datos locales
 *.duckdb
 *.duckdb.wal
 data/raw/
 data/tmp/
+
+# Streamlit (no subir URL de API reales)
+lab-streamlit/.streamlit/secrets.toml
 
 # Reflex / front
 .portal-reflex/
