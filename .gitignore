@@ -1,0 +1,44 @@
+# Entornos
+.venv/
+venv/
+.env
+.env.local
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# DuckDB / datos locales
+*.duckdb
+*.duckdb.wal
+data/raw/
+data/tmp/
+
+# Reflex / front
+.portal-reflex/
+.web/
+reflex.db
+
+# Logs
+*.log
+logs/
+
+# Cobertura
+.coverage
+htmlcov/
