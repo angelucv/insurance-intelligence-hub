@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 
-{# Índice del admin: mismo aspecto que el default + módulo de carga (evita extends admin/index.html → recursión). #}
+{# Prioridad: este archivo vive en TEMPLATES[DIRS] para sobrescribir el index del admin empaquetado. #}
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static "admin/css/dashboard.css" %}">{% endblock %}
 
@@ -30,7 +30,7 @@
     </tbody>
   </table>
   <p class="help" style="margin: 0.5rem 0 0 1rem; max-width: 42rem;">
-    {% translate "Validación con contratos Pydantic y guardado en PostgreSQL. Todo ocurre dentro de este sitio de administración." %}
+    {% translate "Misma sesión y estilo que el resto del administrador: validación Pydantic y guardado en PostgreSQL." %}
   </p>
 </div>
 <div id="content-main">

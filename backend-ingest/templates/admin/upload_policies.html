@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<p class="help">
+  {% translate "El archivo se valida con hub-contracts (Pydantic) y se guarda en PostgreSQL. Misma sesión que el administrador." %}
+</p>
+
+<form method="post" enctype="multipart/form-data" id="upload-policies-form">
+  {% csrf_token %}
+  <fieldset class="module aligned">
+    {% for field in form %}
+      <div class="form-row">
+        {{ field.errors }}
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text|safe }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  </fieldset>
+  <div class="submit-row">
+    <input type="submit" value="{% translate 'Subir archivo' %}" class="default" name="_save">
+  </div>
+</form>
+
+{% if error %}
+  <p class="errornote">{{ error }}</p>
+{% endif %}
+
+{% if result_json %}
+  <div class="module">
+    <h2>{% translate "Resultado" %}</h2>
+    <pre style="overflow: auto; max-height: 24rem; padding: 1rem; background: var(--body-bg, #f8f8f8); border: 1px solid var(--hairline-color, #e0e0e0);">{{ result_json }}</pre>
+  </div>
+{% endif %}
+
+<p class="submit-row" style="padding-left: 0;">
+  <a href="{% url 'admin:index' %}" class="button">{% translate "Volver al inicio del administrador" %}</a>
+</p>
+{% endblock %}

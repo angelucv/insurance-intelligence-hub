@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 
+from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render
+from django.template.response import TemplateResponse
 
 from core.forms import PolicyFileForm
 from core.ingest_service import ingest_policies_file
@@ -13,8 +14,14 @@ from core.ingest_service import ingest_policies_file
 
 @staff_member_required
 def upload_policies(request):  # noqa: ANN001
-    """Persiste CSV/XLSX en la misma BD que la API (validación Pydantic en el proceso Django)."""
-    context: dict = {"form": PolicyFileForm(), "result": None, "error": None}
+    """Persiste CSV/XLSX; plantilla integrada en el sitio Admin (base_site)."""
+    context = {
+        **admin.site.each_context(request),
+        "title": "Carga de pólizas (CSV / Excel)",
+        "form": PolicyFileForm(),
+        "error": None,
+        "result_json": None,
+    }
     if request.method == "POST":
         form = PolicyFileForm(request.POST, request.FILES)
         context["form"] = form
@@ -26,4 +33,4 @@ def upload_policies(request):  # noqa: ANN001
                 context["result_json"] = json.dumps(result, indent=2, ensure_ascii=False)
             except Exception as e:
                 context["error"] = str(e)
-    return render(request, "core/upload_policies.html", context)
+    return TemplateResponse(request, "admin/upload_policies.html", context)

@@ -29,6 +29,8 @@ python manage.py runserver 8080
 
 **Nota:** el modelo `Policy` es `managed = False`. La tabla debe existir (script SQL en `../supabase/migrations/`). Sin esa tabla, el listado de pólizas en Admin y la carga fallarán.
 
+Las plantillas que **sobrescriben el admin** (`templates/admin/index.html`, `templates/admin/upload_policies.html`) están en `backend-ingest/templates/` y se cargan primero vía `TEMPLATES["DIRS"]` (si solo las pones en `core/templates`, Django puede seguir usando el índice del paquete `admin`).
+
 ## Tests (local y CI)
 
 ```bash
