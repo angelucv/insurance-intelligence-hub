@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -18,7 +19,12 @@ from app.database import get_engine, init_engine
 from app.deps import get_db, verify_ingest_key
 from app.ingest_service import ingest_policies_bytes
 from app.kpi_service import kpi_summary_payload
-from app.schemas import IngestResult, KpiSummary
+from app.market_service import (
+    la_fe_resumen_series,
+    market_resumen_totals_series,
+    sanitize_empresa_norm_fragment,
+)
+from app.schemas import IngestResult, KpiSummary, MarketResumenSeries, MarketSeriesPoint
 
 
 @asynccontextmanager
@@ -77,6 +83,8 @@ def root() -> dict[str, str]:
         "health": "/health",
         "docs": "/docs",
         "kpi": "/api/v1/kpi/summary",
+        "market_la_fe": "/api/v1/market/la-fe/resumen-series",
+        "market_totals": "/api/v1/market/resumen/totals-series",
     }
 
 
@@ -105,6 +113,81 @@ def info() -> dict[str, str]:
         "service": "backend-compute",
         "role": "api_and_analytics",
     }
+
+
+def _market_db_error(e: Exception) -> HTTPException:
+    msg = str(e).lower()
+    if "undefinedcolumn" in msg or "does not exist" in msg:
+        return HTTPException(
+            status_code=503,
+            detail="Tablas o columnas SUDEASEG ausentes. Aplique supabase/migrations/003_market_sudeaseg_monthly.sql y ejecute el ETL.",
+        )
+    return HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/market/la-fe/resumen-series", response_model=MarketResumenSeries)
+def market_la_fe_resumen_series(
+    from_year: int = 2023,
+    to_year: int = 2026,
+    mode: str = "monthly_flow",
+    empresa_norm_fragment: str = "fe c.a.",
+    db: Session | None = Depends(get_db),
+) -> MarketResumenSeries:
+    """Serie temporal La Fe (resumen SUDEASEG). `mode`: `ytd` | `monthly_flow`."""
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    if mode not in ("ytd", "monthly_flow"):
+        raise HTTPException(status_code=400, detail="mode debe ser ytd o monthly_flow")
+    try:
+        rows = la_fe_resumen_series(
+            db,
+            from_year=from_year,
+            to_year=to_year,
+            mode=mode,  # type: ignore[arg-type]
+            empresa_norm_fragment=empresa_norm_fragment,
+        )
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+    gran = "ytd_eom" if mode == "ytd" else "monthly_flow"
+    note = (
+        "empresa_nombre_norm LIKE '%…%' AND '%seguros%' (fragmento: "
+        f"{sanitize_empresa_norm_fragment(empresa_norm_fragment)!r})"
+    )
+    return MarketResumenSeries(
+        granularity=gran,  # type: ignore[arg-type]
+        empresa_filter_note=note,
+        points=[MarketSeriesPoint.model_validate(p) for p in rows],
+    )
+
+
+@app.get("/api/v1/market/resumen/totals-series", response_model=MarketResumenSeries)
+def market_resumen_totals_series_ep(
+    from_year: int = 2023,
+    to_year: int = 2026,
+    mode: str = "monthly_flow",
+    db: Session | None = Depends(get_db),
+) -> MarketResumenSeries:
+    """Totales de mercado (suma de empresas) por mes — misma granularidad que La Fe."""
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    if mode not in ("ytd", "monthly_flow"):
+        raise HTTPException(status_code=400, detail="mode debe ser ytd o monthly_flow")
+    try:
+        rows = market_resumen_totals_series(
+            db,
+            from_year=from_year,
+            to_year=to_year,
+            mode=mode,  # type: ignore[arg-type]
+        )
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+    gran = "ytd_eom" if mode == "ytd" else "monthly_flow"
+    return MarketResumenSeries(
+        granularity=gran,  # type: ignore[arg-type]
+        source="market_sudeaseg_resumen_empresa:sum",
+        empresa_filter_note="Suma de todas las filas por (año, mes) en la tabla cargada.",
+        points=[MarketSeriesPoint.model_validate(p) for p in rows],
+    )
 
 
 @app.get("/api/v1/kpi/summary", response_model=KpiSummary)

@@ -150,8 +150,9 @@ Referencia para diseñar **endpoints**, **contratos JSON** y **pantallas** sin d
 
 ### API (previo o en paralelo)
 
-- [ ] `GET /api/v1/market/la-fe/resumen-series` — parámetros: `metric`, `mode` (`ytd` | `monthly_flow`), `from_year`, `to_year`.
-- [ ] `GET /api/v1/market/benchmarks` — totales mercado, opcionalmente mediana/ranking La Fe.
+- [x] `GET /api/v1/market/la-fe/resumen-series` — `mode` (`ytd` | `monthly_flow`), `from_year`, `to_year`, `empresa_norm_fragment`.
+- [x] `GET /api/v1/market/resumen/totals-series` — suma mercado (misma granularidad).
+- [ ] `GET /api/v1/market/benchmarks` — mediana / ranking La Fe (opcional).
 - [ ] `GET /api/v1/market/cuadro/la-fe-series` — series del cuadro de resultados.
 - [ ] Reutilizar `/api/v1/kpi/summary` para demo; opcional `GET .../bridge` que devuelva texto comparativo parametrizado.
 
