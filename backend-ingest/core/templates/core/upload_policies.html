@@ -10,8 +10,8 @@
 </head>
 <body>
   <h1>Carga de maestro de pólizas</h1>
-  <p>El archivo se valida en la API (<code>hub-contracts</code> / Pydantic) y se persiste en PostgreSQL.</p>
-  <p><small>Si ves <strong>HTTP 429</strong>, el servicio gratuito puede estar limitando peticiones o despertando: espera ~1 minuto, abre la API <code>/health</code> en otra pestaña y vuelve a subir.</small></p>
+  <p>El archivo se valida con <code>hub-contracts</code> (Pydantic) y se guarda en PostgreSQL desde este servidor (sin pasar por la API).</p>
+  <p><small>Requiere la misma <code>DATABASE_URL</code> que el resto del hub y las tablas <code>upload_batches</code> / <code>policies</code>.</small></p>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
@@ -20,9 +20,9 @@
   {% if error %}
     <p style="color: crimson;"><strong>Error:</strong> {{ error }}</p>
   {% endif %}
-  {% if result %}
-    <p>HTTP {{ result.status_code }}</p>
-    <pre>{{ result.text }}</pre>
+  {% if result_json %}
+    <p><strong>Resultado</strong></p>
+    <pre>{{ result_json }}</pre>
   {% endif %}
   <p><a href="/admin/">Volver al admin</a></p>
 </body>

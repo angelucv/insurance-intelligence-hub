@@ -11,4 +11,4 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Configura la URL de la API en variables de entorno o en `st.secrets` para no hardcodear entornos.
+Configura `COMPUTE_API_URL` en entorno o `st.secrets`. La carga de CSV/XLSX es en **Django Admin** (`/admin/upload-policies/`); opcional: `DJANGO_ADMIN_BASE_URL` en secretos para enlazar.

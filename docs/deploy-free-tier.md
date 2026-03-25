@@ -18,12 +18,11 @@ Síntoma en logs: `connection to server at "2600:..."` (IPv6) y **Network is unr
 
 1. [Render](https://render.com) → **New** → **Blueprint** → conecta el repo y el archivo [`render.yaml`](../render.yaml).
 2. Al crear el blueprint, Render pedirá valores para variables con `sync: false`:
-   - **`DATABASE_URL`**: la misma en **insurance-hub-api** e **insurance-hub-admin**.
-   - **`INGEST_API_KEY`**: la misma cadena secreta en ambos servicios (la API la exige en `X-API-Key` para ingestión; Django y Streamlit la usan al subir archivos).
-   - **`COMPUTE_API_URL`** (solo Admin): URL pública del servicio API, p. ej. `https://insurance-hub-api-xxxx.onrender.com` (sin barra final).
+   - **`DATABASE_URL`**: la misma en **insurance-hub-api** e **insurance-hub-admin** (Django escribe las cargas directamente en Postgres).
+   - **`INGEST_API_KEY`** (solo API, opcional): si la defines, el endpoint `POST /api/v1/ingest/policies` sigue disponible para scripts; la **carga operativa** es en Django Admin.
    - **`SENTRY_DSN`** (opcional, solo API).
 
-3. Orden práctico: despliega primero la **API**; cuando tenga URL, edita el servicio **Admin** y asigna `COMPUTE_API_URL`.
+3. Orden práctico: despliega **API** y **Admin** en paralelo o primero la API si quieres probar KPIs antes del superusuario.
 
 4. **Admin (Django)** tras el primer arranque: en el shell de Render o local con las mismas variables, ejecuta `python manage.py createsuperuser` (o usa la consola de Render → Shell).
 
@@ -45,10 +44,11 @@ Comprobaciones API:
 
 ```toml
 COMPUTE_API_URL = "https://TU-API.onrender.com"
-INGEST_API_KEY = "la-misma-clave-que-en-render"
+# Opcional: enlace absoluto al formulario de carga en Django Admin
+# DJANGO_ADMIN_BASE_URL = "https://TU-ADMIN.onrender.com"
 ```
 
-5. Deploy. Usa la pestaña **Carga de pólizas** para probar el flujo (columnas según `docs/sample-policies.csv`).
+5. Deploy. Los KPIs se leen desde la API; **sube el CSV** en Django Admin → `/admin/upload-policies/` (columnas según `docs/sample-policies.csv`).
 
 Plantilla local: `lab-streamlit/.streamlit/secrets.toml.example`.
 
@@ -69,4 +69,4 @@ Plantilla local: `lab-streamlit/.streamlit/secrets.toml.example`.
 ## 5. Mensaje para stakeholders
 
 - Excel / Power BI siguen siendo el día a día; el CSV exportable en Streamlit enlaza con ese flujo.
-- La **validación** y la **trazabilidad** de cargas están centralizadas en la API (Pydantic + tablas `upload_batches` / `policies`).
+- La **validación** (Pydantic / `hub-contracts`) y la **trazabilidad** de cargas viven en **Django** al subir el archivo; las tablas `upload_batches` / `policies` son la fuente común para la API de KPIs.

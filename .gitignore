@@ -27,6 +27,9 @@ Thumbs.db
 # Datos locales / assets pesados (no versionar)
 Info/
 
+# SQLite local de pruebas (ingesta)
+backend-ingest/test_ingest.sqlite3
+
 # DuckDB / datos locales
 *.duckdb
 *.duckdb.wal

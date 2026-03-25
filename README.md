@@ -6,12 +6,12 @@ Arquitectura por capas: **ingesta (Django)**, **PostgreSQL (Supabase)**, **valid
 
 | Capa | Carpeta | Rol |
 |------|---------|-----|
-| Ingesta y administración | `backend-ingest/` | Django Admin, usuarios, carga CSV/XLSX → API. |
-| API y cómputo | `backend-compute/` | Ingesta a Postgres, KPIs (DuckDB + SQL), Loguru/Sentry. |
+| Ingesta y administración | `backend-ingest/` | Django Admin, usuarios, **carga CSV/XLSX en Postgres** (Pydantic en Django). |
+| API y cómputo | `backend-compute/` | KPIs (DuckDB + SQL), `POST /ingest/policies` opcional para scripts; Loguru/Sentry opcional. |
 | Base de datos (SQL) | `supabase/migrations/` | Script inicial para Postgres/Supabase. |
 | Contratos | `shared/` | Paquete instalable `hub-contracts` (`PolicyRow`, etc.). |
 | Portal | `portal-reflex/` | KPIs vía `COMPUTE_API_URL`. |
-| Laboratorio | `lab-streamlit/` | Dashboard + pestaña de carga hacia la API. |
+| Laboratorio | `lab-streamlit/` | Dashboard KPI vía API; enlace a la carga en Django Admin. |
 
 ## Requisitos
 
@@ -48,10 +48,9 @@ uvicorn app.main:app --reload --port 8000
 cd backend-ingest
 python -m venv .venv
 .venv\Scripts\activate
+pip install ..\shared
 pip install -r requirements.txt
-set DATABASE_URL=postgresql://...   # misma BD
-set COMPUTE_API_URL=http://127.0.0.1:8000
-set INGEST_API_KEY=tu-clave
+set DATABASE_URL=postgresql://...   # misma BD que la API
 set DJANGO_SECRET_KEY=dev
 python manage.py migrate
 python manage.py createsuperuser
@@ -87,6 +86,11 @@ CSV de prueba: [`docs/sample-policies.csv`](docs/sample-policies.csv).
 
 - **[`docs/deploy-free-tier.md`](docs/deploy-free-tier.md)** — Render (API + Django), Streamlit Cloud, variables y orden de despliegue.
 - Blueprint: [`render.yaml`](render.yaml) (dos servicios web).
+
+## Tests (CI)
+
+- **`backend-ingest`:** `pytest` (validación CSV + ingesta sobre SQLite de prueba). Ver `backend-ingest/README.md`.
+- **GitHub Actions:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en cada push y pull request.
 
 ## Documentación
 

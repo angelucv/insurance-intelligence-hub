@@ -28,7 +28,7 @@ services:
     name: insurance-hub-admin
     runtime: python
     rootDir: backend-ingest
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput
+    buildCommand: pip install --upgrade pip && pip install ../shared && pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
     plan: free
     envVars:
@@ -43,8 +43,4 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        sync: false
-      - key: COMPUTE_API_URL
-        sync: false
-      - key: INGEST_API_KEY
         sync: false

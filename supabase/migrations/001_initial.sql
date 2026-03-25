@@ -30,5 +30,5 @@ create table if not exists public.policies (
 create index if not exists idx_policies_cohort on public.policies (cohort_year);
 create index if not exists idx_policies_status on public.policies (status);
 
-comment on table public.policies is 'Maestro demo de pólizas; alimentado por API ingestión o Django Admin.';
+comment on table public.policies is 'Maestro demo de pólizas; alimentado por Django Admin (ingesta) u opcionalmente POST API.';
 comment on table public.upload_batches is 'Trazabilidad de cargas (archivo / origen).';
