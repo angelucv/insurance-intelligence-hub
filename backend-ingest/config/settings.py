@@ -18,6 +18,21 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
+# HTTPS detrás del proxy (Render): sin esto Django cree que la petición es HTTP y falla la verificación CSRF.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Orígenes permitidos para POST con cookie CSRF (Django 4+). Render suele definir RENDER_EXTERNAL_URL.
+CSRF_TRUSTED_ORIGINS: list[str] = []
+for _chunk in (
+    os.environ.get("RENDER_EXTERNAL_URL", ""),
+    os.environ.get("CSRF_TRUSTED_ORIGINS", ""),
+):
+    for _part in _chunk.split(","):
+        _u = _part.strip().rstrip("/")
+        if _u and _u not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_u)
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
