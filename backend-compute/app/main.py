@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -69,6 +70,16 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {
+        "service": "insurance-hub-api",
+        "health": "/health",
+        "docs": "/docs",
+        "kpi": "/api/v1/kpi/summary",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -76,7 +87,16 @@ def health() -> dict[str, str]:
 
 @app.get("/api/v1/health/db")
 def health_db() -> dict[str, bool]:
-    return {"database_configured": get_engine() is not None}
+    eng = get_engine()
+    if not eng:
+        return {"database_configured": False, "reachable": False}
+    try:
+        with eng.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"database_configured": True, "reachable": True}
+    except Exception as e:  # noqa: BLE001
+        logger.warning("BD configurada pero no alcanzable: {}", e)
+        return {"database_configured": True, "reachable": False}
 
 
 @app.get("/api/v1/info")
