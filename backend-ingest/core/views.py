@@ -47,8 +47,10 @@ def upload_policies(request):  # noqa: ANN001
                         break
                     if attempt < 4:
                         time.sleep(10 + attempt * 5)
-                assert r is not None
-                context["result"] = {"status_code": r.status_code, "text": r.text}
+                if r is None:
+                    context["error"] = "Sin respuesta del servidor de ingestión."
+                else:
+                    context["result"] = {"status_code": r.status_code, "text": r.text}
             except requests.RequestException as e:
                 context["error"] = str(e)
     return render(request, "core/upload_policies.html", context)

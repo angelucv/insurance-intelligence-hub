@@ -59,12 +59,18 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 _default_sqlite = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+_db_url = os.environ.get("DATABASE_URL", _default_sqlite)
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.environ.get("DATABASE_URL", _default_sqlite),
+        default=_db_url,
         conn_max_age=600,
     )
 }
+# Supabase / Postgres en la nube suele exigir TLS; sin esto pueden fallar sesiones y vistas autenticadas (500).
+if DATABASES["default"].get("ENGINE") == "django.db.backends.postgresql":
+    opts = DATABASES["default"].setdefault("OPTIONS", {})
+    if "sslmode=" not in _db_url.lower():
+        opts.setdefault("sslmode", "require")
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
