@@ -95,7 +95,7 @@ El script borra filas previas con el mismo `source_file` y vuelve a insertar (ca
 
 El host **directo** (`db.<ref>.supabase.co`, puerto **5432**) a veces **solo resuelve por IPv6**. Si tu red o PC no tiene IPv6 usable, falla el DNS/conexión.
 
-**Solución:** en Supabase → **Connect** (o **Settings → Database**), copia la URI del **Session pooler** (puerto **6543**), con usuario del estilo `postgres.<ref>` y host `*.pooler.supabase.com`. Úsala como `DATABASE_URL` para el ETL y para Render (igual que en [`docs/deploy-free-tier.md`](deploy-free-tier.md)).
+**Solución:** en Supabase → **Connect** → **Session pooler**: copia la **URI tal cual** (host `*.pooler.supabase.com`, usuario `postgres.<ref>`). El **puerto** lo indica el panel (p. ej. **5432** o **6543** según región/tipo); no lo cambies manualmente. Añade `?sslmode=require` si hace falta. Usa esa cadena como `DATABASE_URL` en el ETL y en Render ([`docs/deploy-free-tier.md`](deploy-free-tier.md)).
 
 ## Arquitectura: ¿Django, API o Supabase directo?
 
