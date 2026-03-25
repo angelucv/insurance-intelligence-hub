@@ -24,6 +24,17 @@ _BRAND_DEEP = "#5a1f94"
 _GAUGE_PRIMARY = _BRAND_PURPLE
 _GAUGE_ACCENT = "#8B5CF6"
 
+_BTN_STYLE = (
+    "display:inline-block;padding:0.55rem 1.25rem;background:{bg};color:white;"
+    "border-radius:10px;text-decoration:none;font-weight:600;font-size:0.95rem;"
+    "border:none;cursor:pointer;box-shadow:0 2px 8px rgba(88,28,135,0.25);"
+)
+_BTN_SECONDARY = (
+    "display:inline-block;padding:0.55rem 1.25rem;background:white;color:{c};"
+    "border-radius:10px;text-decoration:none;font-weight:600;font-size:0.95rem;"
+    "border:2px solid {c};cursor:pointer;"
+)
+
 
 def _api_base() -> str:
     default = "http://127.0.0.1:8000"
@@ -83,87 +94,46 @@ def _fetch_kpi(
     return r.json()
 
 
-def _fetch_health(base: str) -> dict[str, Any]:
-    r = requests.get(f"{base}/health", timeout=15)
-    r.raise_for_status()
-    return r.json()
-
-
-# —— Cabecera visual (marca Seguros La Fe: morado / violeta) ——
-_hdr_l, _hdr_r = st.columns([1, 4])
-with _hdr_l:
+# —— Cabecera: logo grande centrado (sin tarjeta “Laboratorio analítico”) ——
+_, ctr, _ = st.columns([1, 2.2, 1])
+with ctr:
     if _LOGO_FE1.is_file():
         st.image(str(_LOGO_FE1), use_container_width=True)
-with _hdr_r:
-    st.markdown(
-        f"""
-        <div style="
-            padding: 1.35rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1.25rem;
-            background: linear-gradient(125deg, {_BRAND_DEEP} 0%, {_GAUGE_PRIMARY} 45%, {_GAUGE_ACCENT} 100%);
-            box-shadow: 0 10px 28px rgba(88, 28, 135, 0.25);
-        ">
-            <h1 style="color: white; margin: 0; font-size: 1.65rem; font-weight: 700;">
-                Laboratorio analítico
-            </h1>
-            <p style="color: rgba(255,255,255,0.92); margin: 0.5rem 0 0 0; font-size: 1rem;">
-                Gráficos, indicadores y exportación CSV. Datos desde la API; carga del maestro en Django Admin.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    else:
+        st.markdown("### Insurance Intelligence Hub")
 
 base = _api_base()
 upload_path = _admin_upload_hint()
 portal = _portal_reflex_url()
 
-nav_cols = st.columns([3, 1])
-with nav_cols[0]:
-    st.caption(
-        f"[Carga de pólizas (Admin)]({upload_path}) · línea gráfica Seguros La Fe (demo)."
-    )
-with nav_cols[1]:
-    if portal:
-        st.markdown(
-            f'<a href="{portal}" target="_blank" rel="noopener noreferrer" '
-            f'style="display:inline-block;padding:0.45rem 1rem;background:{_BRAND_PURPLE};'
-            'color:white;border-radius:8px;text-decoration:none;font-weight:600;">'
-            "Portal ejecutivo (Reflex)</a>",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.caption("Secret `PORTAL_REFLEX_URL` para enlace al portal.")
+st.markdown(
+    f"""
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0.5rem 0 1.25rem 0;">
+      <a href="{upload_path}" target="_blank" rel="noopener noreferrer"
+         style="{_BTN_STYLE.format(bg=_BRAND_PURPLE)}">
+        Carga de pólizas (Admin)
+      </a>
+      {f'<a href="{portal}" target="_blank" rel="noopener noreferrer" style="{_BTN_SECONDARY.format(c=_BRAND_PURPLE)}">Portal ejecutivo (Reflex)</a>' if portal else ""}
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 with st.sidebar:
-    st.subheader("Conexión API")
-    st.code(base, language="text")
-    st.caption("`COMPUTE_API_URL` en Streamlit Cloud.")
-    use_db = st.toggle("Preferir datos en base de datos", value=True)
+    st.markdown("### Parámetros de análisis")
+    use_db = st.toggle("Usar datos en base de datos", value=True)
     cohort_year = st.slider("Año cohorte", 2019, 2024, 2022)
-    seed = st.number_input("Semilla (modo sintético)", min_value=1, max_value=9999, value=42, step=1)
+    seed = st.number_input("Semilla (datos sintéticos de respaldo)", min_value=1, max_value=9999, value=42, step=1)
     n_policies = st.select_slider(
-        "Pólizas sintéticas (fallback)",
+        "Tamaño cohorte sintética (respaldo)",
         options=[1000, 2000, 4000, 8000, 15000],
         value=8000,
     )
-    if st.button("Probar /health"):
-        try:
-            st.success(_fetch_health(base))
-        except Exception as e:
-            st.error(str(e))
-    try:
-        hb = requests.get(f"{base}/api/v1/health/db", timeout=15)
-        if hb.ok:
-            st.caption(f"BD en API: {'sí' if hb.json().get('database_configured') else 'no'}")
-    except Exception:
-        pass
 
 try:
     data = _fetch_kpi(base, cohort_year, int(seed), int(n_policies), use_db)
 except Exception as e:
-    st.error(f"No se pudo obtener KPIs: {e}")
+    st.error(f"No se pudo obtener los indicadores. Comprueba la conexión o inténtalo más tarde. ({e})")
     st.stop()
 
 if data.get("data_note"):
@@ -208,7 +178,7 @@ if tlr is not None:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("Exportación (Excel / Power BI)")
+st.subheader("Exportación")
 df = pd.DataFrame([data])
 st.download_button(
     "Descargar KPIs como CSV",

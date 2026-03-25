@@ -7,12 +7,11 @@ import os
 import httpx
 import reflex as rx
 
-from rxconfig import config
-
-# Marca Seguros La Fe (coherente con Streamlit / Admin)
+# Marca Seguros La Fe (alineado con Streamlit / Admin)
 _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
 _BRAND_LAVENDER = "#8B5CF6"
+_BRAND_MUTED = "#64748b"
 
 
 class State(rx.State):
@@ -20,7 +19,6 @@ class State(rx.State):
 
     admin_upload_url: str = "http://127.0.0.1:8080/admin/upload-policies/"
     streamlit_lab_url: str = "http://127.0.0.1:8501"
-    env_hint: str = ""
 
     input_year: str = "2022"
     persistency: str = "—"
@@ -32,7 +30,7 @@ class State(rx.State):
     busy: bool = False
 
     async def hydrate_urls(self):
-        """Lee Secrets / env en runtime en Reflex Cloud (evita href fijados a localhost en el bundle)."""
+        """Lee variables de entorno en runtime (Reflex Cloud / servidor)."""
         ab = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
         if ab:
             self.admin_upload_url = f"{ab}/admin/upload-policies/"
@@ -45,13 +43,6 @@ class State(rx.State):
         else:
             self.streamlit_lab_url = "http://127.0.0.1:8501"
 
-        hints: list[str] = []
-        if not ab:
-            hints.append("Define DJANGO_ADMIN_BASE_URL en Secrets del servidor para enlazar al Admin en la nube.")
-        if not sl:
-            hints.append("Define STREAMLIT_LAB_URL en Secrets para enlazar al laboratorio Streamlit en la nube.")
-        self.env_hint = " ".join(hints)
-
     def set_input_year(self, v: str):
         self.input_year = v
 
@@ -61,7 +52,7 @@ class State(rx.State):
         try:
             year = int(self.input_year.strip())
         except ValueError:
-            self.note = "Año inválido."
+            self.note = "Indica un año válido."
             self.busy = False
             return
         base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
@@ -81,40 +72,95 @@ class State(rx.State):
             self.tlr = f"{float(t):.2f} %" if t is not None else "—"
             self.note = str(d.get("data_note", ""))
         except Exception as e:  # noqa: BLE001
-            self.note = f"Error al llamar a la API: {e}"
+            self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
         self.busy = False
 
 
-def _hero() -> rx.Component:
+def _shell_header() -> rx.Component:
+    """Barra superior fija: logo grande + acciones (plantilla tipo aplicación)."""
     return rx.box(
-        rx.hstack(
-            rx.image(src="/logo-fe-1.jpg", alt="Seguros La Fe", width="160px", flex_shrink="0"),
+        rx.box(
+            rx.hstack(
+                rx.image(
+                    src="/logo-fe-1.jpg",
+                    alt="Seguros La Fe",
+                    height="88px",
+                    width="auto",
+                    style={"max_width": "min(100%, 320px)", "object_fit": "contain"},
+                ),
+                rx.spacer(),
+                rx.hstack(
+                    rx.link(
+                        rx.button(
+                            "Carga de pólizas",
+                            size="3",
+                            color_scheme="purple",
+                        ),
+                        href=State.admin_upload_url,
+                        is_external=True,
+                    ),
+                    rx.link(
+                        rx.button(
+                            "Laboratorio analítico",
+                            size="3",
+                            color_scheme="purple",
+                            variant="outline",
+                        ),
+                        href=State.streamlit_lab_url,
+                        is_external=True,
+                    ),
+                    spacing="3",
+                    align_items="center",
+                    flex_wrap="wrap",
+                ),
+                spacing="4",
+                align_items="center",
+                width="100%",
+                flex_wrap="wrap",
+            ),
+            width="100%",
+            max_width="1200px",
+            margin_x="auto",
+            padding_x="6",
+            padding_y="4",
+        ),
+        width="100%",
+        style={
+            "background": "linear-gradient(180deg, #ffffff 0%, #faf5ff 100%)",
+            "border_bottom": "1px solid var(--gray-5)",
+            "box_shadow": "0 4px 24px rgba(88, 28, 135, 0.08)",
+        },
+    )
+
+
+def _hero_strip() -> rx.Component:
+    """Franja de marca bajo el header (sin duplicar el logo)."""
+    return rx.box(
+        rx.box(
             rx.vstack(
                 rx.heading(
                     "Insurance Intelligence Hub",
-                    size="8",
+                    size="7",
                     style={"color": "white", "margin": 0},
                 ),
                 rx.text(
-                    "Portal ejecutivo: KPIs al instante. Laboratorio Streamlit (gráficos y exportación).",
+                    "Seguros La Fe · Indicadores de cohorte y accesos operativos",
                     size="3",
-                    style={"color": "rgba(255,255,255,0.92)", "max_width": "40rem"},
+                    style={"color": "rgba(255,255,255,0.9)"},
                 ),
-                spacing="3",
+                spacing="2",
                 align_items="start",
                 width="100%",
             ),
-            spacing="5",
-            align_items="center",
             width="100%",
-            flex_wrap="wrap",
+            max_width="1200px",
+            margin_x="auto",
+            padding_x="6",
+            padding_y="5",
         ),
         width="100%",
-        padding="2rem",
-        border_radius="14px",
         style={
-            "background": f"linear-gradient(125deg, {_BRAND_DEEP} 0%, {_BRAND_PURPLE} 50%, {_BRAND_LAVENDER} 100%)",
-            "box_shadow": "0 12px 40px rgba(88, 28, 135, 0.22)",
+            "background": f"linear-gradient(115deg, {_BRAND_DEEP} 0%, {_BRAND_PURPLE} 45%, {_BRAND_LAVENDER} 100%)",
         },
     )
 
@@ -130,113 +176,90 @@ def _kpi_card(title: str, value: rx.Var) -> rx.Component:
         ),
         style={
             "border": "1px solid var(--gray-6)",
-            "box_shadow": "0 2px 12px rgba(15, 23, 42, 0.06)",
-            "min_height": "110px",
+            "box_shadow": "0 4px 16px rgba(15, 23, 42, 0.06)",
+            "min_height": "118px",
         },
         width="100%",
     )
 
 
 def index() -> rx.Component:
-    return rx.box(
-        rx.color_mode.button(position="top-right"),
-        rx.container(
-            rx.vstack(
-                _hero(),
-                rx.center(
-                    rx.image(
-                        src="/logo2.jpg",
-                        alt="60 años Seguros La Fe",
-                        height="52px",
-                        style={"max_width": "min(100%, 420px)", "object_fit": "contain"},
-                    ),
-                    width="100%",
-                    padding_y="2",
+    return rx.fragment(
+        rx.box(
+            rx.color_mode.button(position="top-right"),
+            _shell_header(),
+            _hero_strip(),
+            rx.center(
+                rx.image(
+                    src="/logo2.jpg",
+                    alt="60 años Seguros La Fe",
+                    height="64px",
+                    style={"max_width": "min(100%, 480px)", "object_fit": "contain"},
                 ),
-                rx.hstack(
-                    rx.link(
-                        rx.button(
-                            "Carga de pólizas (Admin)",
-                            size="3",
-                            color_scheme="purple",
-                        ),
-                        href=State.admin_upload_url,
-                        is_external=True,
-                    ),
-                    rx.link(
-                        rx.button(
-                            "Abrir laboratorio (Streamlit)",
-                            size="3",
-                            color_scheme="purple",
-                            variant="outline",
-                        ),
-                        href=State.streamlit_lab_url,
-                        is_external=True,
-                    ),
-                    spacing="4",
-                    align="center",
-                    flex_wrap="wrap",
-                    padding_y="2",
-                ),
-                rx.text(
-                    "Admin: usuarios staff. Los enlaces usan las URLs configuradas en Secrets (runtime).",
-                    size="1",
-                    color="gray",
-                ),
-                rx.cond(
-                    State.env_hint != "",
-                    rx.text(State.env_hint, size="1", color="orange"),
-                ),
-                rx.divider(),
-                rx.heading("Resumen de cohorte", size="5"),
-                rx.hstack(
-                    rx.text("Año cohorte:", weight="medium"),
-                    rx.input(
-                        value=State.input_year,
-                        on_change=State.set_input_year,
-                        width="100px",
-                    ),
-                    rx.button(
-                        "Actualizar KPI",
-                        on_click=State.load_kpi,
-                        loading=State.busy,
-                        color_scheme="purple",
-                    ),
-                    spacing="3",
-                    align="center",
-                    flex_wrap="wrap",
-                ),
-                rx.grid(
-                    _kpi_card("Persistencia", State.persistency),
-                    _kpi_card("Pólizas activas", State.active_n),
-                    _kpi_card("Lapsos", State.lapsed_n),
-                    _kpi_card("Prima media", State.avg_premium),
-                    _kpi_card("Ratio técnico (demo)", State.tlr),
-                    columns="5",
-                    spacing="3",
-                    width="100%",
-                ),
-                rx.text(State.note, size="2", color="gray"),
-                rx.text(
-                    "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · demo técnico.",
-                    size="1",
-                    color="gray",
-                ),
-                rx.text(
-                    f"{config.app_name} · variables de entorno en despliegue (API, Admin, Streamlit).",
-                    size="1",
-                    color="gray",
-                ),
-                spacing="4",
                 width="100%",
-                max_width="1200px",
-                margin_x="auto",
+                padding_y="4",
+                style={"background": "var(--gray-2)"},
             ),
-            padding_y="6",
-            size="4",
+            rx.box(
+                rx.container(
+                    rx.vstack(
+                        rx.heading("Resumen de cohorte", size="5", style={"color": _BRAND_DEEP}),
+                        rx.hstack(
+                            rx.text("Año:", weight="medium", color=_BRAND_MUTED),
+                            rx.input(
+                                value=State.input_year,
+                                on_change=State.set_input_year,
+                                width="100px",
+                            ),
+                            rx.button(
+                                "Actualizar indicadores",
+                                on_click=State.load_kpi,
+                                loading=State.busy,
+                                color_scheme="purple",
+                            ),
+                            spacing="3",
+                            align_items="center",
+                            flex_wrap="wrap",
+                        ),
+                        rx.grid(
+                            _kpi_card("Persistencia", State.persistency),
+                            _kpi_card("Pólizas activas", State.active_n),
+                            _kpi_card("Lapsos", State.lapsed_n),
+                            _kpi_card("Prima media", State.avg_premium),
+                            _kpi_card("Ratio técnico (demo)", State.tlr),
+                            columns="5",
+                            spacing="3",
+                            width="100%",
+                        ),
+                        rx.cond(
+                            State.note != "",
+                            rx.callout(
+                                State.note,
+                                icon="info",
+                                color_scheme="blue",
+                                width="100%",
+                            ),
+                        ),
+                        rx.text(
+                            "Seguros La Fe · RIF J-000467382 · Inscrita en la SUDEASEG bajo el N.º 62",
+                            size="1",
+                            color="gray",
+                            text_align="center",
+                            width="100%",
+                        ),
+                        spacing="5",
+                        width="100%",
+                        padding_y="8",
+                        padding_x="2",
+                    ),
+                    size="4",
+                ),
+                width="100%",
+                min_height="50vh",
+                style={"background": "var(--gray-2)"},
+            ),
+            min_height="100vh",
         ),
-        min_height="100vh",
-        style={"background": "var(--gray-2)"},
     )
 
 
