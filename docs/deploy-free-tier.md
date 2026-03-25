@@ -8,7 +8,11 @@ Resumen del encaje entre piezas: [`ecosystem.md`](ecosystem.md).
 
 1. Crea un proyecto en [Supabase](https://supabase.com).
 2. **SQL Editor** → pega y ejecuta `supabase/migrations/001_initial.sql`.
-3. **Settings → Database** → copia la URI (modo *Transaction* o *Session*). La usarás como `DATABASE_URL` en Render (API y Admin).
+3. En **Connect → Connection string** elige **Session pooler** (no “Direct”) para **Render**: la conexión directa suele usar **solo IPv6** y en Render verás `Network is unreachable` / IPv6 en el log. Copia la **URI** del *Session pooler* y úsala como `DATABASE_URL` en **API y Admin**. Si falla SSL, prueba a añadir al final: `?sslmode=require`.
+
+### Si ya usaste “Direct” y falla en Render
+
+Síntoma en logs: `connection to server at "2600:..."` (IPv6) y **Network is unreachable**. Solución: sustituir `DATABASE_URL` en ambos servicios por la cadena del **Session pooler** desde Supabase **Connect**.
 
 ## 1. API y Django en Render (Blueprint)
 
