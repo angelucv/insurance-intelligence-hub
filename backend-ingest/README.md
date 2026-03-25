@@ -4,7 +4,7 @@
 
 - **Usuarios y sesiones** vía Django Admin (`/admin/`).
 - **Listado de pólizas** (modelo no gestionado sobre la tabla `policies` creada en Supabase).
-- **Carga de CSV/XLSX** en `/admin/upload-policies/`: validación con **hub-contracts** (`PolicyRow`, Pydantic) e inserción en PostgreSQL **desde este proceso** (sin reenviar a FastAPI).
+- **Carga de CSV/XLSX** en `/admin/upload-policies/` (también enlace **“Carga de pólizas (CSV / Excel)”** en la página de inicio del Admin tras iniciar sesión).
 
 ## Variables de entorno
 
