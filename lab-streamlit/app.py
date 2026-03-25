@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 
@@ -239,6 +240,7 @@ with tab_mercado:
     st.subheader("Primas netas: La Fe vs total de mercado")
     st.caption(
         "Datos según cuadro resumen SUDEASEG cargado en el hub. Unidades: miles de bolívares. "
+        "La Fe en el eje izquierdo; total de mercado en el eje derecho. "
         "Modo mensual = flujo del mes; YTD = acumulado a cierre de mes."
     )
     mc1, mc2, mc3 = st.columns(3)
@@ -278,31 +280,34 @@ with tab_mercado:
             if merged.empty:
                 st.info("No hay puntos en el rango elegido o faltan datos en la tabla de mercado.")
             else:
-                fig_m = go.Figure()
+                fig_m = make_subplots(specs=[[{"secondary_y": True}]])
                 fig_m.add_trace(
                     go.Scatter(
                         x=merged["periodo"],
                         y=merged["primas_la_fe_thousands_bs"],
-                        name="La Fe",
+                        name="La Fe (eje izq.)",
                         mode="lines+markers",
                         line={"color": _BRAND_PURPLE},
-                    )
+                    ),
+                    secondary_y=False,
                 )
                 fig_m.add_trace(
                     go.Scatter(
                         x=merged["periodo"],
                         y=merged["primas_mercado_thousands_bs"],
-                        name="Mercado (total)",
+                        name="Mercado total (eje der.)",
                         mode="lines+markers",
                         line={"color": _MARKET_TOTAL_LINE},
-                    )
+                    ),
+                    secondary_y=True,
                 )
+                fig_m.update_xaxes(title_text="Período (año-mes)")
+                fig_m.update_yaxes(title_text="La Fe · miles de Bs.", secondary_y=False)
+                fig_m.update_yaxes(title_text="Mercado total · miles de Bs.", secondary_y=True)
                 fig_m.update_layout(
                     height=420,
-                    margin=dict(l=24, r=24, t=48, b=24),
+                    margin=dict(l=24, r=56, t=48, b=24),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                    yaxis_title="Miles de Bs.",
-                    xaxis_title="Período (año-mes)",
                     hovermode="x unified",
                 )
                 st.plotly_chart(fig_m, use_container_width=True)

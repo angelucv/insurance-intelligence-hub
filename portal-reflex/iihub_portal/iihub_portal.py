@@ -78,6 +78,7 @@ class State(rx.State):
             return
 
         import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
 
         la = r1.json().get("points") or []
         tot = r2.json().get("points") or []
@@ -100,31 +101,34 @@ class State(rx.State):
         y_la = [m1.get(k) for k in keys]
         y_tot = [m2.get(k) for k in keys]
 
-        fig = go.Figure()
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(
             go.Scatter(
                 x=xs,
                 y=y_la,
-                name="La Fe",
+                name="La Fe (eje izq.)",
                 mode="lines+markers",
                 line={"color": _BRAND_PURPLE},
             ),
+            secondary_y=False,
         )
         fig.add_trace(
             go.Scatter(
                 x=xs,
                 y=y_tot,
-                name="Mercado (total)",
+                name="Mercado total (eje der.)",
                 mode="lines+markers",
                 line={"color": "#0284c7"},
             ),
+            secondary_y=True,
         )
+        fig.update_xaxes(title_text="Período")
+        fig.update_yaxes(title_text="La Fe · miles de Bs.", secondary_y=False)
+        fig.update_yaxes(title_text="Mercado total · miles de Bs.", secondary_y=True)
         fig.update_layout(
             height=360,
-            margin=dict(l=24, r=24, t=40, b=24),
+            margin=dict(l=24, r=56, t=40, b=24),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            yaxis_title="Miles de Bs.",
-            xaxis_title="Período",
             hovermode="x unified",
         )
         pj = fig.to_plotly_json()
@@ -283,7 +287,7 @@ def index() -> rx.Component:
                     rx.vstack(
                         rx.heading("Referencia de mercado (SUDEASEG)", size="5", style={"color": _BRAND_DEEP}),
                         rx.text(
-                            "Primas netas mensuales (miles de Bs.): La Fe frente al total del sector en los datos cargados.",
+                            "Primas netas mensuales (miles de Bs.): La Fe (eje izquierdo) y total del sector (eje derecho).",
                             size="2",
                             color="gray",
                         ),
