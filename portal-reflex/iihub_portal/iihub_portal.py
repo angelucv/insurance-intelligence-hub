@@ -9,9 +9,10 @@ import reflex as rx
 
 from rxconfig import config
 
-# Paleta demo (coherente con Streamlit config.toml)
-_ACCENT_NAVY = "#1e3a8f"
-_ACCENT_TEAL = "#0f766e"
+# Marca Seguros La Fe (coherente con Streamlit / Admin)
+_BRAND_PURPLE = "#7029B3"
+_BRAND_DEEP = "#5a1f94"
+_BRAND_LAVENDER = "#8B5CF6"
 
 
 class State(rx.State):
@@ -86,27 +87,34 @@ class State(rx.State):
 
 def _hero() -> rx.Component:
     return rx.box(
-        rx.vstack(
-            rx.heading(
-                "Insurance Intelligence Hub",
-                size="8",
-                style={"color": "white", "margin": 0},
+        rx.hstack(
+            rx.image(src="/logo-fe-1.jpg", alt="Seguros La Fe", width="160px", flex_shrink="0"),
+            rx.vstack(
+                rx.heading(
+                    "Insurance Intelligence Hub",
+                    size="8",
+                    style={"color": "white", "margin": 0},
+                ),
+                rx.text(
+                    "Portal ejecutivo: KPIs al instante. Laboratorio Streamlit (gráficos y exportación).",
+                    size="3",
+                    style={"color": "rgba(255,255,255,0.92)", "max_width": "40rem"},
+                ),
+                spacing="3",
+                align_items="start",
+                width="100%",
             ),
-            rx.text(
-                "Portal ejecutivo: KPIs al instante. Profundiza en el laboratorio Streamlit (gráficos y exportación).",
-                size="3",
-                style={"color": "rgba(255,255,255,0.92)", "max_width": "40rem"},
-            ),
-            spacing="3",
-            align_items="start",
+            spacing="5",
+            align_items="center",
             width="100%",
+            flex_wrap="wrap",
         ),
         width="100%",
         padding="2rem",
         border_radius="14px",
         style={
-            "background": f"linear-gradient(125deg, {_ACCENT_NAVY} 0%, {_ACCENT_TEAL} 55%, #134e4a 100%)",
-            "box_shadow": "0 12px 40px rgba(15, 23, 42, 0.18)",
+            "background": f"linear-gradient(125deg, {_BRAND_DEEP} 0%, {_BRAND_PURPLE} 50%, {_BRAND_LAVENDER} 100%)",
+            "box_shadow": "0 12px 40px rgba(88, 28, 135, 0.22)",
         },
     )
 
@@ -115,7 +123,7 @@ def _kpi_card(title: str, value: rx.Var) -> rx.Component:
     return rx.card(
         rx.vstack(
             rx.text(title, size="2", weight="bold", color="gray"),
-            rx.heading(value, size="6", style={"color": _ACCENT_NAVY}),
+            rx.heading(value, size="6", style={"color": _BRAND_DEEP}),
             spacing="1",
             align_items="start",
             width="100%",
@@ -135,12 +143,22 @@ def index() -> rx.Component:
         rx.container(
             rx.vstack(
                 _hero(),
+                rx.center(
+                    rx.image(
+                        src="/logo2.jpg",
+                        alt="60 años Seguros La Fe",
+                        height="52px",
+                        style={"max_width": "min(100%, 420px)", "object_fit": "contain"},
+                    ),
+                    width="100%",
+                    padding_y="2",
+                ),
                 rx.hstack(
                     rx.link(
                         rx.button(
                             "Carga de pólizas (Admin)",
                             size="3",
-                            color_scheme="blue",
+                            color_scheme="purple",
                         ),
                         href=State.admin_upload_url,
                         is_external=True,
@@ -149,8 +167,8 @@ def index() -> rx.Component:
                         rx.button(
                             "Abrir laboratorio (Streamlit)",
                             size="3",
-                            color_scheme="teal",
-                            variant="solid",
+                            color_scheme="purple",
+                            variant="outline",
                         ),
                         href=State.streamlit_lab_url,
                         is_external=True,
@@ -182,7 +200,7 @@ def index() -> rx.Component:
                         "Actualizar KPI",
                         on_click=State.load_kpi,
                         loading=State.busy,
-                        color_scheme="blue",
+                        color_scheme="purple",
                     ),
                     spacing="3",
                     align="center",
@@ -199,6 +217,11 @@ def index() -> rx.Component:
                     width="100%",
                 ),
                 rx.text(State.note, size="2", color="gray"),
+                rx.text(
+                    "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · demo técnico.",
+                    size="1",
+                    color="gray",
+                ),
                 rx.text(
                     f"{config.app_name} · variables de entorno en despliegue (API, Admin, Streamlit).",
                     size="1",

@@ -102,6 +102,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Marca La Fe y activos compartidos del monorepo (collectstatic en Render incluye ../static/brand).
+_REPO_STATIC = BASE_DIR.parent / "static"
+STATICFILES_DIRS = [_REPO_STATIC] if _REPO_STATIC.is_dir() else []
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},

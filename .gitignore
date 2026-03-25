@@ -34,6 +34,9 @@ backend-ingest/test_ingest.sqlite3
 *.duckdb
 *.duckdb.wal
 
+# Django collectstatic (regenerado en deploy)
+backend-ingest/staticfiles/
+
 # Django local (sin Postgres)
 **/db.sqlite3
 data/raw/

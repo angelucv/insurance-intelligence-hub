@@ -1,0 +1,72 @@
+/* Tema admin alineado con Seguros La Fe (morado #7029B3). Compatible con Django 5 admin. */
+
+#header {
+  background: #7029b3;
+  color: #fff;
+}
+
+#site-name a:link,
+#site-name a:visited {
+  color: #fff;
+}
+
+#user-tools,
+#user-tools a:link,
+#user-tools a:visited {
+  color: #f3e8ff;
+}
+
+#user-tools a:focus,
+#user-tools a:hover {
+  color: #fff;
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  background: #5a1f94;
+  color: #fff;
+}
+
+div.breadcrumbs {
+  background: #ede9fe;
+  color: #1e1b4b;
+}
+
+div.breadcrumbs a {
+  color: #5b21b6;
+}
+
+a:link,
+a:visited {
+  color: #6d28d9;
+}
+
+.button.default,
+input[type="submit"].default,
+.submit-row input.default {
+  background: #7029b3;
+}
+
+.button.default:active,
+.button.default:focus,
+.button.default:hover,
+input[type="submit"].default:active,
+input[type="submit"].default:focus,
+input[type="submit"].default:hover {
+  background: #5a1f94;
+}
+
+object,
+.addlink,
+.changelink {
+  color: #5b21b6;
+}
+
+.iihub-admin-footer {
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--hairline-color, #e5e5e5);
+  font-size: 0.75rem;
+  color: #64748b;
+}

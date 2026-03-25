@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -16,8 +17,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-_GAUGE_PRIMARY = "#1e3a8f"
-_GAUGE_ACCENT = "#0f766e"
+_LOGO_FE1 = Path(__file__).resolve().parent / "assets" / "logo-fe-1.jpg"
+
+_BRAND_PURPLE = "#7029B3"
+_BRAND_DEEP = "#5a1f94"
+_GAUGE_PRIMARY = _BRAND_PURPLE
+_GAUGE_ACCENT = "#8B5CF6"
 
 
 def _api_base() -> str:
@@ -84,26 +89,31 @@ def _fetch_health(base: str) -> dict[str, Any]:
     return r.json()
 
 
-# —— Cabecera visual (misma línea gráfica que el portal Reflex: navy / teal) ——
-st.markdown(
-    f"""
-    <div style="
-        padding: 1.35rem 1.5rem;
-        border-radius: 12px;
-        margin-bottom: 1.25rem;
-        background: linear-gradient(125deg, {_GAUGE_PRIMARY} 0%, {_GAUGE_ACCENT} 55%, #134e4a 100%);
-        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2);
-    ">
-        <h1 style="color: white; margin: 0; font-size: 1.65rem; font-weight: 700;">
-            Laboratorio analítico
-        </h1>
-        <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0; font-size: 1rem;">
-            Gráficos, indicadores y exportación CSV. Los datos viven en la API; la carga del maestro es en Django Admin.
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# —— Cabecera visual (marca Seguros La Fe: morado / violeta) ——
+_hdr_l, _hdr_r = st.columns([1, 4])
+with _hdr_l:
+    if _LOGO_FE1.is_file():
+        st.image(str(_LOGO_FE1), use_container_width=True)
+with _hdr_r:
+    st.markdown(
+        f"""
+        <div style="
+            padding: 1.35rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(125deg, {_BRAND_DEEP} 0%, {_GAUGE_PRIMARY} 45%, {_GAUGE_ACCENT} 100%);
+            box-shadow: 0 10px 28px rgba(88, 28, 135, 0.25);
+        ">
+            <h1 style="color: white; margin: 0; font-size: 1.65rem; font-weight: 700;">
+                Laboratorio analítico
+            </h1>
+            <p style="color: rgba(255,255,255,0.92); margin: 0.5rem 0 0 0; font-size: 1rem;">
+                Gráficos, indicadores y exportación CSV. Datos desde la API; carga del maestro en Django Admin.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 base = _api_base()
 upload_path = _admin_upload_hint()
@@ -112,13 +122,13 @@ portal = _portal_reflex_url()
 nav_cols = st.columns([3, 1])
 with nav_cols[0]:
     st.caption(
-        f"[Carga de pólizas (Admin)]({upload_path}) · mismo esquema de colores que el portal ejecutivo."
+        f"[Carga de pólizas (Admin)]({upload_path}) · línea gráfica Seguros La Fe (demo)."
     )
 with nav_cols[1]:
     if portal:
         st.markdown(
             f'<a href="{portal}" target="_blank" rel="noopener noreferrer" '
-            'style="display:inline-block;padding:0.45rem 1rem;background:#1e3a8f;'
+            f'style="display:inline-block;padding:0.45rem 1rem;background:{_BRAND_PURPLE};'
             'color:white;border-radius:8px;text-decoration:none;font-weight:600;">'
             "Portal ejecutivo (Reflex)</a>",
             unsafe_allow_html=True,
@@ -205,4 +215,8 @@ st.download_button(
     data=df.to_csv(index=False).encode("utf-8"),
     file_name="kpi_summary_demo.csv",
     mime="text/csv",
+)
+
+st.caption(
+    "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · Insurance Intelligence Hub (demo técnico)."
 )

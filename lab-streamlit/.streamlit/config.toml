@@ -1,9 +1,9 @@
-# Tema alineado con el portal (navy / teal). Streamlit Cloud lo respeta al desplegar.
+# Tema alineado con marca Seguros La Fe (morado / lavanda).
 [theme]
-primaryColor = "#0f766e"
-backgroundColor = "#f1f5f9"
+primaryColor = "#7029B3"
+backgroundColor = "#f5f3ff"
 secondaryBackgroundColor = "#ffffff"
-textColor = "#0f172a"
+textColor = "#1e1b4b"
 font = "sans serif"
 
 [browser]

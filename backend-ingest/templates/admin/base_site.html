@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name" class="iihub-branding">
+  <a href="{% url 'admin:index' %}">
+    <img
+      src="{% static 'brand/logo-fe-2.jpg' %}"
+      alt="Seguros La Fe"
+      width="140"
+      height="40"
+      style="height: 40px; width: auto; border-radius: 6px; vertical-align: middle; margin-right: 0.65rem;"
+    >
+    <span style="font-weight: 600; vertical-align: middle;">Insurance Intelligence Hub</span>
+  </a>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/la_fe_admin.css' %}">
+{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+<div class="iihub-admin-footer">
+  Seguros La Fe · RIF J-000467382 · Inscrita en la SUDEASEG bajo el N.º 62 · Demo técnico Insurance Intelligence Hub.
+</div>
+{% endblock %}
