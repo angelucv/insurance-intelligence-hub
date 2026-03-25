@@ -47,6 +47,13 @@ def _norm_pg_url(url: str) -> str:
     return u
 
 
+def _sanitize_database_url(url: str) -> str:
+    """Quita BOM, saltos de línea y espacios que rompen getaddrinfo / IDNA (UnicodeError)."""
+    u = url.strip().strip("\ufeff")
+    u = u.replace("\r", "").replace("\n", "")
+    return u.strip()
+
+
 def _to_decimal(v: Any) -> Decimal | None:
     if v is None or (isinstance(v, float) and pd.isna(v)):
         return None
@@ -267,15 +274,32 @@ def main() -> int:
 
     engine: Engine | None = None
     if not args.dry_run:
-        if not args.database_url.strip():
+        raw_url = _sanitize_database_url(args.database_url)
+        if not raw_url:
             print("ERROR: defina DATABASE_URL o --database-url", file=sys.stderr)
             return 1
-        url_n = _norm_pg_url(args.database_url)
+        url_n = _norm_pg_url(raw_url)
         engine = create_engine(
             url_n,
             pool_pre_ping=True,
             connect_args={"prepare_threshold": None} if "psycopg" in url_n else {},
         )
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("select 1"))
+        except UnicodeError as e:
+            print(
+                "ERROR: la URL de base de datos tiene caracteres inválidos o invisibles en el host.\n"
+                "  · Vuelve a escribir la URI a mano (sin pegar desde PDF).\n"
+                "  · Si la contraseña tiene @ # : / ? debe codificarse: "
+                "https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls\n"
+                f"  Detalle: {e}",
+                file=sys.stderr,
+            )
+            return 1
+        except Exception as e:  # noqa: BLE001
+            print(f"ERROR: no se pudo conectar a Postgres: {e}", file=sys.stderr)
+            return 1
 
     total = 0
     for entry in MANIFEST:
