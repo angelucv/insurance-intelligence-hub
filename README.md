@@ -99,6 +99,7 @@ CSV de prueba: [`docs/sample-policies.csv`](docs/sample-policies.csv).
 - [`docs/architecture.md`](docs/architecture.md) — vista neutra por componente.
 - [`docs/ecosystem.md`](docs/ecosystem.md) — cómo se conectan Django, API, Supabase, Reflex y Streamlit.
 - [`docs/sudeaseg-data-scope.md`](docs/sudeaseg-data-scope.md) — mercado SUDEASEG, migración `002` y comando ETL.
+- [`docs/metrics-and-portals.md`](docs/metrics-and-portals.md) — catálogo de indicadores, gráficos y reparto Reflex / Streamlit.
 
 ## Relación con marca / cliente
 
