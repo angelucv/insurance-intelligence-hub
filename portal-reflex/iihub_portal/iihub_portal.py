@@ -10,6 +10,15 @@ import reflex as rx
 from rxconfig import config
 
 
+def _admin_upload_url() -> str:
+    """URL absoluta al formulario de carga en Django Admin."""
+    base = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
+    if not base:
+        # README local: runserver en 8080
+        base = "http://127.0.0.1:8080"
+    return f"{base}/admin/upload-policies/"
+
+
 class State(rx.State):
     input_year: str = "2022"
     persistency: str = "—"
@@ -54,14 +63,41 @@ class State(rx.State):
 
 
 def index() -> rx.Component:
+    upload_href = _admin_upload_url()
+    admin_configured = bool(os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip())
     return rx.container(
         rx.color_mode.button(position="top-right"),
         rx.vstack(
             rx.heading("Insurance Intelligence Hub", size="8"),
             rx.text(
-                "Portal gerencial (demo). La carga de archivos vive en Django Admin; aquí solo lectura de KPIs.",
+                "Portal gerencial (demo). Los KPIs se leen desde la API; el maestro de pólizas se sube en Django Admin.",
                 size="3",
                 color="gray",
+            ),
+            rx.hstack(
+                rx.link(
+                    rx.button(
+                        "Carga de pólizas (CSV / Excel)",
+                        size="3",
+                        color_scheme="blue",
+                    ),
+                    href=upload_href,
+                    is_external=True,
+                ),
+                rx.text(
+                    "Requiere usuario staff en Admin."
+                    + (
+                        ""
+                        if admin_configured
+                        else " En producción define DJANGO_ADMIN_BASE_URL con la URL pública del Admin."
+                    ),
+                    size="2",
+                    color="gray",
+                ),
+                spacing="3",
+                align="center",
+                width="100%",
+                flex_wrap="wrap",
             ),
             rx.hstack(
                 rx.text("Cohorte (año):"),
@@ -101,7 +137,7 @@ def index() -> rx.Component:
             ),
             rx.text(State.note, size="2", color="gray"),
             rx.text(
-                f"App: {config.app_name} — configurar COMPUTE_API_URL en despliegue.",
+                f"App: {config.app_name} — COMPUTE_API_URL y, en nube, DJANGO_ADMIN_BASE_URL.",
                 size="2",
                 color="gray",
             ),
