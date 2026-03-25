@@ -1,8 +1,8 @@
-# Tema alineado con marca Seguros La Fe (morado / lavanda).
+# Área principal blanca (logo con fondo blanco); sidebar en lavanda suave.
 [theme]
 primaryColor = "#7029B3"
-backgroundColor = "#f5f3ff"
-secondaryBackgroundColor = "#ffffff"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3e8ff"
 textColor = "#1e1b4b"
 font = "sans serif"
 
