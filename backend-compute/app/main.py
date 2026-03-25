@@ -144,5 +144,13 @@ async def ingest_policies(
     except ValueError as e:
         logger.warning("Ingesta rechazada: {}", e)
         raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Ingesta falló ({})", name)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    try:
+        payload = IngestResult.model_validate(result)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Respuesta ingest inválida")
+        raise HTTPException(status_code=500, detail=f"validate: {e}") from e
     logger.info("Ingesta {}: insertadas {}", name, result.get("inserted"))
-    return IngestResult.model_validate(result)
+    return payload

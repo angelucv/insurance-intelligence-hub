@@ -13,7 +13,10 @@ from sqlalchemy.orm import Session
 
 def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+    df.columns = [
+        str(c).strip().lower().replace(" ", "_").removeprefix("\ufeff")
+        for c in df.columns
+    ]
     required = {"policy_id", "cohort_year", "issue_age", "annual_premium", "status"}
     missing = required - set(df.columns)
     if missing:
@@ -42,13 +45,17 @@ def ingest_policies_bytes(
     errors: list[dict[str, Any]] = []
     valid_rows: list[PolicyRow] = []
     for idx, row in df.iterrows():
-        raw = {
-            "policy_id": row["policy_id"],
-            "cohort_year": int(row["cohort_year"]),
-            "issue_age": int(row["issue_age"]),
-            "annual_premium": float(row["annual_premium"]),
-            "status": row["status"],
-        }
+        try:
+            raw = {
+                "policy_id": row["policy_id"],
+                "cohort_year": int(row["cohort_year"]),
+                "issue_age": int(row["issue_age"]),
+                "annual_premium": float(row["annual_premium"]),
+                "status": row["status"],
+            }
+        except (TypeError, ValueError) as e:
+            errors.append({"row": int(idx) + 2, "error": f"celda inválida: {e}"})
+            continue
         try:
             valid_rows.append(PolicyRow.model_validate(raw))
         except Exception as e:

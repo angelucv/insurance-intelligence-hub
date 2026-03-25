@@ -33,7 +33,17 @@ def init_engine() -> Engine | None:
         _SessionLocal = None
         return None
     url = _normalize_postgres_url(url.strip())
-    _engine = create_engine(url, pool_pre_ping=True, pool_size=3, max_overflow=5)
+    # Supabase pooler en modo transacción no admite prepared statements; evita errores opacos.
+    connect_kw: dict = {}
+    if "psycopg" in url:
+        connect_kw["connect_args"] = {"prepare_threshold": None}
+    _engine = create_engine(
+        url,
+        pool_pre_ping=True,
+        pool_size=3,
+        max_overflow=5,
+        **connect_kw,
+    )
     _SessionLocal = sessionmaker(bind=_engine, autoflush=False, autocommit=False)
     return _engine
 
