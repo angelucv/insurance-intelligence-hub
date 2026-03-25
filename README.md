@@ -12,6 +12,7 @@ Arquitectura por capas: **ingesta (Django)**, **PostgreSQL (Supabase)**, **valid
 | Contratos | `shared/` | Paquete instalable `hub-contracts` (`PolicyRow`, etc.). |
 | Portal | `portal-reflex/` | KPIs vía `COMPUTE_API_URL`. |
 | Laboratorio | `lab-streamlit/` | Dashboard KPI vía API; enlace a la carga en Django Admin. |
+| ETL SUDEASEG | `scripts/etl_sudeaseg.py` | Carga tablas `market_sudeaseg_*` desde Excel local (`docs/sudeaseg-data-scope.md`). |
 
 ## Requisitos
 
@@ -97,6 +98,7 @@ CSV de prueba: [`docs/sample-policies.csv`](docs/sample-policies.csv).
 
 - [`docs/architecture.md`](docs/architecture.md) — vista neutra por componente.
 - [`docs/ecosystem.md`](docs/ecosystem.md) — cómo se conectan Django, API, Supabase, Reflex y Streamlit.
+- [`docs/sudeaseg-data-scope.md`](docs/sudeaseg-data-scope.md) — mercado SUDEASEG, migración `002` y comando ETL.
 
 ## Relación con marca / cliente
 

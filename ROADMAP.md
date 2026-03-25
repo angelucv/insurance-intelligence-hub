@@ -7,6 +7,9 @@
 - [x] Streamlit: dashboard + pestaña de carga.
 - [x] Reflex: portal KPI (plantilla `reflex init`).
 - [x] Blueprint Render: API + Django (`render.yaml`).
+- [x] Tablas mercado SUDEASEG (`002_market_sudeaseg.sql`) + ETL `scripts/etl_sudeaseg.py`.
+- [ ] Endpoints API lectura `market_sudeaseg_*` + UI Streamlit/Reflex (series / benchmark La Fe).
+- [ ] Generador sintético alineado a agregados SUDEASEG (Fe C.A.).
 - [ ] Row Level Security y Supabase Auth enlazados a la API.
 - [ ] Endpoints actuariales (`/pricing`, reservas / chainladder).
 - [ ] Tests automatizados (ingesta, KPI, contratos).

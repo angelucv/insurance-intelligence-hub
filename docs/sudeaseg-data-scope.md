@@ -61,6 +61,7 @@ Objetivo: tablas **largas** fáciles de consultar desde API → Streamlit/Reflex
 | `period_year`, `period_month` | int |
 | `empresa_rank` | int |
 | `empresa_nombre` | text |
+| `primas_netas_cobradas` | numeric nullable (solo algunos cuadros 2023 traen primas en columna extra) |
 | `resultado_tecnico_bruto` | numeric |
 | `resultado_reaseguro_cedido` | numeric |
 | `resultado_tecnico_neto` | numeric |
@@ -75,11 +76,20 @@ Objetivo: tablas **largas** fáciles de consultar desde API → Streamlit/Reflex
 2. Calcular ratios agregados del mercado o de esa fila: ej. \( \text{siniestralidad proxy} \approx \text{siniestros totales} / \text{primas} \) (ajustar según definición exacta del cuadro).
 3. Al **simular** pólizas/siniestros micro, escalar volúmenes y tasas para que **tendencias YoY** (crecimiento, ratio) no contradigan fuerte las series públicas (demo creíble, no contabilidad auditada).
 
-## ETL (siguiente implementación)
+## ETL (implementado)
 
-1. Script Python (`scripts/etl_sudeaseg.py`) leyendo rutas bajo `Info/data-sudeaseg/xlsx/` (argumento CLI `--data-dir`).
-2. Por archivo: hoja `Diciembre` (o parámetro `--month`), saltar filas de encabezado hasta la fila de títulos (#, Empresa, …).
-3. `INSERT` o `COPY` a las tablas anteriores; `ON CONFLICT` opcional por `(source_file, period_year, period_month, empresa_rank)` si se define unique.
+1. Aplicar en Supabase/Postgres: `supabase/migrations/002_market_sudeaseg.sql` (después de `001_initial.sql`).
+2. Dependencias: `pip install -r scripts/requirements-etl.txt` (o usar el mismo venv que `backend-ingest`).
+3. Carga (desde la raíz del repo, con Excel en `Info/data-sudeaseg/xlsx/`):
+
+```bash
+set DATABASE_URL=postgresql+psycopg://...
+python scripts/etl_sudeaseg.py --data-dir Info/data-sudeaseg/xlsx
+```
+
+4. Simulacro sin escribir en BD: `python scripts/etl_sudeaseg.py --data-dir ... --dry-run`
+
+El script borra filas previas con el mismo `source_file` y vuelve a insertar (carga idempotente). Archivos incluidos: los seis xlsx de la tabla del inicio de este documento.
 
 ## Arquitectura: ¿Django, API o Supabase directo?
 
