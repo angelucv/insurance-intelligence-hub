@@ -44,19 +44,25 @@ Comprobaciones API:
 
 ```toml
 COMPUTE_API_URL = "https://TU-API.onrender.com"
-# Opcional: enlace absoluto al formulario de carga en Django Admin
 # DJANGO_ADMIN_BASE_URL = "https://TU-ADMIN.onrender.com"
+# Tras desplegar Reflex, añade la URL pública del portal:
+# PORTAL_REFLEX_URL = "https://tu-app.reflex.run"
 ```
 
-5. Deploy. Los KPIs se leen desde la API; **sube el CSV** en Django Admin → `/admin/upload-policies/` (columnas según `docs/sample-policies.csv`).
+5. Deploy. **Sube el CSV** en Django Admin → `/admin/upload-policies/`. Opcional: botón al portal Reflex con `PORTAL_REFLEX_URL`.
 
 Plantilla local: `lab-streamlit/.streamlit/secrets.toml.example`.
 
 ## 3. Reflex (portal)
 
-1. Cuenta en [Reflex Cloud](https://reflex.dev/) o despliega el contenido de `portal-reflex/` en un host con Node/Bun (ver documentación de tu versión de Reflex).
-2. Variable de entorno **`COMPUTE_API_URL`** apuntando a la API pública.
-3. `pip install -r requirements.txt` y comando de despliegue según la guía oficial (`reflex deploy`, etc.).
+1. Cuenta en [Reflex Cloud](https://reflex.dev/) o despliega `portal-reflex/` (Node/Bun según la guía de tu versión).
+2. Variables de entorno:
+   - **`COMPUTE_API_URL`**: API pública.
+   - **`DJANGO_ADMIN_BASE_URL`**: Admin público (botón carga).
+   - **`STREAMLIT_LAB_URL`**: tras tener Streamlit en la nube, URL del lab (botón “Abrir laboratorio”).
+3. `pip install -r requirements.txt` y `reflex deploy` (o el flujo que indique Reflex Cloud).
+
+**Orden práctico para enlaces cruzados:** despliega Streamlit y copia su URL → configúrala en Reflex como `STREAMLIT_LAB_URL`. Despliega Reflex y copia su URL → configúrala en Streamlit como `PORTAL_REFLEX_URL`.
 
 ## 4. Alternativas gratuitas (opcional)
 

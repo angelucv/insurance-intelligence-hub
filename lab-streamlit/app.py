@@ -1,4 +1,4 @@
-"""Laboratorio: KPIs (API); la carga de maestros es solo vía Django Admin."""
+"""Laboratorio: visualización rica (Plotly) + KPIs API; carga solo vía Django Admin."""
 
 from __future__ import annotations
 
@@ -11,10 +11,13 @@ import requests
 import streamlit as st
 
 st.set_page_config(
-    page_title="Insurance Intelligence Hub — Lab",
+    page_title="Insurance Intelligence Hub — Laboratorio",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+_GAUGE_PRIMARY = "#1e3a8f"
+_GAUGE_ACCENT = "#0f766e"
 
 
 def _api_base() -> str:
@@ -41,6 +44,17 @@ def _admin_upload_hint() -> str:
     if env_u:
         return f"{env_u.rstrip('/')}/admin/upload-policies/"
     return "/admin/upload-policies/"
+
+
+def _portal_reflex_url() -> str | None:
+    try:
+        if "PORTAL_REFLEX_URL" in st.secrets:
+            u = str(st.secrets["PORTAL_REFLEX_URL"]).strip().rstrip("/")
+            return u or None
+    except FileNotFoundError:
+        pass
+    env_u = os.environ.get("PORTAL_REFLEX_URL", "").strip().rstrip("/")
+    return env_u or None
 
 
 def _fetch_kpi(
@@ -70,24 +84,52 @@ def _fetch_health(base: str) -> dict[str, Any]:
     return r.json()
 
 
-st.title("Insurance Intelligence Hub — Laboratorio")
-st.caption(
-    "KPIs vía API (DuckDB / Postgres). La carga de CSV/XLSX es interna en Django Admin (usuarios y trazabilidad)."
+# —— Cabecera visual (misma línea gráfica que el portal Reflex: navy / teal) ——
+st.markdown(
+    f"""
+    <div style="
+        padding: 1.35rem 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.25rem;
+        background: linear-gradient(125deg, {_GAUGE_PRIMARY} 0%, {_GAUGE_ACCENT} 55%, #134e4a 100%);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2);
+    ">
+        <h1 style="color: white; margin: 0; font-size: 1.65rem; font-weight: 700;">
+            Laboratorio analítico
+        </h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0; font-size: 1rem;">
+            Gráficos, indicadores y exportación CSV. Los datos viven en la API; la carga del maestro es en Django Admin.
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 base = _api_base()
 upload_path = _admin_upload_hint()
+portal = _portal_reflex_url()
 
-st.info(
-    f"**Carga de pólizas:** usa Django Admin → [ruta de carga]({upload_path}) "
-    f"(inicia sesión con staff). Opcional: define el secreto `DJANGO_ADMIN_BASE_URL` "
-    f"(p. ej. `https://tu-admin.onrender.com`) para un enlace absoluto."
-)
+nav_cols = st.columns([3, 1])
+with nav_cols[0]:
+    st.caption(
+        f"[Carga de pólizas (Admin)]({upload_path}) · mismo esquema de colores que el portal ejecutivo."
+    )
+with nav_cols[1]:
+    if portal:
+        st.markdown(
+            f'<a href="{portal}" target="_blank" rel="noopener noreferrer" '
+            'style="display:inline-block;padding:0.45rem 1rem;background:#1e3a8f;'
+            'color:white;border-radius:8px;text-decoration:none;font-weight:600;">'
+            "Portal ejecutivo (Reflex)</a>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.caption("Secret `PORTAL_REFLEX_URL` para enlace al portal.")
 
 with st.sidebar:
     st.subheader("Conexión API")
     st.code(base, language="text")
-    st.caption("Streamlit Cloud: Secret `COMPUTE_API_URL`.")
+    st.caption("`COMPUTE_API_URL` en Streamlit Cloud.")
     use_db = st.toggle("Preferir datos en base de datos", value=True)
     cohort_year = st.slider("Año cohorte", 2019, 2024, 2022)
     seed = st.number_input("Semilla (modo sintético)", min_value=1, max_value=9999, value=42, step=1)
@@ -114,8 +156,10 @@ except Exception as e:
     st.error(f"No se pudo obtener KPIs: {e}")
     st.stop()
 
-st.info(data.get("data_note", ""))
+if data.get("data_note"):
+    st.info(data["data_note"])
 
+st.subheader("Indicadores clave")
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Persistencia", f"{data['persistency_rate_pct']:.2f} %")
 c2.metric("Pólizas activas", f"{data['policies_active']:,}")
@@ -132,21 +176,26 @@ if tlr is not None:
             title={"text": "Indicador sintético / proxy"},
             gauge={
                 "axis": {"range": [0, 120]},
-                "bar": {"color": "darkblue"},
+                "bar": {"color": _GAUGE_PRIMARY},
                 "steps": [
-                    {"range": [0, 70], "color": "lightgreen"},
-                    {"range": [70, 100], "color": "khaki"},
-                    {"range": [100, 120], "color": "salmon"},
+                    {"range": [0, 70], "color": "#d1fae5"},
+                    {"range": [70, 100], "color": "#fef3c7"},
+                    {"range": [100, 120], "color": "#fecaca"},
                 ],
                 "threshold": {
-                    "line": {"color": "red", "width": 4},
+                    "line": {"color": "#b91c1c", "width": 4},
                     "thickness": 0.8,
                     "value": 100,
                 },
             },
         )
     )
-    fig.update_layout(height=280)
+    fig.update_layout(
+        height=300,
+        margin=dict(l=24, r=24, t=48, b=24),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("Exportación (Excel / Power BI)")

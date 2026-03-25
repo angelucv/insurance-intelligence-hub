@@ -1,4 +1,4 @@
-"""Portal gerencial: KPIs desde la API de cómputo (Reflex)."""
+"""Portal gerencial: KPIs (API) + enlaces a Admin y laboratorio Streamlit."""
 
 from __future__ import annotations
 
@@ -9,14 +9,23 @@ import reflex as rx
 
 from rxconfig import config
 
+# Paleta demo (coherente con Streamlit config.toml)
+_ACCENT_NAVY = "#1e3a8f"
+_ACCENT_TEAL = "#0f766e"
+
 
 def _admin_upload_url() -> str:
-    """URL absoluta al formulario de carga en Django Admin."""
     base = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
     if not base:
-        # README local: runserver en 8080
         base = "http://127.0.0.1:8080"
     return f"{base}/admin/upload-policies/"
+
+
+def _streamlit_lab_url() -> str:
+    u = os.environ.get("STREAMLIT_LAB_URL", "").strip().rstrip("/")
+    if u:
+        return u
+    return "http://127.0.0.1:8501"
 
 
 class State(rx.State):
@@ -62,89 +71,147 @@ class State(rx.State):
         self.busy = False
 
 
+def _hero() -> rx.Component:
+    return rx.box(
+        rx.vstack(
+            rx.heading(
+                "Insurance Intelligence Hub",
+                size="8",
+                style={"color": "white", "margin": 0},
+            ),
+            rx.text(
+                "Portal ejecutivo: KPIs al instante. Profundiza en el laboratorio Streamlit (gráficos y exportación).",
+                size="3",
+                style={"color": "rgba(255,255,255,0.92)", "max_width": "40rem"},
+            ),
+            spacing="3",
+            align_items="start",
+            width="100%",
+        ),
+        width="100%",
+        padding="2rem",
+        border_radius="14px",
+        style={
+            "background": f"linear-gradient(125deg, {_ACCENT_NAVY} 0%, {_ACCENT_TEAL} 55%, #134e4a 100%)",
+            "box_shadow": "0 12px 40px rgba(15, 23, 42, 0.18)",
+        },
+    )
+
+
+def _kpi_card(title: str, value: rx.Var) -> rx.Component:
+    return rx.card(
+        rx.vstack(
+            rx.text(title, size="2", weight="bold", color="gray"),
+            rx.heading(value, size="6", style={"color": _ACCENT_NAVY}),
+            spacing="1",
+            align_items="start",
+            width="100%",
+        ),
+        style={
+            "border": "1px solid var(--gray-6)",
+            "box_shadow": "0 2px 12px rgba(15, 23, 42, 0.06)",
+            "min_height": "110px",
+        },
+        width="100%",
+    )
+
+
 def index() -> rx.Component:
     upload_href = _admin_upload_url()
+    streamlit_href = _streamlit_lab_url()
     admin_configured = bool(os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip())
-    return rx.container(
+    streamlit_configured = bool(os.environ.get("STREAMLIT_LAB_URL", "").strip())
+
+    return rx.box(
         rx.color_mode.button(position="top-right"),
-        rx.vstack(
-            rx.heading("Insurance Intelligence Hub", size="8"),
-            rx.text(
-                "Portal gerencial (demo). Los KPIs se leen desde la API; el maestro de pólizas se sube en Django Admin.",
-                size="3",
-                color="gray",
-            ),
-            rx.hstack(
-                rx.link(
-                    rx.button(
-                        "Carga de pólizas (CSV / Excel)",
-                        size="3",
-                        color_scheme="blue",
+        rx.container(
+            rx.vstack(
+                _hero(),
+                rx.hstack(
+                    rx.link(
+                        rx.button(
+                            "Carga de pólizas (Admin)",
+                            size="3",
+                            color_scheme="blue",
+                        ),
+                        href=upload_href,
+                        is_external=True,
                     ),
-                    href=upload_href,
-                    is_external=True,
+                    rx.link(
+                        rx.button(
+                            "Abrir laboratorio (Streamlit)",
+                            size="3",
+                            color_scheme="teal",
+                            variant="solid",
+                        ),
+                        href=streamlit_href,
+                        is_external=True,
+                    ),
+                    spacing="4",
+                    align="center",
+                    flex_wrap="wrap",
+                    padding_y="2",
                 ),
                 rx.text(
-                    "Requiere usuario staff en Admin."
+                    "Admin: usuarios staff."
                     + (
                         ""
                         if admin_configured
-                        else " En producción define DJANGO_ADMIN_BASE_URL con la URL pública del Admin."
+                        else " Define DJANGO_ADMIN_BASE_URL en nube."
+                    )
+                    + (
+                        " Streamlit: URL pública del lab."
+                        if streamlit_configured
+                        else " Define STREAMLIT_LAB_URL para el botón del laboratorio en producción."
                     ),
-                    size="2",
+                    size="1",
                     color="gray",
                 ),
-                spacing="3",
-                align="center",
+                rx.divider(),
+                rx.heading("Resumen de cohorte", size="5"),
+                rx.hstack(
+                    rx.text("Año cohorte:", weight="medium"),
+                    rx.input(
+                        value=State.input_year,
+                        on_change=State.set_input_year,
+                        width="100px",
+                    ),
+                    rx.button(
+                        "Actualizar KPI",
+                        on_click=State.load_kpi,
+                        loading=State.busy,
+                        color_scheme="blue",
+                    ),
+                    spacing="3",
+                    align="center",
+                    flex_wrap="wrap",
+                ),
+                rx.grid(
+                    _kpi_card("Persistencia", State.persistency),
+                    _kpi_card("Pólizas activas", State.active_n),
+                    _kpi_card("Lapsos", State.lapsed_n),
+                    _kpi_card("Prima media", State.avg_premium),
+                    _kpi_card("Ratio técnico (demo)", State.tlr),
+                    columns="5",
+                    spacing="3",
+                    width="100%",
+                ),
+                rx.text(State.note, size="2", color="gray"),
+                rx.text(
+                    f"{config.app_name} · variables de entorno en despliegue (API, Admin, Streamlit).",
+                    size="1",
+                    color="gray",
+                ),
+                spacing="4",
                 width="100%",
-                flex_wrap="wrap",
+                max_width="1200px",
+                margin_x="auto",
             ),
-            rx.hstack(
-                rx.text("Cohorte (año):"),
-                rx.input(
-                    value=State.input_year,
-                    on_change=State.set_input_year,
-                    width="120px",
-                ),
-                rx.button("Cargar KPI", on_click=State.load_kpi, loading=State.busy),
-                spacing="3",
-                align="center",
-            ),
-            rx.grid(
-                rx.card(
-                    rx.text("Persistencia", weight="bold"),
-                    rx.heading(State.persistency, size="6"),
-                ),
-                rx.card(
-                    rx.text("Pólizas activas", weight="bold"),
-                    rx.heading(State.active_n, size="6"),
-                ),
-                rx.card(
-                    rx.text("Lapsos", weight="bold"),
-                    rx.heading(State.lapsed_n, size="6"),
-                ),
-                rx.card(
-                    rx.text("Prima media", weight="bold"),
-                    rx.heading(State.avg_premium, size="6"),
-                ),
-                rx.card(
-                    rx.text("Ratio técnico (demo)", weight="bold"),
-                    rx.heading(State.tlr, size="6"),
-                ),
-                columns="5",
-                spacing="3",
-                width="100%",
-            ),
-            rx.text(State.note, size="2", color="gray"),
-            rx.text(
-                f"App: {config.app_name} — COMPUTE_API_URL y, en nube, DJANGO_ADMIN_BASE_URL.",
-                size="2",
-                color="gray",
-            ),
-            spacing="4",
-            width="100%",
+            padding_y="6",
+            size="4",
         ),
-        padding_y="6",
+        min_height="100vh",
+        style={"background": "var(--gray-2)"},
     )
 
 
