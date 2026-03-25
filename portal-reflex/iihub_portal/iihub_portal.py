@@ -14,21 +14,13 @@ _ACCENT_NAVY = "#1e3a8f"
 _ACCENT_TEAL = "#0f766e"
 
 
-def _admin_upload_url() -> str:
-    base = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
-    if not base:
-        base = "http://127.0.0.1:8080"
-    return f"{base}/admin/upload-policies/"
-
-
-def _streamlit_lab_url() -> str:
-    u = os.environ.get("STREAMLIT_LAB_URL", "").strip().rstrip("/")
-    if u:
-        return u
-    return "http://127.0.0.1:8501"
-
-
 class State(rx.State):
+    """URLs de despliegue en state: se rellenan en el servidor con on_load (no en tiempo de build)."""
+
+    admin_upload_url: str = "http://127.0.0.1:8080/admin/upload-policies/"
+    streamlit_lab_url: str = "http://127.0.0.1:8501"
+    env_hint: str = ""
+
     input_year: str = "2022"
     persistency: str = "—"
     active_n: str = "—"
@@ -37,6 +29,27 @@ class State(rx.State):
     tlr: str = "—"
     note: str = ""
     busy: bool = False
+
+    async def hydrate_urls(self):
+        """Lee Secrets / env en runtime en Reflex Cloud (evita href fijados a localhost en el bundle)."""
+        ab = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
+        if ab:
+            self.admin_upload_url = f"{ab}/admin/upload-policies/"
+        else:
+            self.admin_upload_url = "http://127.0.0.1:8080/admin/upload-policies/"
+
+        sl = os.environ.get("STREAMLIT_LAB_URL", "").strip().rstrip("/")
+        if sl:
+            self.streamlit_lab_url = sl
+        else:
+            self.streamlit_lab_url = "http://127.0.0.1:8501"
+
+        hints: list[str] = []
+        if not ab:
+            hints.append("Define DJANGO_ADMIN_BASE_URL en Secrets del servidor para enlazar al Admin en la nube.")
+        if not sl:
+            hints.append("Define STREAMLIT_LAB_URL en Secrets para enlazar al laboratorio Streamlit en la nube.")
+        self.env_hint = " ".join(hints)
 
     def set_input_year(self, v: str):
         self.input_year = v
@@ -117,11 +130,6 @@ def _kpi_card(title: str, value: rx.Var) -> rx.Component:
 
 
 def index() -> rx.Component:
-    upload_href = _admin_upload_url()
-    streamlit_href = _streamlit_lab_url()
-    admin_configured = bool(os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip())
-    streamlit_configured = bool(os.environ.get("STREAMLIT_LAB_URL", "").strip())
-
     return rx.box(
         rx.color_mode.button(position="top-right"),
         rx.container(
@@ -134,7 +142,7 @@ def index() -> rx.Component:
                             size="3",
                             color_scheme="blue",
                         ),
-                        href=upload_href,
+                        href=State.admin_upload_url,
                         is_external=True,
                     ),
                     rx.link(
@@ -144,7 +152,7 @@ def index() -> rx.Component:
                             color_scheme="teal",
                             variant="solid",
                         ),
-                        href=streamlit_href,
+                        href=State.streamlit_lab_url,
                         is_external=True,
                     ),
                     spacing="4",
@@ -153,19 +161,13 @@ def index() -> rx.Component:
                     padding_y="2",
                 ),
                 rx.text(
-                    "Admin: usuarios staff."
-                    + (
-                        ""
-                        if admin_configured
-                        else " Define DJANGO_ADMIN_BASE_URL en nube."
-                    )
-                    + (
-                        " Streamlit: URL pública del lab."
-                        if streamlit_configured
-                        else " Define STREAMLIT_LAB_URL para el botón del laboratorio en producción."
-                    ),
+                    "Admin: usuarios staff. Los enlaces usan las URLs configuradas en Secrets (runtime).",
                     size="1",
                     color="gray",
+                ),
+                rx.cond(
+                    State.env_hint != "",
+                    rx.text(State.env_hint, size="1", color="orange"),
                 ),
                 rx.divider(),
                 rx.heading("Resumen de cohorte", size="5"),
@@ -216,4 +218,4 @@ def index() -> rx.Component:
 
 
 app = rx.App()
-app.add_page(index)
+app.add_page(index, on_load=State.hydrate_urls)
