@@ -42,8 +42,10 @@ Objetivo: tablas **largas** fáciles de consultar desde API → Streamlit/Reflex
 | `source_file` | text | Traza de procedencia |
 | `period_year` | int | 2023, 2024, 2025 |
 | `period_month` | int | 1–12; usar 12 para cierre anual |
-| `empresa_rank` | int | Columna # |
-| `empresa_nombre` | text | |
+| `empresa_rank` | int | Columna # en esa hoja (puede cambiar entre meses) |
+| `empresa_nombre` | text | Texto oficial en la hoja |
+| `empresa_nombre_norm` | text | Clave estable para cruzar meses (ver migración 003) |
+| `*_mes` | numeric | Incremento mensual derivado del YTD (ver abajo) |
 | `primas_netas_cobradas` | numeric | Miles Bs. |
 | `siniestros_pagados` | numeric | |
 | `siniestros_totales` | numeric | Según definición (5) del cuadro |
@@ -78,7 +80,7 @@ Objetivo: tablas **largas** fáciles de consultar desde API → Streamlit/Reflex
 
 ## ETL (implementado)
 
-1. Aplicar en Supabase/Postgres: `supabase/migrations/002_market_sudeaseg.sql` (después de `001_initial.sql`).
+1. Aplicar en Supabase/Postgres: `002_market_sudeaseg.sql` y luego `003_market_sudeaseg_monthly.sql` (después de `001_initial.sql`).
 2. Dependencias: `pip install -r scripts/requirements-etl.txt` (o usar el mismo venv que `backend-ingest`).
 3. Carga (desde la raíz del repo, con Excel en `Info/data-sudeaseg/xlsx/`):
 
@@ -90,6 +92,12 @@ python scripts/etl_sudeaseg.py --data-dir Info/data-sudeaseg/xlsx
 4. Simulacro sin escribir en BD: `python scripts/etl_sudeaseg.py --data-dir ... --dry-run`
 
 El script borra filas previas con el mismo `source_file` y vuelve a insertar (carga idempotente). Archivos incluidos: los seis xlsx de la tabla del inicio de este documento.
+
+### Serie mensual (12 hojas por workbook)
+
+Por defecto el ETL lee **Enero…Diciembre** de cada archivo. Las columnas numéricas **sin `_mes`** son el **acumulado YTD** publicado en esa hoja. Las columnas **`*_mes`** son el **incremento** respecto al acumulado del **último mes calendario anterior** en el que esa empresa tenga fila en el mismo año (si es el primer mes con dato en el año, `*_mes` = YTD de ese mes). La clave de cruce entre hojas es `empresa_nombre_norm` (nombre en minúsculas, comas normalizadas, espacios colapsados).
+
+Para cargar solo diciembre (comportamiento antiguo): `python scripts/etl_sudeaseg.py ... --december-only` (deja `*_mes` en NULL).
 
 ### Si en Windows ves `getaddrinfo failed` (11001) con `db.xxx.supabase.co`
 
