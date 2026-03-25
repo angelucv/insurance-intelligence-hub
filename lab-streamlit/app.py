@@ -21,6 +21,7 @@ _LOGO_FE1 = Path(__file__).resolve().parent / "assets" / "logo-fe-1.jpg"
 
 _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
+_MARKET_TOTAL_LINE = "#0284c7"
 _GAUGE_PRIMARY = _BRAND_PURPLE
 _GAUGE_ACCENT = "#8B5CF6"
 
@@ -71,6 +72,50 @@ def _portal_reflex_url() -> str | None:
         pass
     env_u = os.environ.get("PORTAL_REFLEX_URL", "").strip().rstrip("/")
     return env_u or None
+
+
+def _fetch_market_series(
+    base: str,
+    path: str,
+    from_year: int,
+    to_year: int,
+    mode: str,
+) -> dict[str, Any]:
+    r = requests.get(
+        f"{base}{path}",
+        params={"from_year": from_year, "to_year": to_year, "mode": mode},
+        timeout=90,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def _merge_market_primas(
+    la_fe_payload: dict[str, Any],
+    totals_payload: dict[str, Any],
+) -> pd.DataFrame:
+    p1 = la_fe_payload.get("points") or []
+    p2 = totals_payload.get("points") or []
+    if not p1 and not p2:
+        return pd.DataFrame()
+    d1 = pd.DataFrame(p1)
+    d2 = pd.DataFrame(p2)
+    if d1.empty or d2.empty:
+        return pd.DataFrame()
+    d1 = d1.rename(columns={"primas_netas_thousands_bs": "primas_la_fe_thousands_bs"})
+    d2 = d2.rename(columns={"primas_netas_thousands_bs": "primas_mercado_thousands_bs"})
+    m = pd.merge(
+        d1[["period_year", "period_month", "primas_la_fe_thousands_bs"]],
+        d2[["period_year", "period_month", "primas_mercado_thousands_bs"]],
+        on=["period_year", "period_month"],
+        how="outer",
+    ).sort_values(["period_year", "period_month"])
+    m["periodo"] = (
+        m["period_year"].astype(int).astype(str)
+        + "-"
+        + m["period_month"].astype(int).astype(str).str.zfill(2)
+    )
+    return m
 
 
 def _fetch_kpi(
@@ -130,62 +175,150 @@ with st.sidebar:
         value=8000,
     )
 
-try:
-    data = _fetch_kpi(base, cohort_year, int(seed), int(n_policies), use_db)
-except Exception as e:
-    st.error(f"No se pudo obtener los indicadores. Comprueba la conexión o inténtalo más tarde. ({e})")
-    st.stop()
+tab_demo, tab_mercado = st.tabs(["Cohorte demo", "Mercado SUDEASEG"])
 
-if data.get("data_note"):
-    st.info(data["data_note"])
+with tab_demo:
+    try:
+        data = _fetch_kpi(base, cohort_year, int(seed), int(n_policies), use_db)
+    except Exception as e:
+        st.error(f"No se pudo obtener los indicadores. Comprueba la conexión o inténtalo más tarde. ({e})")
+        st.stop()
 
-st.subheader("Indicadores clave")
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Persistencia", f"{data['persistency_rate_pct']:.2f} %")
-c2.metric("Pólizas activas", f"{data['policies_active']:,}")
-c3.metric("Lapsos", f"{data['policies_lapsed']:,}")
-c4.metric("Prima media anual", f"{data['avg_annual_premium']:,.2f}")
+    if data.get("data_note"):
+        st.info(data["data_note"])
 
-tlr = data.get("technical_loss_ratio_pct")
-if tlr is not None:
-    st.subheader("Ratio técnico (demo)")
-    fig = go.Figure(
-        go.Indicator(
-            mode="gauge+number",
-            value=float(tlr),
-            title={"text": "Indicador sintético / proxy"},
-            gauge={
-                "axis": {"range": [0, 120]},
-                "bar": {"color": _GAUGE_PRIMARY},
-                "steps": [
-                    {"range": [0, 70], "color": "#d1fae5"},
-                    {"range": [70, 100], "color": "#fef3c7"},
-                    {"range": [100, 120], "color": "#fecaca"},
-                ],
-                "threshold": {
-                    "line": {"color": "#b91c1c", "width": 4},
-                    "thickness": 0.8,
-                    "value": 100,
+    st.subheader("Indicadores clave")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Persistencia", f"{data['persistency_rate_pct']:.2f} %")
+    c2.metric("Pólizas activas", f"{data['policies_active']:,}")
+    c3.metric("Lapsos", f"{data['policies_lapsed']:,}")
+    c4.metric("Prima media anual", f"{data['avg_annual_premium']:,.2f}")
+
+    tlr = data.get("technical_loss_ratio_pct")
+    if tlr is not None:
+        st.subheader("Ratio técnico (demo)")
+        fig = go.Figure(
+            go.Indicator(
+                mode="gauge+number",
+                value=float(tlr),
+                title={"text": "Indicador sintético / proxy"},
+                gauge={
+                    "axis": {"range": [0, 120]},
+                    "bar": {"color": _GAUGE_PRIMARY},
+                    "steps": [
+                        {"range": [0, 70], "color": "#d1fae5"},
+                        {"range": [70, 100], "color": "#fef3c7"},
+                        {"range": [100, 120], "color": "#fecaca"},
+                    ],
+                    "threshold": {
+                        "line": {"color": "#b91c1c", "width": 4},
+                        "thickness": 0.8,
+                        "value": 100,
+                    },
                 },
-            },
+            )
         )
-    )
-    fig.update_layout(
-        height=300,
-        margin=dict(l=24, r=24, t=48, b=24),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            height=300,
+            margin=dict(l=24, r=24, t=48, b=24),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("Exportación")
-df = pd.DataFrame([data])
-st.download_button(
-    "Descargar KPIs como CSV",
-    data=df.to_csv(index=False).encode("utf-8"),
-    file_name="kpi_summary_demo.csv",
-    mime="text/csv",
-)
+    st.subheader("Exportación")
+    df = pd.DataFrame([data])
+    st.download_button(
+        "Descargar KPIs como CSV",
+        data=df.to_csv(index=False).encode("utf-8"),
+        file_name="kpi_summary_demo.csv",
+        mime="text/csv",
+    )
+
+with tab_mercado:
+    st.subheader("Primas netas: La Fe vs total de mercado")
+    st.caption(
+        "Datos según cuadro resumen SUDEASEG cargado en el hub. Unidades: miles de bolívares. "
+        "Modo mensual = flujo del mes; YTD = acumulado a cierre de mes."
+    )
+    mc1, mc2, mc3 = st.columns(3)
+    with mc1:
+        m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1)
+    with mc2:
+        m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1)
+    with mc3:
+        m_mode = st.selectbox("Modo", options=["monthly_flow", "ytd"], format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)")
+
+    if m_from > m_to:
+        st.warning("Ajusta el rango de años (desde ≤ hasta).")
+    else:
+        try:
+            la_payload = _fetch_market_series(
+                base,
+                "/api/v1/market/la-fe/resumen-series",
+                int(m_from),
+                int(m_to),
+                str(m_mode),
+            )
+            tot_payload = _fetch_market_series(
+                base,
+                "/api/v1/market/resumen/totals-series",
+                int(m_from),
+                int(m_to),
+                str(m_mode),
+            )
+        except Exception as e:
+            st.error(
+                "No se pudieron obtener las series de mercado. "
+                "Comprueba que la API compute tenga DATABASE_URL y las migraciones SUDEASEG aplicadas. "
+                f"({e})"
+            )
+        else:
+            merged = _merge_market_primas(la_payload, tot_payload)
+            if merged.empty:
+                st.info("No hay puntos en el rango elegido o faltan datos en la tabla de mercado.")
+            else:
+                fig_m = go.Figure()
+                fig_m.add_trace(
+                    go.Scatter(
+                        x=merged["periodo"],
+                        y=merged["primas_la_fe_thousands_bs"],
+                        name="La Fe",
+                        mode="lines+markers",
+                        line={"color": _BRAND_PURPLE},
+                    )
+                )
+                fig_m.add_trace(
+                    go.Scatter(
+                        x=merged["periodo"],
+                        y=merged["primas_mercado_thousands_bs"],
+                        name="Mercado (total)",
+                        mode="lines+markers",
+                        line={"color": _MARKET_TOTAL_LINE},
+                    )
+                )
+                fig_m.update_layout(
+                    height=420,
+                    margin=dict(l=24, r=24, t=48, b=24),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    yaxis_title="Miles de Bs.",
+                    xaxis_title="Período (año-mes)",
+                    hovermode="x unified",
+                )
+                st.plotly_chart(fig_m, use_container_width=True)
+
+                st.subheader("Detalle y exportación")
+                st.dataframe(merged, use_container_width=True, hide_index=True)
+                csv_bytes = merged.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Descargar tabla fusionada (CSV)",
+                    data=csv_bytes,
+                    file_name="market_la_fe_vs_totales.csv",
+                    mime="text/csv",
+                )
+                with st.expander("Notas de filtro (API)"):
+                    st.write(la_payload.get("empresa_filter_note", ""))
+                    st.write(tot_payload.get("empresa_filter_note", ""))
 
 st.caption(
     "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · Insurance Intelligence Hub (demo técnico)."

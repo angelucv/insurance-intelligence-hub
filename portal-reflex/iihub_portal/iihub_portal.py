@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 import httpx
 import reflex as rx
@@ -29,6 +30,11 @@ class State(rx.State):
     note: str = ""
     busy: bool = False
 
+    market_plot_data: list[Any] = []
+    market_plot_layout: dict[str, Any] = {}
+    market_plot_ok: bool = False
+    market_plot_error: str = ""
+
     async def hydrate_urls(self):
         """Lee variables de entorno en runtime (Reflex Cloud / servidor)."""
         ab = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
@@ -42,6 +48,89 @@ class State(rx.State):
             self.streamlit_lab_url = sl
         else:
             self.streamlit_lab_url = "http://127.0.0.1:8501"
+
+    async def portal_on_load(self):
+        await self.hydrate_urls()
+        await self.load_sudeaseg_preview()
+
+    async def load_sudeaseg_preview(self):
+        self.market_plot_ok = False
+        self.market_plot_error = ""
+        self.market_plot_data = []
+        self.market_plot_layout = {}
+        base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
+        fy = int(os.environ.get("MARKET_PREVIEW_FROM_YEAR", "2023"))
+        ty = int(os.environ.get("MARKET_PREVIEW_TO_YEAR", "2026"))
+        try:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                r1 = await client.get(
+                    f"{base}/api/v1/market/la-fe/resumen-series",
+                    params={"from_year": fy, "to_year": ty, "mode": "monthly_flow"},
+                )
+                r2 = await client.get(
+                    f"{base}/api/v1/market/resumen/totals-series",
+                    params={"from_year": fy, "to_year": ty, "mode": "monthly_flow"},
+                )
+                r1.raise_for_status()
+                r2.raise_for_status()
+        except Exception as e:  # noqa: BLE001
+            self.market_plot_error = f"No se pudo cargar la referencia de mercado. ({e})"
+            return
+
+        import plotly.graph_objects as go
+
+        la = r1.json().get("points") or []
+        tot = r2.json().get("points") or []
+
+        def primas_map(rows: list[dict[str, Any]]) -> dict[tuple[int, int], float | None]:
+            out: dict[tuple[int, int], float | None] = {}
+            for row in rows:
+                key = (int(row["period_year"]), int(row["period_month"]))
+                out[key] = row.get("primas_netas_thousands_bs")
+            return out
+
+        m1 = primas_map(la)
+        m2 = primas_map(tot)
+        keys = sorted(set(m1.keys()) | set(m2.keys()))
+        if not keys:
+            self.market_plot_error = "Sin puntos de mercado en el rango configurado."
+            return
+
+        xs = [f"{y}-{m:02d}" for y, m in keys]
+        y_la = [m1.get(k) for k in keys]
+        y_tot = [m2.get(k) for k in keys]
+
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=xs,
+                y=y_la,
+                name="La Fe",
+                mode="lines+markers",
+                line={"color": _BRAND_PURPLE},
+            ),
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=xs,
+                y=y_tot,
+                name="Mercado (total)",
+                mode="lines+markers",
+                line={"color": "#0284c7"},
+            ),
+        )
+        fig.update_layout(
+            height=360,
+            margin=dict(l=24, r=24, t=40, b=24),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            yaxis_title="Miles de Bs.",
+            xaxis_title="Período",
+            hovermode="x unified",
+        )
+        pj = fig.to_plotly_json()
+        self.market_plot_data = pj["data"]
+        self.market_plot_layout = pj.get("layout") or {}
+        self.market_plot_ok = True
 
     def set_input_year(self, v: str):
         self.input_year = v
@@ -192,6 +281,25 @@ def index() -> rx.Component:
             rx.box(
                 rx.container(
                     rx.vstack(
+                        rx.heading("Referencia de mercado (SUDEASEG)", size="5", style={"color": _BRAND_DEEP}),
+                        rx.text(
+                            "Primas netas mensuales (miles de Bs.): La Fe frente al total del sector en los datos cargados.",
+                            size="2",
+                            color="gray",
+                        ),
+                        rx.cond(
+                            State.market_plot_ok,
+                            rx.plotly(data=State.market_plot_data, layout=State.market_plot_layout),
+                        ),
+                        rx.cond(
+                            State.market_plot_error != "",
+                            rx.callout(
+                                State.market_plot_error,
+                                icon="alert_triangle",
+                                color_scheme="red",
+                                width="100%",
+                            ),
+                        ),
                         rx.heading("Resumen de cohorte", size="5", style={"color": _BRAND_DEEP}),
                         rx.hstack(
                             rx.text("Año:", weight="medium", color=_BRAND_MUTED),
@@ -253,4 +361,4 @@ def index() -> rx.Component:
 
 
 app = rx.App()
-app.add_page(index, on_load=State.hydrate_urls)
+app.add_page(index, on_load=State.portal_on_load)
