@@ -189,17 +189,6 @@ def index() -> rx.Component:
             rx.color_mode.button(position="top-right"),
             _shell_header(),
             _hero_strip(),
-            rx.center(
-                rx.image(
-                    src="/logo2.jpg",
-                    alt="60 años Seguros La Fe",
-                    height="64px",
-                    style={"max_width": "min(100%, 480px)", "object_fit": "contain"},
-                ),
-                width="100%",
-                padding_y="4",
-                style={"background": "var(--gray-2)"},
-            ),
             rx.box(
                 rx.container(
                     rx.vstack(
