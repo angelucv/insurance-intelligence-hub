@@ -11,6 +11,7 @@
 <body>
   <h1>Carga de maestro de pólizas</h1>
   <p>El archivo se valida en la API (<code>hub-contracts</code> / Pydantic) y se persiste en PostgreSQL.</p>
+  <p><small>Si ves <strong>HTTP 429</strong>, el servicio gratuito puede estar limitando peticiones o despertando: espera ~1 minuto, abre la API <code>/health</code> en otra pestaña y vuelve a subir.</small></p>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
