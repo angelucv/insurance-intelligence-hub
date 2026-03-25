@@ -22,7 +22,19 @@ Requiere **Node/Bun** instalado (Reflex compila el frontend). Si falta, instala 
 
 ## Nube
 
-- [Reflex Cloud](https://reflex.dev/) o contenedor propio (Render/Fly) con el mismo comando de arranque que indique la versión de Reflex.
+- [Reflex Cloud](https://reflex.dev/) o contenedor propio (Render/Fly) con el comando que indique tu versión de Reflex.
+
+### Variables para desplegar (referencia demo)
+
+Sin barra final:
+
+| Variable | Ejemplo |
+|----------|---------|
+| `COMPUTE_API_URL` | `https://insurance-hub-api.onrender.com` |
+| `DJANGO_ADMIN_BASE_URL` | `https://insurance-hub-admin.onrender.com` |
+| `STREAMLIT_LAB_URL` | `https://insurance-suite.streamlit.app` |
+
+Tras el deploy, añade en **Streamlit Secrets** `PORTAL_REFLEX_URL` con la URL que te asigne Reflex Cloud.
 
 ## Estructura
 

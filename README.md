@@ -84,8 +84,9 @@ CSV de prueba: [`docs/sample-policies.csv`](docs/sample-policies.csv).
 
 ## Demo en la nube (gratis)
 
-- **[`docs/deploy-free-tier.md`](docs/deploy-free-tier.md)** — Render (API + Django), Streamlit Cloud, variables y orden de despliegue.
+- **[`docs/deploy-free-tier.md`](docs/deploy-free-tier.md)** — Render (API + Django), Streamlit Cloud, Reflex, variables y orden de despliegue.
 - Blueprint: [`render.yaml`](render.yaml) (dos servicios web).
+- Laboratorio Streamlit (ejemplo): [insurance-suite.streamlit.app](https://insurance-suite.streamlit.app).
 
 ## Tests (CI)
 

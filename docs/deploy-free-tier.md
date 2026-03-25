@@ -43,26 +43,35 @@ Comprobaciones API:
 4. **Secrets**:
 
 ```toml
-COMPUTE_API_URL = "https://TU-API.onrender.com"
-# DJANGO_ADMIN_BASE_URL = "https://TU-ADMIN.onrender.com"
-# Tras desplegar Reflex, añade la URL pública del portal:
+COMPUTE_API_URL = "https://insurance-hub-api.onrender.com"
+DJANGO_ADMIN_BASE_URL = "https://insurance-hub-admin.onrender.com"
+# Tras desplegar Reflex, descomenta y pega la URL que te dé Reflex Cloud:
 # PORTAL_REFLEX_URL = "https://tu-app.reflex.run"
 ```
 
-5. Deploy. **Sube el CSV** en Django Admin → `/admin/upload-policies/`. Opcional: botón al portal Reflex con `PORTAL_REFLEX_URL`.
+5. Deploy. **Laboratorio público de referencia:** [insurance-suite.streamlit.app](https://insurance-suite.streamlit.app/). **Sube el CSV** en Django Admin → `/admin/upload-policies/`.
 
 Plantilla local: `lab-streamlit/.streamlit/secrets.toml.example`.
 
 ## 3. Reflex (portal)
 
-1. Cuenta en [Reflex Cloud](https://reflex.dev/) o despliega `portal-reflex/` (Node/Bun según la guía de tu versión).
-2. Variables de entorno:
-   - **`COMPUTE_API_URL`**: API pública.
-   - **`DJANGO_ADMIN_BASE_URL`**: Admin público (botón carga).
-   - **`STREAMLIT_LAB_URL`**: tras tener Streamlit en la nube, URL del lab (botón “Abrir laboratorio”).
-3. `pip install -r requirements.txt` y `reflex deploy` (o el flujo que indique Reflex Cloud).
+1. Cuenta en [Reflex Cloud](https://reflex.dev/) y conecta el mismo repo; **root / directorio de la app:** `portal-reflex/` (según el asistente de despliegue de tu versión de Reflex).
+2. **Variables de entorno** (sin barra final en las URLs):
 
-**Orden práctico para enlaces cruzados:** despliega Streamlit y copia su URL → configúrala en Reflex como `STREAMLIT_LAB_URL`. Despliega Reflex y copia su URL → configúrala en Streamlit como `PORTAL_REFLEX_URL`.
+| Variable | Valor de referencia (ajusta si tus nombres en Render difieren) |
+|----------|----------------------------------------------------------------|
+| `COMPUTE_API_URL` | `https://insurance-hub-api.onrender.com` |
+| `DJANGO_ADMIN_BASE_URL` | `https://insurance-hub-admin.onrender.com` |
+| `STREAMLIT_LAB_URL` | `https://insurance-suite.streamlit.app` |
+
+3. Despliega (`reflex deploy` o botón en Reflex Cloud). Copia la **URL pública del portal**.
+4. Vuelve a **Streamlit Cloud → Secrets** y añade (o descomenta):
+
+```toml
+PORTAL_REFLEX_URL = "https://LA-URL-QUE-TE-DIO-REFLEX"
+```
+
+**Resumen de enlaces cruzados:** Reflex usa `STREAMLIT_LAB_URL` → laboratorio. Streamlit usa `PORTAL_REFLEX_URL` → portal.
 
 ## 4. Alternativas gratuitas (opcional)
 

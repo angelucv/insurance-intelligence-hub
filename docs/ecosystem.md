@@ -28,7 +28,7 @@ flowchart LR
 | Cómputo | `backend-compute` | KPIs = lectura SQL + agregación **DuckDB** en memoria; fallback sintético. `POST /ingest/policies` opcional (scripts / integraciones). |
 | Observabilidad | Loguru + Sentry opcional | `SENTRY_DSN` en la API. |
 | Portal | `portal-reflex` | KPIs vía `httpx` → `COMPUTE_API_URL`; botón a carga en Admin (`DJANGO_ADMIN_BASE_URL`). |
-| Laboratorio | `lab-streamlit` | Dashboard KPI; enlace a la carga en Django Admin. |
+| Laboratorio | `lab-streamlit` | Dashboard KPI; desplegado de referencia: [insurance-suite.streamlit.app](https://insurance-suite.streamlit.app). |
 
 ## Variables de entorno clave
 

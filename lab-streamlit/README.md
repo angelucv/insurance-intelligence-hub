@@ -11,4 +11,4 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Secretos típicos: `COMPUTE_API_URL`, opcional `DJANGO_ADMIN_BASE_URL`, opcional `PORTAL_REFLEX_URL` (enlace al portal). Tema en `.streamlit/config.toml`. Carga de CSV solo en **Django Admin**.
+Secretos típicos: `COMPUTE_API_URL`, `DJANGO_ADMIN_BASE_URL`, opcional `PORTAL_REFLEX_URL` tras desplegar Reflex. Tema en `.streamlit/config.toml`. Carga de CSV solo en **Django Admin**. App de referencia: [insurance-suite.streamlit.app](https://insurance-suite.streamlit.app).
