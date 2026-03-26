@@ -136,6 +136,170 @@ def trace_lr_la_fe(xs: list[str], y: list[Any]) -> go.Scatter:
     )
 
 
+MONTH_NAMES_ES = (
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
+)
+
+
+def _month_series_primas(rows: list[dict[str, Any]]) -> list[Any]:
+    m: dict[int, Any] = {}
+    for row in rows:
+        mo = int(row["period_month"])
+        m[mo] = row.get("primas_netas_thousands_bs")
+    return [m.get(i) for i in range(1, 13)]
+
+
+def _month_series_lr(rows: list[dict[str, Any]]) -> list[Any]:
+    m: dict[int, Any] = {}
+    for row in rows:
+        mo = int(row["period_month"])
+        vlr = row.get("loss_ratio_proxy")
+        m[mo] = float(vlr) if vlr is not None else None
+    return [m.get(i) for i in range(1, 13)]
+
+
+def build_yoy_primas_figure(
+    year_left: int,
+    year_right: int,
+    la_points_left: list[dict[str, Any]],
+    la_points_right: list[dict[str, Any]],
+    *,
+    height: int = 340,
+) -> Figure:
+    """Misma métrica (primas La Fe), un año por eje Y, meses alineados."""
+    from plotly.subplots import make_subplots
+
+    xs = list(MONTH_NAMES_ES)
+    y_l = _month_series_primas(la_points_left)
+    y_r = _month_series_primas(la_points_right)
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=y_l,
+            name=f"La Fe {year_left}",
+            mode="lines+markers",
+            line=dict(color=BRAND_PURPLE, width=2.8, shape="spline"),
+            hovertemplate=f"%{{x}} {year_left}<br>%{{y:,.2f}} mil Bs.<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=y_r,
+            name=f"La Fe {year_right}",
+            mode="lines+markers",
+            line=dict(color="#a855f7", width=2.8, shape="spline", dash="dot"),
+            hovertemplate=f"%{{x}} {year_right}<br>%{{y:,.2f}} mil Bs.<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+    fig.update_xaxes(title_text="Mes (calendario)")
+    fig.update_yaxes(title_text=f"La Fe {year_left} · miles Bs.", secondary_y=False)
+    fig.update_yaxes(title_text=f"La Fe {year_right} · miles Bs.", secondary_y=True)
+    polish_market_subplots(fig, height=height)
+    return fig
+
+
+def build_yoy_mercado_figure(
+    year_left: int,
+    year_right: int,
+    tot_points_left: list[dict[str, Any]],
+    tot_points_right: list[dict[str, Any]],
+    *,
+    height: int = 340,
+) -> Figure:
+    from plotly.subplots import make_subplots
+
+    xs = list(MONTH_NAMES_ES)
+    y_l = _month_series_primas(tot_points_left)
+    y_r = _month_series_primas(tot_points_right)
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=y_l,
+            name=f"Mercado {year_left}",
+            mode="lines+markers",
+            line=dict(color=MARKET_BLUE, width=2.8, shape="spline"),
+            hovertemplate=f"%{{x}} {year_left}<br>%{{y:,.2f}} mil Bs.<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=y_r,
+            name=f"Mercado {year_right}",
+            mode="lines+markers",
+            line=dict(color="#38bdf8", width=2.8, shape="spline", dash="dot"),
+            hovertemplate=f"%{{x}} {year_right}<br>%{{y:,.2f}} mil Bs.<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+    fig.update_xaxes(title_text="Mes (calendario)")
+    fig.update_yaxes(title_text=f"Mercado {year_left} · miles Bs.", secondary_y=False)
+    fig.update_yaxes(title_text=f"Mercado {year_right} · miles Bs.", secondary_y=True)
+    polish_market_subplots(fig, height=height)
+    return fig
+
+
+def build_yoy_lr_compare_figure(
+    year_left: int,
+    year_right: int,
+    la_left: list[dict[str, Any]],
+    la_right: list[dict[str, Any]],
+    *,
+    height: int = 300,
+) -> Figure:
+    """Loss ratio La Fe: dos años, doble eje."""
+    from plotly.subplots import make_subplots
+
+    xs = list(MONTH_NAMES_ES)
+    y_l = _month_series_lr(la_left)
+    y_r = _month_series_lr(la_right)
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=y_l,
+            name=f"LR La Fe {year_left}",
+            mode="lines+markers",
+            line=dict(color=BRAND_PURPLE, width=2.5, shape="spline"),
+            hovertemplate=f"%{{x}} {year_left}<br>%{{y:.4f}}<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=y_r,
+            name=f"LR La Fe {year_right}",
+            mode="lines+markers",
+            line=dict(color="#c084fc", width=2.5, shape="spline", dash="dot"),
+            hovertemplate=f"%{{x}} {year_right}<br>%{{y:.4f}}<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+    fig.update_xaxes(title_text="Mes")
+    fig.update_yaxes(title_text=f"LR {year_left} (fracción)", secondary_y=False)
+    fig.update_yaxes(title_text=f"LR {year_right} (fracción)", secondary_y=True)
+    polish_market_subplots(fig, height=height)
+    return fig
+
+
 def trace_lr_mercado(xs: list[str], y: list[Any]) -> go.Scatter:
     return go.Scatter(
         x=xs,

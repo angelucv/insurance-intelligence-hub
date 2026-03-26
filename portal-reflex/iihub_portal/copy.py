@@ -49,10 +49,12 @@ HEADER_SUB_MERCADO = "Referencia SUDEASEG · último cierre y series La Fe vs me
 HEADER_SUB_CARTERA = "Indicadores de cartera · lectura rápida y cargas en Admin"
 
 # Mercado
-MERCADO_PARAMS_TITLE = "Parámetros de las series"
-MERCADO_PARAMS_BODY = (
-    "Ajuste rango y modo temporal. Para exportaciones y cortes adicionales use «Análisis BI detallado» en Operaciones."
-)
+MERCADO_PARAMS_TITLE = "Series SUDEASEG"
+MERCADO_PARAMS_BODY = "Rango y modo · exportaciones en «Análisis BI detallado»."
+MERCADO_YOY_TITLE = "Comparativa año vs año (meses alineados)"
+MERCADO_YOY_SUB = "Cada año en un eje Y · prima y LR La Fe / mercado total"
+MERCADO_YOY_A = "Año A"
+MERCADO_YOY_B = "Año B"
 MERCADO_SNAPSHOT_TITLE = "Último cierre La Fe (YTD)"
 MERCADO_SNAPSHOT_HINT = "Miles de Bs. · ratios en fracción"
 MERCADO_CHART_PRIM_TITLE = "Primas netas · La Fe vs mercado total"
@@ -67,27 +69,18 @@ MERCADO_HEATMAP_SUB = (
 
 # Cartera
 CARTERA_PAGE_HEADING = "Resumen de cartera"
-CARTERA_LEAD = (
-    "Vista prioritaria con el período más reciente por defecto. Los KPI se calculan vía API "
-    "(datos en BD o respaldo sintético según carga)."
-)
-CARTERA_HERO_TITLE = "Período de referencia"
-CARTERA_PARAMS_TITLE = "Filtro de período"
-CARTERA_PARAMS_BODY = (
-    "El año seleccionado define la cartera consultada por la API. El mes fija la etiqueta de "
-    "referencia (corte mensual detallado puede incorporarse después)."
-)
+CARTERA_LEAD = "KPI por API · BD o sintético según carga."
+CARTERA_HERO_TITLE = "Referencia"
+CARTERA_PARAMS_TITLE = "Filtro"
+CARTERA_PARAMS_BODY = "Año = cartera API · mes = etiqueta visual."
 CARTERA_GAUGE_TITLE = "Indicadores clave"
-CARTERA_GAUGE_SUB = "Tacómetros · persistencia, ratio técnico y peso de pólizas activas"
+CARTERA_GAUGE_SUB = "Persistencia · ratio técnico · share activas"
 CARTERA_METRICS_TITLE = "Cifras"
 CARTERA_DONUT_TITLE = "Composición de la cartera"
 CARTERA_DONUT_SUB = "Distribución entre pólizas activas y lapsos"
 
 PORTFOLIO_SECTION_TITLE = "Análisis de cartera (base de datos)"
-PORTFOLIO_SECTION_LEAD = (
-    "Gráficos avanzados a partir del paquete agregado de pólizas y siniestros. "
-    "Requiere datos reales en PostgreSQL para el año de cartera seleccionado."
-)
+PORTFOLIO_SECTION_LEAD = "Agregados de pólizas/siniestros en PostgreSQL para el año de cartera."
 PORTFOLIO_SUNBURST_T = "Sunburst"
 PORTFOLIO_SUNBURST_S = "Jerarquía cartera → estado → tramo de edad al emitir"
 PORTFOLIO_TREEMAP_T = "Treemap"
@@ -103,8 +96,9 @@ PORTFOLIO_VIOLIN_S = "Distribución de prima anual por tramo (muestra hasta 500 
 PORTFOLIO_BOX_T = "Cajas · prima por estado"
 PORTFOLIO_BOX_S = "Box plot de prima según estado de la póliza"
 
-# Años para selector (emisión de cartera)
+# Años para selector (emisión de cartera y mercado)
 CARTERA_YEAR_OPTIONS = [str(y) for y in range(2015, 2032)]
+MERCADO_YEAR_OPTIONS = CARTERA_YEAR_OPTIONS
 CARTERA_MONTH_OPTIONS = [f"{m:02d}" for m in range(1, 13)]
 
 # Pestañas / títulos cortos (sidebar + mobile) — cartera primero en el menú

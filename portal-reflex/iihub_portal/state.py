@@ -16,6 +16,9 @@ from iihub_portal.plotly_charts import (
     build_cartera_donut_figure,
     build_kpi_gauge_figure,
     build_market_metrics_heatmap,
+    build_yoy_lr_compare_figure,
+    build_yoy_mercado_figure,
+    build_yoy_primas_figure,
     polish_market_subplots,
     polish_ratio_figure,
     trace_lr_la_fe,
@@ -47,6 +50,8 @@ class State(rx.State):
     market_fy: str = "2023"
     market_ty: str = "2026"
     market_mode: str = "monthly_flow"
+    market_yoy_a: str = "2023"
+    market_yoy_b: str = "2024"
     show_snap_more: bool = False
 
     market_plot_data: list[Any] = []
@@ -73,6 +78,16 @@ class State(rx.State):
     market_heatmap_data: list[Any] = []
     market_heatmap_layout: dict[str, Any] = {}
     market_heatmap_ok: bool = False
+
+    market_yoy_la_data: list[Any] = []
+    market_yoy_la_layout: dict[str, Any] = {}
+    market_yoy_la_ok: bool = False
+    market_yoy_mk_data: list[Any] = []
+    market_yoy_mk_layout: dict[str, Any] = {}
+    market_yoy_mk_ok: bool = False
+    market_yoy_lr_data: list[Any] = []
+    market_yoy_lr_layout: dict[str, Any] = {}
+    market_yoy_lr_ok: bool = False
 
     snap_ok: bool = False
     snap_period: str = "—"
@@ -120,6 +135,24 @@ class State(rx.State):
             data=self.market_heatmap_data,
             layout=self.market_heatmap_layout or {},
         )
+
+    @rx.var(cache=True, auto_deps=True)
+    def market_yoy_la_figure(self) -> PlotlyFigure:
+        if not self.market_yoy_la_ok or not self.market_yoy_la_data:
+            return PlotlyFigure()
+        return PlotlyFigure(data=self.market_yoy_la_data, layout=self.market_yoy_la_layout or {})
+
+    @rx.var(cache=True, auto_deps=True)
+    def market_yoy_mk_figure(self) -> PlotlyFigure:
+        if not self.market_yoy_mk_ok or not self.market_yoy_mk_data:
+            return PlotlyFigure()
+        return PlotlyFigure(data=self.market_yoy_mk_data, layout=self.market_yoy_mk_layout or {})
+
+    @rx.var(cache=True, auto_deps=True)
+    def market_yoy_lr_figure(self) -> PlotlyFigure:
+        if not self.market_yoy_lr_ok or not self.market_yoy_lr_data:
+            return PlotlyFigure()
+        return PlotlyFigure(data=self.market_yoy_lr_data, layout=self.market_yoy_lr_layout or {})
 
     @rx.var(cache=True, auto_deps=True)
     def cartera_period_label(self) -> str:
@@ -211,25 +244,49 @@ class State(rx.State):
         self.market_heatmap_ok = False
         self.market_heatmap_data = []
         self.market_heatmap_layout = {}
+        self.market_yoy_la_ok = False
+        self.market_yoy_la_data = []
+        self.market_yoy_la_layout = {}
+        self.market_yoy_mk_ok = False
+        self.market_yoy_mk_data = []
+        self.market_yoy_mk_layout = {}
+        self.market_yoy_lr_ok = False
+        self.market_yoy_lr_data = []
+        self.market_yoy_lr_layout = {}
         self.market_charts_busy = True
         try:
             base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
             try:
                 fy = int(self.market_fy.strip())
                 ty = int(self.market_ty.strip())
+                yoy_a = int(self.market_yoy_a.strip())
+                yoy_b = int(self.market_yoy_b.strip())
             except ValueError:
-                self.market_plot_error = "Indique años válidos (desde / hasta)."
+                self.market_plot_error = "Indique años válidos (desde / hasta y comparativa)."
                 return
             mode = (self.market_mode or "monthly_flow").strip()
             if mode not in ("monthly_flow", "ytd"):
                 mode = "monthly_flow"
             params = {"from_year": fy, "to_year": ty, "mode": mode}
+            rla1 = rla2 = rt1 = rt2 = None
             try:
-                async with httpx.AsyncClient(timeout=90.0) as client:
-                    r1, r2 = await asyncio.gather(
-                        client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=params),
-                        client.get(f"{base}/api/v1/market/resumen/totals-series", params=params),
-                    )
+                async with httpx.AsyncClient(timeout=120.0) as client:
+                    if yoy_a != yoy_b:
+                        py1 = {"from_year": yoy_a, "to_year": yoy_a, "mode": mode}
+                        py2 = {"from_year": yoy_b, "to_year": yoy_b, "mode": mode}
+                        r1, r2, rla1, rla2, rt1, rt2 = await asyncio.gather(
+                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=params),
+                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=params),
+                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=py1),
+                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=py2),
+                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=py1),
+                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=py2),
+                        )
+                    else:
+                        r1, r2 = await asyncio.gather(
+                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=params),
+                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=params),
+                        )
                     r1.raise_for_status()
                     r2.raise_for_status()
             except Exception as e:  # noqa: BLE001
@@ -307,6 +364,36 @@ class State(rx.State):
             self.market_heatmap_data = hmj["data"]
             self.market_heatmap_layout = hmj.get("layout") or {}
             self.market_heatmap_ok = True
+
+            if yoy_a != yoy_b and rla1 is not None and rla2 is not None and rt1 is not None and rt2 is not None:
+                try:
+                    rla1.raise_for_status()
+                    rla2.raise_for_status()
+                    rt1.raise_for_status()
+                    rt2.raise_for_status()
+                    la_y1 = rla1.json().get("points") or []
+                    la_y2 = rla2.json().get("points") or []
+                    tot_y1 = rt1.json().get("points") or []
+                    tot_y2 = rt2.json().get("points") or []
+                    f_la = build_yoy_primas_figure(yoy_a, yoy_b, la_y1, la_y2, height=320)
+                    pj_la = f_la.to_plotly_json()
+                    self.market_yoy_la_data = pj_la["data"]
+                    self.market_yoy_la_layout = pj_la.get("layout") or {}
+                    self.market_yoy_la_ok = True
+
+                    f_mk = build_yoy_mercado_figure(yoy_a, yoy_b, tot_y1, tot_y2, height=320)
+                    pj_mk = f_mk.to_plotly_json()
+                    self.market_yoy_mk_data = pj_mk["data"]
+                    self.market_yoy_mk_layout = pj_mk.get("layout") or {}
+                    self.market_yoy_mk_ok = True
+
+                    f_lr = build_yoy_lr_compare_figure(yoy_a, yoy_b, la_y1, la_y2, height=280)
+                    pj_lr = f_lr.to_plotly_json()
+                    self.market_yoy_lr_data = pj_lr["data"]
+                    self.market_yoy_lr_layout = pj_lr.get("layout") or {}
+                    self.market_yoy_lr_ok = True
+                except Exception:  # noqa: BLE001
+                    pass
         finally:
             self.market_charts_busy = False
 
@@ -376,6 +463,12 @@ class State(rx.State):
     def set_market_mode(self, v: str):
         self.market_mode = v
 
+    def set_market_yoy_a(self, v: str):
+        self.market_yoy_a = v
+
+    def set_market_yoy_b(self, v: str):
+        self.market_yoy_b = v
+
     def pick_tab_mercado(self):
         self.ui_main_tab = "mercado"
 
@@ -430,14 +523,14 @@ class State(rx.State):
                     persistency_pct=per,
                     technical_loss_pct=tlr_f,
                     active_share_pct=active_share,
-                    height=320,
+                    height=280,
                 )
                 gpj = gfig.to_plotly_json()
                 self.kpi_gauge_data = gpj["data"]
                 self.kpi_gauge_layout = gpj.get("layout") or {}
                 self.kpi_gauge_ok = True
 
-                dfig = build_cartera_donut_figure(active=act, lapsed=lap, height=300)
+                dfig = build_cartera_donut_figure(active=act, lapsed=lap, height=260)
                 dj = dfig.to_plotly_json()
                 self.cartera_donut_data = dj["data"]
                 self.cartera_donut_layout = dj.get("layout") or {}
