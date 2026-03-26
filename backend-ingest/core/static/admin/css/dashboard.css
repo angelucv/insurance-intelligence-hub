@@ -35,11 +35,38 @@ body.dashboard #content {
 }
 
 /*
- * Portada colMS: .iihub-dashboard-top = acciones + tablas; #content-related a la derecha en la misma fila;
- * .iihub-dashboard-reference = título «Panel…» + ayuda, ancho completo debajo (grid fila 2).
+ * La barra #content-related está en el DOM junto a .iihub-dashboard-top dentro de .iihub-dashboard-row (flex).
+ * Así queda a la derecha de acciones/tablas sin depender del orden content/sidebar de base.html.
  */
-body.dashboard .iihub-dashboard-top {
+body.dashboard .iihub-dashboard-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.25rem;
+  width: 100%;
   min-width: 0;
+}
+
+body.dashboard .iihub-dashboard-top {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+body.dashboard .iihub-dashboard-row #content-related {
+  flex: 0 0 260px;
+  width: 260px;
+  max-width: 280px;
+  float: none !important;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  position: sticky;
+  top: 0.75rem;
+  align-self: flex-start;
+}
+
+body.dashboard .iihub-dashboard-top #content-main {
+  float: none !important;
+  width: 100% !important;
 }
 
 body.dashboard .iihub-dashboard-page-title {
@@ -50,81 +77,28 @@ body.dashboard .iihub-dashboard-page-title {
   letter-spacing: -0.02em;
 }
 
-/* Texto explicativo e ilustraciones debajo del bloque operativo + barra lateral. */
+/* Texto explicativo e ilustraciones debajo de la fila operativa + barra lateral. */
 body.dashboard .iihub-dashboard-reference {
   margin-top: 0;
   padding-top: 1.75rem;
   border-top: 1px solid var(--hairline-color, #e2e8f0);
 }
 
-@media (min-width: 900px) {
-  body.dashboard #content.colMS {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
-    grid-template-rows: auto auto;
-    column-gap: 1.25rem;
-    row-gap: 0;
-    align-items: start;
-    margin-right: 0 !important;
-  }
-
-  body.dashboard #content.colMS > .iihub-dashboard-top {
-    grid-column: 1;
-    grid-row: 1;
-    min-width: 0;
-  }
-
-  body.dashboard #content.colMS > #content-related {
-    grid-column: 2;
-    grid-row: 1;
-    float: none !important;
-    margin-right: 0 !important;
-    margin-left: 0 !important;
-    width: 100% !important;
-    max-width: 280px;
-    position: sticky;
-    top: 0.75rem;
-    align-self: start;
-  }
-
-  body.dashboard #content.colMS > .iihub-dashboard-reference {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    min-width: 0;
-  }
-
-  body.dashboard #content.colMS .iihub-dashboard-top #content-main {
-    float: none !important;
-    width: 100% !important;
-  }
-
-  body.dashboard #content.colMS > br.clear {
-    display: none;
-  }
+body.dashboard #content > br.clear {
+  display: none;
 }
 
 @media (max-width: 899px) {
-  body.dashboard #content.colMS {
-    display: flex;
+  body.dashboard .iihub-dashboard-row {
     flex-direction: column;
   }
 
-  body.dashboard #content.colMS > .iihub-dashboard-top {
-    order: 1;
-  }
-
-  body.dashboard #content.colMS > #content-related {
-    order: 2;
-    float: none !important;
-    clear: both;
+  body.dashboard .iihub-dashboard-row #content-related {
+    position: static;
+    align-self: stretch;
     width: 100% !important;
-    max-width: 100%;
-    margin-right: 0 !important;
-    margin-left: 0 !important;
-  }
-
-  body.dashboard #content.colMS > .iihub-dashboard-reference {
-    order: 3;
+    max-width: 100% !important;
+    flex: none;
   }
 }
 
