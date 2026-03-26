@@ -3,7 +3,86 @@
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">{% endblock %}
 
-{% block responsive %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/dashboard-layout.css' %}">{% endblock %}
+{% block responsive %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/dashboard-layout.css' %}">
+<style>
+/*
+ * Barra «Acciones rápidas» — misma lógica que cortex_index (Gestión Social).
+ * Inline + selectores #content para que no la pisen responsive.css ni caché de estáticos.
+ */
+#content .cortex-admin-links,
+#content .iihub-admin-links {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem 1rem !important;
+  align-items: center !important;
+  padding: 0.75rem 1rem !important;
+  background: #f0f4f4 !important;
+  border-radius: 6px !important;
+  margin-bottom: 1.5rem !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+#content .cortex-admin-links strong,
+#content .iihub-admin-links strong {
+  margin-right: 0.5rem !important;
+  color: #5a1f94 !important;
+  font-weight: 600 !important;
+}
+#content .cortex-admin-links a,
+#content .iihub-admin-links a {
+  color: #5a1f94 !important;
+  text-decoration: none !important;
+  padding: 0.2rem 0.5rem !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+#content .cortex-admin-links a:hover,
+#content .iihub-admin-links a:hover {
+  background: rgba(90, 31, 148, 0.15) !important;
+  text-decoration: underline !important;
+}
+html[data-theme="dark"] #content .cortex-admin-links,
+html[data-theme="dark"] #content .iihub-admin-links {
+  background: var(--darkened-bg) !important;
+}
+html[data-theme="dark"] #content .cortex-admin-links strong,
+html[data-theme="dark"] #content .iihub-admin-links strong {
+  color: var(--body-loud-color) !important;
+}
+html[data-theme="dark"] #content .cortex-admin-links a,
+html[data-theme="dark"] #content .iihub-admin-links a {
+  color: var(--link-fg) !important;
+}
+html[data-theme="dark"] #content .cortex-admin-links a:hover,
+html[data-theme="dark"] #content .iihub-admin-links a:hover {
+  background: rgba(129, 212, 250, 0.12) !important;
+  color: var(--link-hover-color) !important;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) #content .cortex-admin-links,
+  html:not([data-theme="light"]) #content .iihub-admin-links {
+    background: var(--darkened-bg) !important;
+  }
+  html:not([data-theme="light"]) #content .cortex-admin-links strong,
+  html:not([data-theme="light"]) #content .iihub-admin-links strong {
+    color: var(--body-loud-color) !important;
+  }
+  html:not([data-theme="light"]) #content .cortex-admin-links a,
+  html:not([data-theme="light"]) #content .iihub-admin-links a {
+    color: var(--link-fg) !important;
+  }
+  html:not([data-theme="light"]) #content .cortex-admin-links a:hover,
+  html:not([data-theme="light"]) #content .iihub-admin-links a:hover {
+    background: rgba(129, 212, 250, 0.12) !important;
+    color: var(--link-hover-color) !important;
+  }
+}
+</style>
+{% endblock %}
 
 {% block coltype %}colMS{% endblock %}
 
@@ -16,7 +95,7 @@
 {% block content %}
 <div class="iihub-dashboard-top">
 <section class="iihub-quick-actions">
-  <div class="iihub-admin-links" role="navigation" aria-label="{% translate 'Acciones rápidas' %}">
+  <div class="cortex-admin-links iihub-admin-links" role="navigation" aria-label="{% translate 'Acciones rápidas' %}">
     <strong>{% translate "Acciones rápidas" %}:</strong>
     <a href="{% url 'upload_policies' %}" title="{% translate 'CSV / Excel · cohortes y KPI' %}">{% translate "Carga de pólizas" %}</a>
     <a href="{% url 'upload_claims' %}" title="{% translate 'Enlazados a pólizas existentes' %}">{% translate "Carga de siniestros" %}</a>
