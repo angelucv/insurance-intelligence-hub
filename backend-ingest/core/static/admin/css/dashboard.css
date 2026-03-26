@@ -3,6 +3,8 @@
 .iihub-suite-map {
   margin-bottom: 2rem;
   padding: 0 0.15rem;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Contenedor: en móvil permite ver mapas anchos sin recortar (scroll horizontal táctil). */
@@ -32,32 +34,26 @@
 
 .iihub-suite-map__figure {
   margin: 0;
-  min-width: min(100%, 20rem);
-  /* En pantallas pequeñas el diagrama puede ser más ancho que el viewport */
-  width: max(100%, min(56rem, 1200px));
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .iihub-suite-map__img {
   display: block;
-  width: auto;
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
   height: auto;
   min-height: 0;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  vertical-align: top;
 }
 
 @media (min-width: 768px) {
   .iihub-suite-map__figure {
-    width: 100%;
     max-width: 56rem;
-  }
-
-  .iihub-suite-map__img {
-    width: 100%;
-    max-width: 100%;
   }
 }
 

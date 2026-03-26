@@ -174,37 +174,25 @@ SUITE_NO_CORE_FIG_COL_CAPTION = (
     "alineado al negocio, sin depender de una caja cerrada de un solo fabricante."
 )
 HEADER_SUB_SUITE = (
-    "Núcleo actuarial integrado: operaciones con control de acceso, almacén PostgreSQL, servicio de indicadores y analítica "
-    "(portal ejecutivo y laboratorio). Despliegue demostrativo en nube; arquitectura adaptable a entorno on-premise."
+    "Guía de la demostración: mapa de la suite, comparación con tableros, proceso de datos y encaje con sistemas centrales."
 )
 
-# UI — La suite (índice, modos, glosario)
+# UI — La suite (índice, modos)
 SUITE_UI_TOC_TITLE = "Índice de contenidos"
 SUITE_UI_DOCS_FULL = "Documentación completa"
 SUITE_UI_DOCS_SUMMARY = "Vista resumida"
-SUITE_UI_GLOSSARY_TITLE = "Términos empleados en esta vista"
 SUITE_PRESENTATION_SUMMARY_MD = """
-**Síntesis.** La suite integra **ingesta validada**, **PostgreSQL** como repositorio, un **servicio único de indicadores** y **dos capas de consulta** (portal ejecutivo y laboratorio). Se diferencia de un despliegue basado solo en tableros (p. ej. Power BI) por el **proceso completo** desde el dato hasta la visualización. Los sistemas **Acsel/x** y **Rector** representan el **core operativo** habitual; esta solución se orienta a la **capa analítica** y a sustituir el **paralelo informal en hojas de cálculo**, no a reemplazar dichos cores en su integridad.
+**En breve.** Datos validados en un **único almacén**, **indicadores** en un solo canal y **dos pantallas** de consulta (este portal y el laboratorio). Frente a un tablero aislado, el valor está en el **proceso completo** desde la carga hasta la lectura. **Acsel/x** y **Rector** ejemplifican el **core operativo** habitual; esta solución se centra en la **capa analítica** y en sustituir el **trabajo en Excel paralelo**, no en reemplazar esos sistemas al completo.
 """
-SUITE_GLOSSARY_MD = """
-| Término | Significado en este portal |
-|---------|----------------------------|
-| **Portal ejecutivo** | Vista actual (Reflex): **Mi cartera** y **Mercado**, lectura de KPI y series. |
-| **Laboratorio analítico** | Aplicación complementaria (Streamlit): exploración ampliada y lienzo tipo autoservicio sobre los mismos datos. |
-| **Panel de operaciones** | Django Admin: usuarios autorizados, carga de pólizas/siniestros y consultas con filtros. |
-| **Servicio de datos (API)** | Punto único HTTPS donde las aplicaciones solicitan indicadores ya calculados; no sustituye el gobierno del dato maestro en el core asegurador. |
-| **Core tradicional** | P. ej. **Acsel/x** (Consis) o **Rector** (Indra): registro operativo de pólizas y siniestros en producción. |
-"""
+SUITE_CORE_SECTION_BREAK_TITLE = "Encaje con sistemas centrales"
 
 # Bloques de documentación (índice anclado + fondos alternos en `suite_panel`)
 SUITE_MD_BLOCK1 = """
-### Contenido de esta sección
-
-El texto que sigue tiene carácter de **documentación ejecutiva** para la demostración: describe el alcance de la suite, define el **servicio de datos (interfaz de programación de aplicaciones, API)** en formulación comprensible para el negocio y establece el **posicionamiento** frente a una solución limitada a cuadros de mando (p. ej. **Microsoft Power BI**).
+Este apartado describe el alcance de la demostración, el **servicio de datos (API)** en lenguaje de negocio y el **posicionamiento** frente a un enfoque centrado solo en **cuadros de mando** (p. ej. **Power BI**).
 """
 
 SUITE_MD_BLOCK2 = """
-### Definición sintética del “core actuarial”
+**Definición breve del “core actuarial”**
 
 Constituye un **conjunto integrado y escalable**: se **ingieren y consolidan** datos (pólizas, siniestros y, según el caso, series de mercado); un **servicio centralizado** calcula y expone **indicadores homogéneos**; a continuación, **dos aplicaciones web** —portal ejecutivo y laboratorio analítico— **consultan dichos resultados** mediante canales seguros. El modelo permite **incrementar volumen y reglas** sin dispersar la lógica crítica en ficheros locales.
 
@@ -212,7 +200,7 @@ La **arquitectura de software** es **parametrizable** según organización (regl
 """
 
 SUITE_MD_BLOCK3 = """
-### Cores tradicionales en seguros (Acsel/x, Rector) y aportación de la presente suite
+**Cores tradicionales (Acsel/x, Rector) y qué aporta esta suite**
 
 En **Latinoamérica** y en **Venezuela**, muchas aseguradoras trabajan con **sistemas centrales de gestión** muy completos. Dos nombres que suelen citarse son:
 
@@ -229,7 +217,7 @@ Esos sistemas son, en la práctica, **donde la compañía “oficializa” la op
 """
 
 SUITE_MD_BLOCK4 = """
-### Funcionalidades objeto de la demostración
+**Funcionalidades cubiertas por la demostración**
 
 | Área | Alcance |
 |------|---------|
@@ -241,13 +229,13 @@ SUITE_MD_BLOCK4 = """
 """
 
 SUITE_MD_BLOCK5 = """
-### El servicio de datos (API) en términos de negocio
+**El servicio de datos (API) en lenguaje de negocio**
 
 Puede conceptualizarse como un **punto único de solicitud** de información: ante una petición del tipo «resumen de cartera del año X», el servidor devuelve un conjunto de datos **homogéneo y validado**, evitando divergencias de cálculo entre aplicaciones. En términos técnicos se implementa como **API REST** sobre **HTTPS**; desde la perspectiva de negocio constituye la **interfaz oficial** para indicadores y series.
 """
 
 SUITE_MD_BLOCK6 = """
-### Despliegue: entornos en nube y on-premise
+**Despliegue (nube u on‑premise)**
 
 La **demostración** se exhibe habitualmente **en infraestructura de nube** (coste y despliegue acotados). La arquitectura admite **traslado a instalación local** o nube privada: mismos componentes (panel de operaciones, PostgreSQL, servicio de datos, aplicaciones de presentación), con políticas de red, seguridad y respaldo acordes al entorno.
 """

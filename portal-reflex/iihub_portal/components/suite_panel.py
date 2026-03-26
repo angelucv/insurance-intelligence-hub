@@ -1,4 +1,4 @@
-"""Vista demo: documentación de la suite (índice, modo resumen/completo, glosario)."""
+"""Vista demo: documentación de la suite (índice, modo resumido/completo)."""
 
 import reflex as rx
 
@@ -7,7 +7,7 @@ from iihub_portal.state import State
 
 _MD_PROSE = (
     "text-sm text-gray-800 leading-relaxed max-w-4xl "
-    "[&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mt-0 [&_h3]:mb-2 [&_h3]:scroll-mt-24 "
+    "[&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-gray-800 [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:scroll-mt-24 "
     "[&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_li]:mb-1 "
     "[&_table]:text-xs [&_table]:w-full [&_th]:text-left [&_th]:py-2 [&_th]:text-gray-900 [&_td]:py-1.5 "
     "[&_tr]:border-b [&_tr]:border-gray-100 "
@@ -79,9 +79,9 @@ def _suite_pair_section(
         else "rounded-xl p-4 sm:p-5 mb-4 border bg-white border-gray-100/90"
     )
     return rx.el.div(
-        rx.el.h3(
+        rx.el.h2(
             heading,
-            class_name="text-base font-semibold text-gray-900 mb-4 scroll-mt-24",
+            class_name="text-lg font-semibold text-gray-900 mb-4 scroll-mt-24",
         ),
         rx.el.div(
             rx.el.div(
@@ -101,6 +101,20 @@ def _suite_pair_section(
         ),
         id=anchor,
         class_name=bg,
+    )
+
+
+def _suite_cores_section_break() -> rx.Component:
+    """Separador visual antes del bloque denso de cores."""
+    return rx.el.div(
+        rx.el.hr(class_name="border-gray-200 my-8 max-w-3xl mx-auto"),
+        rx.el.p(
+            copy.SUITE_CORE_SECTION_BREAK_TITLE,
+            class_name=(
+                "text-center text-xs font-semibold uppercase tracking-wider text-gray-500"
+            ),
+        ),
+        class_name="w-full",
     )
 
 
@@ -218,48 +232,8 @@ def _suite_toc() -> rx.Component:
     )
 
 
-def _suite_glossary() -> rx.Component:
-    return rx.el.div(
-        rx.el.h3(
-            copy.SUITE_UI_GLOSSARY_TITLE,
-            class_name="text-sm font-semibold text-gray-900 mb-2",
-        ),
-        rx.markdown(copy.SUITE_GLOSSARY_MD.strip(), class_name=_MD_PROSE),
-        class_name="mt-8 pt-6 border-t border-gray-200",
-    )
-
-
-def _suite_infographics() -> rx.Component:
-    return rx.fragment(
-        _responsive_figure(
-            heading=copy.SUITE_MAP_HEADING,
-            src="/infografia/suite-arquitectura-reflex.png",
-            alt=copy.SUITE_MAP_ALT_REFLEX,
-            caption=copy.SUITE_MAP_CAPTION_REFLEX,
-            bottom_border=True,
-            loading="eager",
-        ),
-        _responsive_figure(
-            heading=copy.SUITE_COMPARISON_HEADING,
-            src="/infografia/suite-comparativa-powerbi.png",
-            alt=copy.SUITE_COMPARISON_ALT,
-            caption=copy.SUITE_COMPARISON_CAPTION,
-            bottom_border=True,
-            loading="lazy",
-        ),
-        _responsive_figure(
-            heading=copy.SUITE_HEART_HEADING,
-            src="/infografia/suite-corazon-proceso.png",
-            alt=copy.SUITE_HEART_ALT,
-            caption=copy.SUITE_HEART_CAPTION,
-            bottom_border=True,
-            loading="lazy",
-        ),
-    )
-
-
 def _suite_doc_blocks_full() -> rx.Component:
-    """Documentación completa: cada infografía principal va con su texto; luego bloque de cores."""
+    """Documentación completa: figura + texto por bloque; separador; bloque cores."""
     return rx.fragment(
         _suite_pair_section(
             "suite-1",
@@ -288,6 +262,7 @@ def _suite_doc_blocks_full() -> rx.Component:
             2,
             loading="lazy",
         ),
+        _suite_cores_section_break(),
         _suite_block3_with_figure(),
     )
 
@@ -326,12 +301,18 @@ def _suite_toolbar() -> rx.Component:
 def suite_panel() -> rx.Component:
     summary_column = rx.el.div(
         _suite_toolbar(),
-        _suite_infographics(),
+        _responsive_figure(
+            heading=copy.SUITE_MAP_HEADING,
+            src="/infografia/suite-arquitectura-reflex.png",
+            alt=copy.SUITE_MAP_ALT_REFLEX,
+            caption=copy.SUITE_MAP_CAPTION_REFLEX,
+            bottom_border=False,
+            loading="eager",
+        ),
         rx.markdown(
             copy.SUITE_PRESENTATION_SUMMARY_MD.strip(),
-            class_name=_MD_PROSE,
+            class_name=_MD_PROSE + " mt-2",
         ),
-        _suite_glossary(),
         class_name="space-y-0",
     )
 
@@ -339,7 +320,6 @@ def suite_panel() -> rx.Component:
         _suite_toolbar(),
         _suite_toc(),
         _suite_doc_blocks_full(),
-        _suite_glossary(),
         class_name="space-y-0",
     )
 
