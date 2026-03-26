@@ -34,6 +34,57 @@ body.dashboard #content {
   box-sizing: border-box;
 }
 
+/*
+ * Portada colMS: Django coloca #content-related al final del flujo flotante, quedando «abajo» junto al listado de apps.
+ * Con grid, la columna derecha (Enlaces útiles / Acciones recientes) comparte altura con todo el bloque principal.
+ */
+@media (min-width: 1024px) {
+  body.dashboard #content.colMS {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+    gap: 0 1.25rem;
+    align-items: start;
+    margin-right: 0 !important;
+  }
+
+  body.dashboard #content.colMS > *:not(#content-related) {
+    grid-column: 1;
+  }
+
+  body.dashboard #content.colMS > #content-related {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    float: none !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 280px;
+    position: sticky;
+    top: 0.75rem;
+    align-self: start;
+  }
+
+  body.dashboard #content.colMS > #content-main {
+    float: none !important;
+    width: 100% !important;
+  }
+
+  body.dashboard #content.colMS > br.clear {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.dashboard #content.colMS > #content-related {
+    float: none !important;
+    clear: both;
+    width: 100% !important;
+    max-width: 100%;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+}
+
 /* Columna principal del admin en flex: permite que imágenes y bloques usen 100% sin desbordar. */
 .dashboard #content,
 .dashboard #content-main {
@@ -107,6 +158,82 @@ body.dashboard #content {
   .iihub-suite-map__caption {
     font-size: 0.8rem;
     padding-right: 0.25rem;
+  }
+}
+
+.iihub-data-desk {
+  margin-bottom: 2rem;
+  padding: 0 0.15rem;
+  min-width: 0;
+}
+
+.iihub-data-desk__lead {
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #475569;
+  max-width: 48rem;
+}
+
+.iihub-data-desk__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.iihub-data-desk__card {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  min-width: 0;
+}
+
+.iihub-data-desk__card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #5a1f94;
+  margin: 0 0 0.5rem;
+}
+
+.iihub-data-desk__text {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.iihub-data-desk__figure {
+  margin: 0;
+}
+
+.iihub-data-desk__footnote {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.iihub-data-desk__footnote a {
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .iihub-data-desk__card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .iihub-data-desk__lead,
+  .iihub-data-desk__text {
+    color: #cbd5e1;
+  }
+
+  .iihub-data-desk__card-title {
+    color: #e9d5ff;
   }
 }
 

@@ -16,6 +16,62 @@
   </p>
 </div>
 
+<section class="iihub-data-desk" aria-labelledby="iihub-data-desk-title">
+  <h2 id="iihub-data-desk-title" class="iihub-guide__main-title">{% translate "Qué datos cargamos y cómo se relacionan" %}</h2>
+  <p class="iihub-data-desk__lead">
+    {% blocktranslate %}Las dos vistas siguientes resumen el <strong>modelo lógico</strong> en PostgreSQL: primero el
+    <strong>maestro operativo</strong> (pólizas y siniestros) que usted sube desde este panel; después la
+    <strong>capa SUDEASEG</strong>, alimentada por ETL sobre datos públicos de referencia de mercado (no sustituye
+    informes regulatorios oficiales).{% endblocktranslate %}
+  </p>
+  <div class="iihub-data-desk__columns">
+    <article class="iihub-data-desk__card">
+      <h3 class="iihub-data-desk__card-title">{% translate "Pólizas y siniestros (operativo)" %}</h3>
+      <p class="iihub-data-desk__text">
+        {% blocktranslate %}Cada archivo genera un <code>batch_id</code> en <code>upload_batches</code>. Las pólizas
+        quedan en <code>policies</code> con <code>policy_id</code> único, cohorte, prima y estado. Los siniestros van a
+        <code>policy_claims</code> y deben referenciar un <code>policy_id</code> ya existente; así se puede analizar
+        siniestralidad frente a la cartera cargada.{% endblocktranslate %}
+      </p>
+      <figure class="iihub-img-wrap iihub-data-desk__figure">
+        <img
+          src="{% static 'admin/img/data-polizas-siniestros.png' %}"
+          alt="{% translate 'Esquema: lotes de carga, tabla policies y policy_claims enlazada por policy_id.' %}"
+          width="1600"
+          height="900"
+          loading="lazy"
+          decoding="async"
+          class="iihub-fluid-img"
+        />
+      </figure>
+    </article>
+    <article class="iihub-data-desk__card">
+      <h3 class="iihub-data-desk__card-title">{% translate "Mercado SUDEASEG (referencia)" %}</h3>
+      <p class="iihub-data-desk__text">
+        {% blocktranslate %}Las tablas <code>market_sudeaseg_*</code> guardan series por empresa y período
+        (año/mes), con nombre normalizado para filtrar La Fe y agregar el <strong>mercado total</strong>. No hay clave
+        foránea hacia <code>policies</code>: sirven para contextualizar KPI y gráficos del API de cómputo y del portal
+        Reflex frente al mercado.{% endblocktranslate %}
+      </p>
+      <figure class="iihub-img-wrap iihub-data-desk__figure">
+        <img
+          src="{% static 'admin/img/data-sudeaseg-resumen.png' %}"
+          alt="{% translate 'Esquema: tablas resumen y cuadro SUDEASEG, carga vía ETL.' %}"
+          width="1600"
+          height="900"
+          loading="lazy"
+          decoding="async"
+          class="iihub-fluid-img"
+        />
+      </figure>
+      <p class="iihub-data-desk__footnote">
+        {% translate "Detalle de columnas: página «Modelo de datos y flujos» y migraciones en el repositorio." %}
+        <a href="{% url 'data_model_doc' %}">{% translate "Abrir documentación" %}</a>
+      </p>
+    </article>
+  </div>
+</section>
+
 <section class="iihub-suite-map" aria-labelledby="iihub-suite-map-title">
   <h2 id="iihub-suite-map-title" class="iihub-guide__main-title">{% translate "Tu lugar en la suite" %}</h2>
   <p class="iihub-suite-map__intro">{% translate "El mapa se adapta al ancho de la pantalla." %}</p>
