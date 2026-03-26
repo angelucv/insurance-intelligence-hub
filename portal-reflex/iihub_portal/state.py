@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import reflex as rx
 from plotly.graph_objects import Figure as PlotlyFigure
 
+from iihub_portal.plotly_responsive import merge_responsive_layout
 from iihub_portal.portfolio_plotly import build_all_portfolio_figures, demo_portfolio_payload_from_kpi
 from iihub_portal.plotly_charts import (
     build_cartera_donut_figure,
@@ -61,8 +62,20 @@ class State(rx.State):
 
     # Vista «La suite»: documentación completa vs. resumen ejecutivo
     suite_docs_mode: str = "full"
+    # Menú lateral en móvil (sidebar oculto por defecto)
+    mobile_nav_open: bool = False
     # KPI: fallo de red/API (para mensaje y acciones de recuperación)
     kpi_load_failed: bool = False
+
+    # Mercado SUDEASEG: no cargar hasta que el usuario abra la pestaña (ahorra red/CPU en móvil).
+    mercado_hydrated: bool = False
+    mercado_loading: bool = False
+
+    # Cartera: KPI rápido primero; gráficos avanzados en segundo plane (página principal más ligera).
+    portfolio_charts_busy: bool = False
+    kpi_act_n: int = 0
+    kpi_lap_n: int = 0
+    kpi_avg_pr: float = 0.0
 
     market_plot_data: list[Any] = []
     market_plot_layout: dict[str, Any] = {}
@@ -114,7 +127,10 @@ class State(rx.State):
         """Reflex 0.8 exige `Figure` en rx.plotly(data=...), no listas sueltas."""
         if not self.market_plot_ok or not self.market_plot_data:
             return PlotlyFigure()
-        return PlotlyFigure(data=self.market_plot_data, layout=self.market_plot_layout or {})
+        return PlotlyFigure(
+            data=self.market_plot_data,
+            layout=merge_responsive_layout(self.market_plot_layout),
+        )
 
     @rx.var(cache=True, auto_deps=True)
     def market_ratio_figure(self) -> PlotlyFigure:
@@ -122,20 +138,26 @@ class State(rx.State):
             return PlotlyFigure()
         return PlotlyFigure(
             data=self.market_ratio_plot_data,
-            layout=self.market_ratio_plot_layout or {},
+            layout=merge_responsive_layout(self.market_ratio_plot_layout),
         )
 
     @rx.var(cache=True, auto_deps=True)
     def kpi_gauge_figure(self) -> PlotlyFigure:
         if not self.kpi_gauge_ok or not self.kpi_gauge_data:
             return PlotlyFigure()
-        return PlotlyFigure(data=self.kpi_gauge_data, layout=self.kpi_gauge_layout or {})
+        return PlotlyFigure(
+            data=self.kpi_gauge_data,
+            layout=merge_responsive_layout(self.kpi_gauge_layout),
+        )
 
     @rx.var(cache=True, auto_deps=True)
     def cartera_donut_figure(self) -> PlotlyFigure:
         if not self.cartera_donut_ok or not self.cartera_donut_data:
             return PlotlyFigure()
-        return PlotlyFigure(data=self.cartera_donut_data, layout=self.cartera_donut_layout or {})
+        return PlotlyFigure(
+            data=self.cartera_donut_data,
+            layout=merge_responsive_layout(self.cartera_donut_layout),
+        )
 
     @rx.var(cache=True, auto_deps=True)
     def market_heatmap_figure(self) -> PlotlyFigure:
@@ -143,26 +165,40 @@ class State(rx.State):
             return PlotlyFigure()
         return PlotlyFigure(
             data=self.market_heatmap_data,
-            layout=self.market_heatmap_layout or {},
+            layout=merge_responsive_layout(self.market_heatmap_layout),
         )
 
     @rx.var(cache=True, auto_deps=True)
     def market_yoy_la_figure(self) -> PlotlyFigure:
         if not self.market_yoy_la_ok or not self.market_yoy_la_data:
             return PlotlyFigure()
-        return PlotlyFigure(data=self.market_yoy_la_data, layout=self.market_yoy_la_layout or {})
+        return PlotlyFigure(
+            data=self.market_yoy_la_data,
+            layout=merge_responsive_layout(self.market_yoy_la_layout),
+        )
 
     @rx.var(cache=True, auto_deps=True)
     def market_yoy_mk_figure(self) -> PlotlyFigure:
         if not self.market_yoy_mk_ok or not self.market_yoy_mk_data:
             return PlotlyFigure()
-        return PlotlyFigure(data=self.market_yoy_mk_data, layout=self.market_yoy_mk_layout or {})
+        return PlotlyFigure(
+            data=self.market_yoy_mk_data,
+            layout=merge_responsive_layout(self.market_yoy_mk_layout),
+        )
 
     @rx.var(cache=True, auto_deps=True)
     def market_yoy_lr_figure(self) -> PlotlyFigure:
         if not self.market_yoy_lr_ok or not self.market_yoy_lr_data:
             return PlotlyFigure()
-        return PlotlyFigure(data=self.market_yoy_lr_data, layout=self.market_yoy_lr_layout or {})
+        return PlotlyFigure(
+            data=self.market_yoy_lr_data,
+            layout=merge_responsive_layout(self.market_yoy_lr_layout),
+        )
+
+    @rx.var(cache=True, auto_deps=True)
+    def kpi_refresh_busy(self) -> bool:
+        """True mientras carga el resumen KPI o los gráficos de cartera en segundo plano."""
+        return bool(self.busy or self.portfolio_charts_busy)
 
     @rx.var(cache=True, auto_deps=True)
     def cartera_period_label(self) -> str:
@@ -176,7 +212,10 @@ class State(rx.State):
         b = (self.portfolio_bundle or {}).get(key)
         if not b or not b.get("data"):
             return PlotlyFigure()
-        return PlotlyFigure(data=b["data"], layout=b.get("layout") or {})
+        return PlotlyFigure(
+            data=b["data"],
+            layout=merge_responsive_layout(b.get("layout")),
+        )
 
     @rx.var(cache=True, auto_deps=True)
     def portfolio_sunburst_figure(self) -> PlotlyFigure:
@@ -238,13 +277,53 @@ class State(rx.State):
 
     async def portal_on_load(self):
         await self.hydrate_urls()
-        # KPI + snapshot primero (lo que ve el usuario en cartera); mercado SUDEASEG en segundo plano
-        # para no alargar el tiempo hasta datos de cartera/listo.
-        await asyncio.gather(
-            self.load_market_snapshot(),
-            self.load_kpi(),
-        )
-        asyncio.create_task(self.load_sudeaseg_preview())
+        # Solo cartera en arranque: snapshot + gráficos SUDEASEG se cargan al abrir «Mercado SUDEASEG»
+        # (menos latencia y menos trabajo en 3G/móvil).
+        await self.load_kpi()
+
+    def _apply_snapshot_payload(self, d: dict[str, Any] | None) -> None:
+        """Rellena celdas del hero de mercado desde JSON snapshot (API o portal-bundle)."""
+        self.snap_ok = False
+        self.snap_period = "—"
+        self.snap_primas = "—"
+        self.snap_sini = "—"
+        self.snap_lr = "—"
+        self.snap_cuota = "—"
+        self.snap_comisiones = "—"
+        self.snap_gadm = "—"
+        self.snap_mk_lr = "—"
+        if not d:
+            return
+
+        def fmt_num(x: object) -> str:
+            if x is None:
+                return "—"
+            try:
+                return f"{float(x):,.2f}"
+            except (TypeError, ValueError):
+                return "—"
+
+        def fmt_pct_ratio(x: object) -> str:
+            if x is None:
+                return "—"
+            try:
+                return f"{float(x) * 100:.2f} %"
+            except (TypeError, ValueError):
+                return "—"
+
+        py, pm = int(d["period_year"]), int(d["period_month"])
+        self.snap_period = f"{py}-{pm:02d}"
+        lf = d.get("la_fe") or {}
+        mk = d.get("mercado_total") or {}
+        self.snap_primas = fmt_num(lf.get("primas_ytd"))
+        self.snap_sini = fmt_num(lf.get("siniestros_totales_ytd"))
+        self.snap_lr = fmt_pct_ratio(lf.get("loss_ratio_ytd"))
+        cq = d.get("cuota_mercado_primas_pct")
+        self.snap_cuota = f"{float(cq):.3f} %" if cq is not None else "—"
+        self.snap_comisiones = fmt_num(lf.get("comisiones_ytd"))
+        self.snap_gadm = fmt_num(lf.get("gastos_admin_ytd"))
+        self.snap_mk_lr = fmt_pct_ratio(mk.get("loss_ratio_ytd"))
+        self.snap_ok = True
 
     async def load_sudeaseg_preview(self):
         self.market_plot_ok = False
@@ -267,6 +346,7 @@ class State(rx.State):
         self.market_yoy_lr_data = []
         self.market_yoy_lr_layout = {}
         self.market_charts_busy = True
+        self._apply_snapshot_payload(None)
         try:
             base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
             try:
@@ -283,36 +363,27 @@ class State(rx.State):
             mode = (self.market_mode or "monthly_flow").strip()
             if mode not in ("monthly_flow", "ytd"):
                 mode = "monthly_flow"
-            params = {"from_year": fy, "to_year": ty, "mode": mode}
-            rla1 = rla2 = rt1 = rt2 = None
+            params = {
+                "from_year": fy,
+                "to_year": ty,
+                "mode": mode,
+                "yoy_a": yoy_a,
+                "yoy_b": yoy_b,
+            }
             try:
                 async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, limits=_HTTP_LIMITS) as client:
-                    if yoy_a != yoy_b:
-                        py1 = {"from_year": yoy_a, "to_year": yoy_a, "mode": mode}
-                        py2 = {"from_year": yoy_b, "to_year": yoy_b, "mode": mode}
-                        r1, r2, rla1, rla2, rt1, rt2 = await asyncio.gather(
-                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=params),
-                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=params),
-                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=py1),
-                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=py2),
-                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=py1),
-                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=py2),
-                        )
-                    else:
-                        r1, r2 = await asyncio.gather(
-                            client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=params),
-                            client.get(f"{base}/api/v1/market/resumen/totals-series", params=params),
-                        )
-                    r1.raise_for_status()
-                    r2.raise_for_status()
+                    r = await client.get(f"{base}/api/v1/market/portal-bundle", params=params)
+                    r.raise_for_status()
+                    bundle = r.json()
             except Exception as e:  # noqa: BLE001
                 self.market_plot_error = f"No se pudo cargar la referencia de mercado. ({e})"
                 return
 
             from plotly.subplots import make_subplots
 
-            la = r1.json().get("points") or []
-            tot = r2.json().get("points") or []
+            self._apply_snapshot_payload(bundle.get("snapshot"))
+            la = (bundle.get("la_fe_range") or {}).get("points") or []
+            tot = (bundle.get("totals_range") or {}).get("points") or []
 
             def primas_map(rows: list[dict[str, Any]]) -> dict[tuple[int, int], float | None]:
                 out: dict[tuple[int, int], float | None] = {}
@@ -381,16 +452,13 @@ class State(rx.State):
             self.market_heatmap_layout = hmj.get("layout") or {}
             self.market_heatmap_ok = True
 
-            if yoy_a != yoy_b and rla1 is not None and rla2 is not None and rt1 is not None and rt2 is not None:
+            yoy_block = bundle.get("yoy")
+            if yoy_a != yoy_b and isinstance(yoy_block, dict):
                 try:
-                    rla1.raise_for_status()
-                    rla2.raise_for_status()
-                    rt1.raise_for_status()
-                    rt2.raise_for_status()
-                    la_y1 = rla1.json().get("points") or []
-                    la_y2 = rla2.json().get("points") or []
-                    tot_y1 = rt1.json().get("points") or []
-                    tot_y2 = rt2.json().get("points") or []
+                    la_y1 = (yoy_block.get("la_fe_a") or {}).get("points") or []
+                    la_y2 = (yoy_block.get("la_fe_b") or {}).get("points") or []
+                    tot_y1 = (yoy_block.get("totals_a") or {}).get("points") or []
+                    tot_y2 = (yoy_block.get("totals_b") or {}).get("points") or []
                     f_la = build_yoy_primas_figure(yoy_a, yoy_b, la_y1, la_y2, height=320)
                     pj_la = f_la.to_plotly_json()
                     self.market_yoy_la_data = pj_la["data"]
@@ -412,57 +480,6 @@ class State(rx.State):
                     pass
         finally:
             self.market_charts_busy = False
-
-    async def load_market_snapshot(self):
-        self.snap_ok = False
-        self.snap_period = "—"
-        self.snap_primas = "—"
-        self.snap_sini = "—"
-        self.snap_lr = "—"
-        self.snap_cuota = "—"
-        self.snap_comisiones = "—"
-        self.snap_gadm = "—"
-        self.snap_mk_lr = "—"
-        base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
-        try:
-            async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, limits=_HTTP_LIMITS) as client:
-                r = await client.get(f"{base}/api/v1/market/la-fe/snapshot-latest")
-                if r.status_code == 404:
-                    return
-                r.raise_for_status()
-                d = r.json()
-        except Exception:  # noqa: BLE001
-            return
-        py, pm = int(d["period_year"]), int(d["period_month"])
-        self.snap_period = f"{py}-{pm:02d}"
-        lf = d.get("la_fe") or {}
-        mk = d.get("mercado_total") or {}
-
-        def fmt_num(x: object) -> str:
-            if x is None:
-                return "—"
-            try:
-                return f"{float(x):,.2f}"
-            except (TypeError, ValueError):
-                return "—"
-
-        def fmt_pct_ratio(x: object) -> str:
-            if x is None:
-                return "—"
-            try:
-                return f"{float(x) * 100:.2f} %"
-            except (TypeError, ValueError):
-                return "—"
-
-        self.snap_primas = fmt_num(lf.get("primas_ytd"))
-        self.snap_sini = fmt_num(lf.get("siniestros_totales_ytd"))
-        self.snap_lr = fmt_pct_ratio(lf.get("loss_ratio_ytd"))
-        cq = d.get("cuota_mercado_primas_pct")
-        self.snap_cuota = f"{float(cq):.3f} %" if cq is not None else "—"
-        self.snap_comisiones = fmt_num(lf.get("comisiones_ytd"))
-        self.snap_gadm = fmt_num(lf.get("gastos_admin_ytd"))
-        self.snap_mk_lr = fmt_pct_ratio(mk.get("loss_ratio_ytd"))
-        self.snap_ok = True
 
     def set_input_year(self, v: str):
         self.input_year = v
@@ -503,14 +520,31 @@ class State(rx.State):
     def set_market_yoy_b(self, v: str):
         self.market_yoy_b = v
 
-    def pick_tab_mercado(self):
+    async def pick_tab_mercado(self):
         self.ui_main_tab = "mercado"
+        self.mobile_nav_open = False
+        if self.mercado_hydrated or self.mercado_loading:
+            return
+        self.mercado_loading = True
+        try:
+            await self.load_sudeaseg_preview()
+        finally:
+            self.mercado_loading = False
+        self.mercado_hydrated = True
 
     def pick_tab_cartera(self):
         self.ui_main_tab = "cartera"
+        self.mobile_nav_open = False
 
     def pick_tab_suite(self):
         self.ui_main_tab = "suite"
+        self.mobile_nav_open = False
+
+    def toggle_mobile_nav(self):
+        self.mobile_nav_open = not self.mobile_nav_open
+
+    def close_mobile_nav(self):
+        self.mobile_nav_open = False
 
     def toggle_snap_more(self):
         self.show_snap_more = not self.show_snap_more
@@ -524,8 +558,72 @@ class State(rx.State):
     def set_suite_docs_summary(self):
         self.suite_docs_mode = "summary"
 
+    async def _load_portfolio_charts_async(self, year: int) -> None:
+        """Segunda fase: payload pesado de cartera (no bloquea tacómetros ni donut)."""
+        self.portfolio_charts_busy = True
+        self.portfolio_viz_ok = False
+        self.portfolio_bundle = {}
+        try:
+            base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
+            raw_pf: dict[str, Any] | None = None
+            async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, limits=_HTTP_LIMITS) as client:
+                r = await client.get(
+                    f"{base}/api/v1/kpi/cohort-portfolio",
+                    params={"cohort_year": year},
+                )
+                if r.status_code == 404:
+                    raw_pf = None
+                else:
+                    r.raise_for_status()
+                    raw_pf = r.json()
+
+            act, lap = self.kpi_act_n, self.kpi_lap_n
+            avg_pr = self.kpi_avg_pr
+            note_low = str(self.note or "").lower()
+
+            try:
+                if raw_pf is not None:
+                    self.portfolio_note = ""
+                else:
+                    raw_pf = demo_portfolio_payload_from_kpi(
+                        cohort_year=year,
+                        policies_active=act,
+                        policies_lapsed=lap,
+                        avg_annual_premium=avg_pr,
+                    )
+                    if "sin filas" in note_low or "sintética" in note_low or "synthetic" in note_low:
+                        self.portfolio_note = (
+                            "Sin datos de cohorte en BD para gráficos avanzados: demostración alineada al KPI. "
+                            "Cargue pólizas en Admin para vistas reales."
+                        )
+                    else:
+                        self.portfolio_note = (
+                            "Visualización demostrativa alineada al resumen KPI (sin detalle de cohorte en BD)."
+                        )
+                figs = await asyncio.to_thread(build_all_portfolio_figures, raw_pf)
+                self.portfolio_bundle = {
+                    k: {"data": fd, "layout": fl} for k, (fd, fl) in figs.items()
+                }
+                self.portfolio_viz_ok = True
+            except Exception as pe:  # noqa: BLE001
+                raw_pf = demo_portfolio_payload_from_kpi(
+                    cohort_year=year,
+                    policies_active=act,
+                    policies_lapsed=lap,
+                    avg_annual_premium=avg_pr,
+                )
+                figs = await asyncio.to_thread(build_all_portfolio_figures, raw_pf)
+                self.portfolio_bundle = {
+                    k: {"data": fd, "layout": fl} for k, (fd, fl) in figs.items()
+                }
+                self.portfolio_viz_ok = True
+                self.portfolio_note = f"Error al construir gráficos de cartera ({pe}). Demostración con KPI."
+        finally:
+            self.portfolio_charts_busy = False
+
     async def load_kpi(self):
         self.busy = True
+        self.portfolio_charts_busy = True
         self.kpi_load_failed = False
         self.kpi_gauge_ok = False
         self.kpi_gauge_data = []
@@ -541,18 +639,22 @@ class State(rx.State):
         except ValueError:
             self.note = "Indique un año válido en el selector."
             self.busy = False
+            self.portfolio_charts_busy = False
             return
         base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
         try:
             async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, limits=_HTTP_LIMITS) as client:
                 r = await client.get(
                     f"{base}/api/v1/kpi/cohort-bundle",
-                    params={"cohort_year": year, "use_db": "true"},
+                    params={
+                        "cohort_year": year,
+                        "use_db": "true",
+                        "include_portfolio": False,
+                    },
                 )
                 r.raise_for_status()
                 bundle = r.json()
                 d = bundle["summary"]
-                raw_pf = bundle.get("portfolio")
                 per = float(d["persistency_rate_pct"])
                 act = int(d["policies_active"])
                 lap = int(d["policies_lapsed"])
@@ -560,6 +662,10 @@ class State(rx.State):
                 active_share = (act / total_pl * 100.0) if total_pl > 0 else 0.0
                 t_raw = d.get("technical_loss_ratio_pct")
                 tlr_f = float(t_raw) if t_raw is not None else None
+
+                self.kpi_act_n = act
+                self.kpi_lap_n = lap
+                self.kpi_avg_pr = float(d["avg_annual_premium"])
 
                 self.persistency = f"{per:.2f} %"
                 self.active_n = f"{act:,}"
@@ -586,48 +692,12 @@ class State(rx.State):
                 self.cartera_donut_layout = dj.get("layout") or {}
                 self.cartera_donut_ok = True
 
-                avg_pr = float(d["avg_annual_premium"])
-                try:
-                    if raw_pf is not None:
-                        self.portfolio_note = ""
-                    else:
-                        raw_pf = demo_portfolio_payload_from_kpi(
-                            cohort_year=year,
-                            policies_active=act,
-                            policies_lapsed=lap,
-                            avg_annual_premium=avg_pr,
-                        )
-                        note_low = str(d.get("data_note", "")).lower()
-                        if "sin filas" in note_low or "sintética" in note_low or "synthetic" in note_low:
-                            self.portfolio_note = (
-                                "Sin datos de cohorte en BD para gráficos avanzados: demostración alineada al KPI. "
-                                "Cargue pólizas en Admin para vistas reales."
-                            )
-                        else:
-                            self.portfolio_note = (
-                                "Visualización demostrativa alineada al resumen KPI (sin detalle de cohorte en BD)."
-                            )
-                    figs = await asyncio.to_thread(build_all_portfolio_figures, raw_pf)
-                    self.portfolio_bundle = {
-                        k: {"data": fd, "layout": fl} for k, (fd, fl) in figs.items()
-                    }
-                    self.portfolio_viz_ok = True
-                except Exception as pe:  # noqa: BLE001
-                    raw_pf = demo_portfolio_payload_from_kpi(
-                        cohort_year=year,
-                        policies_active=act,
-                        policies_lapsed=lap,
-                        avg_annual_premium=float(d["avg_annual_premium"]),
-                    )
-                    figs = await asyncio.to_thread(build_all_portfolio_figures, raw_pf)
-                    self.portfolio_bundle = {
-                        k: {"data": fd, "layout": fl} for k, (fd, fl) in figs.items()
-                    }
-                    self.portfolio_viz_ok = True
-                    self.portfolio_note = f"Error al construir gráficos de cartera ({pe}). Demostración con KPI."
+            self.busy = False
+            asyncio.create_task(self._load_portfolio_charts_async(year))
         except Exception as e:  # noqa: BLE001
             self.kpi_load_failed = True
             self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
             self.portfolio_viz_ok = False
             self.portfolio_bundle = {}
-        self.busy = False
+            self.busy = False
+            self.portfolio_charts_busy = False

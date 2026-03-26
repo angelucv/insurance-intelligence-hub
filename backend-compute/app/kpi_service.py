@@ -166,10 +166,12 @@ def kpi_cohort_bundle_payload(
     seed: int,
     n_policies: int,
     prefer_db: bool,
+    include_portfolio: bool = True,
 ) -> dict[str, Any]:
     """
     Resumen KPI + payload de cartera en una sola respuesta.
     Cuando hay BD, lee pólizas y claims una sola vez por cohorte (sin duplicar el SELECT de pólizas).
+    Con include_portfolio=False solo devuelve summary (portal: primera pintada más ligera).
     """
     if prefer_db and session is not None and session.bind is not None:
         try:
@@ -180,8 +182,10 @@ def kpi_cohort_bundle_payload(
                 df_c = _read_claims(session, cohort_year)
                 kpi = kpi_from_policies_dataframe(df_p, cohort_year, session)
                 if kpi:
-                    portfolio = build_cohort_portfolio_payload(df_p, df_c, cohort_year)
-                    return {"summary": kpi, "portfolio": portfolio}
+                    if include_portfolio:
+                        portfolio = build_cohort_portfolio_payload(df_p, df_c, cohort_year)
+                        return {"summary": kpi, "portfolio": portfolio}
+                    return {"summary": kpi, "portfolio": None}
         except Exception as e:  # noqa: BLE001
             logger.exception("kpi_cohort_bundle desde BD falló: {}", e)
 

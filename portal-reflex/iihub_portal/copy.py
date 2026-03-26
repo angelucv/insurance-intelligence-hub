@@ -11,6 +11,8 @@ SIDEBAR_BRAND_SHORT = "IIH"
 SIDEBAR_BRAND_LONG = "Insurance Intelligence Hub"
 SIDEBAR_SECTION_VIEWS = "Vistas"
 SIDEBAR_SECTION_OPS = "Operaciones"
+MOBILE_MENU_OPEN_ARIA = "Abrir menú de navegación"
+MOBILE_MENU_CLOSE_ARIA = "Cerrar menú"
 SIDEBAR_AUTHOR_LABEL = "Elaborado por"
 AUTHOR_NAME = "Prof. Angel Colmenares"
 AUTHOR_EMAIL = "angelc.ucv@gmail.com"
@@ -40,7 +42,7 @@ VISUAL_SUGGESTIONS_MD = """
 
 **Rendimiento**
 
-- Cargar datos en **paralelo** (series y snapshot) y **mostrar estado de carga** mientras llega la API.
+- Mercado: **una respuesta** agregada (`/api/v1/market/portal-bundle`) con snapshot + series + YoY; KPI de cartera: **resumen ligero** primero y **gráficos avanzados** en segundo plano.
 - En el futuro: **paginar** series largas, **reducir puntos** (muestreo) o **cachear** respuestas en servidor.
 """
 
@@ -73,6 +75,7 @@ MERCADO_YOY_A = "YoY A"
 MERCADO_YOY_B = "YoY B"
 MERCADO_SNAPSHOT_TITLE = "Último cierre La Fe (YTD)"
 MERCADO_SNAPSHOT_HINT = "Miles de Bs. · ratios en fracción"
+MERCADO_SNAPSHOT_LOADING = "Cargando referencia de mercado…"
 MERCADO_CHART_PRIM_TITLE = "Primas netas · La Fe vs mercado total"
 MERCADO_CHART_PRIM_SUB = "Miles de bolívares · doble eje"
 MERCADO_CHART_LR_TITLE = "Loss ratio proxy (siniestros / primas)"

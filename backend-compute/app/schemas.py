@@ -121,6 +121,24 @@ class MarketLaFeSnapshot(BaseModel):
     empresa_filter_note: str = ""
 
 
+class PortalMercadoYoySeries(BaseModel):
+    """Series La Fe y mercado total para dos años (comparativa YoY del portal)."""
+
+    la_fe_a: MarketResumenSeries
+    la_fe_b: MarketResumenSeries
+    totals_a: MarketResumenSeries
+    totals_b: MarketResumenSeries
+
+
+class PortalMercadoBundle(BaseModel):
+    """Una sola respuesta HTTP: snapshot + series rango + opcional YoY (portal Reflex)."""
+
+    snapshot: MarketLaFeSnapshot | None = None
+    la_fe_range: MarketResumenSeries
+    totals_range: MarketResumenSeries
+    yoy: PortalMercadoYoySeries | None = None
+
+
 class IngestResult(BaseModel):
     batch_id: str
     rows_valid: int

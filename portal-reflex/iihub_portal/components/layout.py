@@ -2,12 +2,13 @@
 
 import reflex as rx
 
-from iihub_portal.components.sidebar import mobile_tab_bar, sidebar
+from iihub_portal.components.sidebar import mobile_nav_drawer, mobile_tab_bar, sidebar
 
 
 def dashboard_layout(*children: rx.Component) -> rx.Component:
     return rx.el.div(
         sidebar(),
+        mobile_nav_drawer(),
         rx.el.div(
             mobile_tab_bar(),
             rx.el.main(

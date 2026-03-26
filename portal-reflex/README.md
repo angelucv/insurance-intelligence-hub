@@ -1,6 +1,9 @@
 # Portal (Reflex)
 
-SPA en Python que consume la API de cómputo (`GET /api/v1/kpi/summary`).
+SPA en Python que consume la API de cómputo (FastAPI). Endpoints usados:
+
+- `GET /api/v1/kpi/cohort-bundle` (con `include_portfolio=false` en la primera carga y `cohort-portfolio` después).
+- `GET /api/v1/market/portal-bundle` (vista Mercado SUDEASEG: snapshot + series + YoY en una petición).
 
 ## Configuración
 

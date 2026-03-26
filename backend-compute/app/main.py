@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Literal
 import os
 import sys
 from contextlib import asynccontextmanager
@@ -42,6 +42,8 @@ from app.schemas import (
     MarketResumenExtendedSeries,
     MarketResumenSeries,
     MarketSeriesPoint,
+    PortalMercadoBundle,
+    PortalMercadoYoySeries,
 )
 
 
@@ -110,6 +112,7 @@ def root() -> dict[str, str]:
         "market_la_fe_cuadro": "/api/v1/market/la-fe/cuadro-series",
         "market_cuadro_totals": "/api/v1/market/cuadro/totals-series",
         "market_la_fe_snapshot": "/api/v1/market/la-fe/snapshot-latest",
+        "market_portal_bundle": "/api/v1/market/portal-bundle",
     }
 
 
@@ -138,6 +141,107 @@ def info() -> dict[str, str]:
         "service": "backend-compute",
         "role": "api_and_analytics",
     }
+
+
+Mode = Literal["ytd", "monthly_flow"]
+
+
+def _build_portal_mercado_bundle(
+    db: Session,
+    *,
+    from_year: int,
+    to_year: int,
+    mode: Mode,
+    yoy_a: int,
+    yoy_b: int,
+    empresa_norm_fragment: str,
+) -> PortalMercadoBundle:
+    """Ensambla snapshot + series en una sola lectura de lógica (una respuesta HTTP)."""
+    rows_la = la_fe_resumen_series(
+        db,
+        from_year=from_year,
+        to_year=to_year,
+        mode=mode,
+        empresa_norm_fragment=empresa_norm_fragment,
+    )
+    rows_tot = market_resumen_totals_series(
+        db,
+        from_year=from_year,
+        to_year=to_year,
+        mode=mode,
+    )
+    gran: Literal["ytd_eom", "monthly_flow"] = "ytd_eom" if mode == "ytd" else "monthly_flow"
+    note = (
+        "empresa_nombre_norm LIKE '%…%' AND '%seguros%' (fragmento: "
+        f"{sanitize_empresa_norm_fragment(empresa_norm_fragment)!r})"
+    )
+    la_range = MarketResumenSeries(
+        granularity=gran,
+        empresa_filter_note=note,
+        points=[MarketSeriesPoint.model_validate(p) for p in rows_la],
+    )
+    tot_range = MarketResumenSeries(
+        granularity=gran,
+        source="market_sudeaseg_resumen_empresa:sum",
+        empresa_filter_note="Suma de todas las filas por (año, mes) en la tabla cargada.",
+        points=[MarketSeriesPoint.model_validate(p) for p in rows_tot],
+    )
+    snap_raw = la_fe_market_snapshot_latest(db, empresa_norm_fragment=empresa_norm_fragment)
+    snapshot = MarketLaFeSnapshot.model_validate(snap_raw) if snap_raw else None
+
+    yoy: PortalMercadoYoySeries | None = None
+    if yoy_a != yoy_b:
+        la_a = la_fe_resumen_series(
+            db,
+            from_year=yoy_a,
+            to_year=yoy_a,
+            mode=mode,
+            empresa_norm_fragment=empresa_norm_fragment,
+        )
+        la_b = la_fe_resumen_series(
+            db,
+            from_year=yoy_b,
+            to_year=yoy_b,
+            mode=mode,
+            empresa_norm_fragment=empresa_norm_fragment,
+        )
+        tot_a = market_resumen_totals_series(
+            db, from_year=yoy_a, to_year=yoy_a, mode=mode
+        )
+        tot_b = market_resumen_totals_series(
+            db, from_year=yoy_b, to_year=yoy_b, mode=mode
+        )
+        yoy = PortalMercadoYoySeries(
+            la_fe_a=MarketResumenSeries(
+                granularity=gran,
+                empresa_filter_note=note,
+                points=[MarketSeriesPoint.model_validate(p) for p in la_a],
+            ),
+            la_fe_b=MarketResumenSeries(
+                granularity=gran,
+                empresa_filter_note=note,
+                points=[MarketSeriesPoint.model_validate(p) for p in la_b],
+            ),
+            totals_a=MarketResumenSeries(
+                granularity=gran,
+                source="market_sudeaseg_resumen_empresa:sum",
+                empresa_filter_note="Suma de todas las filas por (año, mes) en la tabla cargada.",
+                points=[MarketSeriesPoint.model_validate(p) for p in tot_a],
+            ),
+            totals_b=MarketResumenSeries(
+                granularity=gran,
+                source="market_sudeaseg_resumen_empresa:sum",
+                empresa_filter_note="Suma de todas las filas por (año, mes) en la tabla cargada.",
+                points=[MarketSeriesPoint.model_validate(p) for p in tot_b],
+            ),
+        )
+
+    return PortalMercadoBundle(
+        snapshot=snapshot,
+        la_fe_range=la_range,
+        totals_range=tot_range,
+        yoy=yoy,
+    )
 
 
 def _market_db_error(e: Exception) -> HTTPException:
@@ -357,6 +461,41 @@ def market_la_fe_snapshot_latest_ep(
     return MarketLaFeSnapshot.model_validate(raw)
 
 
+@app.get("/api/v1/market/portal-bundle", response_model=PortalMercadoBundle)
+def market_portal_bundle_ep(
+    from_year: int = 2023,
+    to_year: int = 2026,
+    mode: str = "monthly_flow",
+    yoy_a: int = 2023,
+    yoy_b: int = 2024,
+    empresa_norm_fragment: str = "fe c.a.",
+    db: Session | None = Depends(get_db),
+) -> PortalMercadoBundle:
+    """
+    Snapshot + series La Fe / mercado total + bloque YoY en una sola respuesta.
+    Reduce round-trips para el portal Reflex (móvil).
+    """
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    if mode not in ("ytd", "monthly_flow"):
+        raise HTTPException(status_code=400, detail="mode debe ser ytd o monthly_flow")
+    fy, ty = from_year, to_year
+    if fy > ty:
+        fy, ty = ty, fy
+    try:
+        return _build_portal_mercado_bundle(
+            db,
+            from_year=fy,
+            to_year=ty,
+            mode=mode,  # type: ignore[arg-type]
+            yoy_a=yoy_a,
+            yoy_b=yoy_b,
+            empresa_norm_fragment=empresa_norm_fragment,
+        )
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+
+
 @app.get("/api/v1/kpi/summary", response_model=KpiSummary)
 def kpi_summary(
     cohort_year: int = 2022,
@@ -382,11 +521,13 @@ def kpi_cohort_bundle(
     seed: int = 42,
     n_policies: int = 8000,
     use_db: bool = True,
+    include_portfolio: bool = True,
     db: Session | None = Depends(get_db),
 ) -> dict[str, Any]:
     """
     KPI + agregados de cartera en una sola respuesta HTTP.
     Evita duplicar la lectura de `policies` que ocurría al llamar summary y cohort-portfolio en paralelo.
+    include_portfolio=false omite el payload pesado de gráficos (el cliente puede llamar /cohort-portfolio después).
     """
     return kpi_cohort_bundle_payload(
         session=db,
@@ -394,6 +535,7 @@ def kpi_cohort_bundle(
         seed=seed,
         n_policies=n_policies,
         prefer_db=use_db and db is not None,
+        include_portfolio=include_portfolio,
     )
 
 

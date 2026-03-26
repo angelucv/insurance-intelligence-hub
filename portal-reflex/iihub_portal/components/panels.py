@@ -7,6 +7,17 @@ from iihub_portal.state import State
 from iihub_portal.theme import BRAND_DEEP, BRAND_PURPLE
 
 
+def plotly_chart_wrap(figure: rx.Var) -> rx.Component:
+    """Contenedor ancho completo + scroll suave si Plotly aún desborda en móvil."""
+    return rx.el.div(
+        rx.plotly(data=figure),
+        class_name=(
+            "w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain "
+            "[scrollbar-width:thin] -mx-0.5 px-0.5 sm:mx-0 sm:px-0"
+        ),
+    )
+
+
 def snap_hero_cell(label: str, value: rx.Var) -> rx.Component:
     return rx.el.div(
         rx.el.p(label, class_name="text-[10px] font-semibold text-white/75 uppercase tracking-wide"),
@@ -27,8 +38,8 @@ def portfolio_chart_card(
     return rx.el.div(
         rx.el.h4(title, class_name="text-xs font-semibold text-gray-900"),
         rx.el.p(subtitle, class_name=sub_cls),
-        rx.plotly(data=figure),
-        class_name=f"rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden {pad}",
+        plotly_chart_wrap(figure),
+        class_name=f"rounded-2xl border border-gray-100 bg-white shadow-sm min-w-0 {pad}",
     )
 
 
@@ -77,9 +88,13 @@ def mercado_panel() -> rx.Component:
                     class_name="text-[10px] text-white/70 mt-0.5",
                 ),
                 rx.cond(
-                    State.snap_ok,
-                    snap_grid,
-                    rx.el.p("Sin snapshot.", class_name="text-white/90 text-xs mt-3"),
+                    State.mercado_loading,
+                    rx.el.p(copy.MERCADO_SNAPSHOT_LOADING, class_name="text-white/90 text-xs mt-3"),
+                    rx.cond(
+                        State.snap_ok,
+                        snap_grid,
+                        rx.el.p("Sin snapshot.", class_name="text-white/90 text-xs mt-3"),
+                    ),
                 ),
                 rx.button(
                     rx.cond(State.show_snap_more, "Menos", "Más"),
@@ -215,7 +230,7 @@ def mercado_panel() -> rx.Component:
                         chart_busy,
                         rx.cond(
                             State.market_plot_ok,
-                            rx.plotly(data=State.market_plot_figure),
+                            plotly_chart_wrap(State.market_plot_figure),
                             rx.el.p(
                                 "Sin datos de primas.",
                                 class_name="text-xs text-gray-400",
@@ -241,7 +256,7 @@ def mercado_panel() -> rx.Component:
                         chart_busy,
                         rx.cond(
                             State.market_ratio_ok,
-                            rx.plotly(data=State.market_ratio_figure),
+                            plotly_chart_wrap(State.market_ratio_figure),
                             rx.el.p(
                                 "Sin datos de loss ratio.",
                                 class_name="text-xs text-gray-400",
@@ -270,7 +285,7 @@ def mercado_panel() -> rx.Component:
                         chart_busy,
                         rx.cond(
                             State.market_yoy_la_ok,
-                            rx.plotly(data=State.market_yoy_la_figure),
+                            plotly_chart_wrap(State.market_yoy_la_figure),
                             rx.el.p(
                                 "Elija dos años distintos o espere datos.",
                                 class_name="text-xs text-gray-400",
@@ -296,7 +311,7 @@ def mercado_panel() -> rx.Component:
                         chart_busy,
                         rx.cond(
                             State.market_yoy_mk_ok,
-                            rx.plotly(data=State.market_yoy_mk_figure),
+                            plotly_chart_wrap(State.market_yoy_mk_figure),
                             rx.el.p(
                                 "—",
                                 class_name="text-xs text-gray-400",
@@ -324,7 +339,7 @@ def mercado_panel() -> rx.Component:
                     chart_busy,
                     rx.cond(
                         State.market_yoy_lr_ok,
-                        rx.plotly(data=State.market_yoy_lr_figure),
+                        plotly_chart_wrap(State.market_yoy_lr_figure),
                         rx.el.p("—", class_name="text-xs text-gray-400"),
                     ),
                 ),
@@ -347,7 +362,7 @@ def mercado_panel() -> rx.Component:
                     chart_busy,
                     rx.cond(
                         State.market_heatmap_ok,
-                        rx.plotly(data=State.market_heatmap_figure),
+                        plotly_chart_wrap(State.market_heatmap_figure),
                         rx.el.p(
                             "Sin mapa de calor.",
                             class_name="text-xs text-gray-400",
@@ -456,7 +471,7 @@ def cartera_panel() -> rx.Component:
                     rx.button(
                         "Actualizar",
                         on_click=State.load_kpi,
-                        loading=State.busy,
+                        loading=State.kpi_refresh_busy,
                         color_scheme="purple",
                         size="2",
                         class_name="rounded-lg",
@@ -480,13 +495,13 @@ def cartera_panel() -> rx.Component:
                     busy_kpi,
                     rx.cond(
                         State.kpi_gauge_ok,
-                        rx.plotly(data=State.kpi_gauge_figure),
+                        plotly_chart_wrap(State.kpi_gauge_figure),
                         rx.el.p("Sin tacómetros.", class_name="text-xs text-gray-400"),
                     ),
                 ),
                 class_name="p-3 sm:p-4",
             ),
-            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden",
+            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm min-w-0 overflow-x-auto",
         ),
         rx.el.section(
             rx.el.div(
@@ -523,7 +538,11 @@ def cartera_panel() -> rx.Component:
                     ),
                     class_name="flex flex-col gap-4",
                 ),
-                rx.fragment(),
+                rx.cond(
+                    State.portfolio_charts_busy,
+                    busy_kpi,
+                    rx.fragment(),
+                ),
             ),
             class_name="mt-4",
         ),
@@ -567,9 +586,13 @@ def cartera_panel() -> rx.Component:
                         ),
                         class_name="flex flex-col gap-4",
                     ),
-                    rx.el.p(
-                        "Cargue el resumen KPI para ver el análisis avanzado de cartera.",
-                        class_name="text-xs text-gray-400",
+                    rx.cond(
+                        State.portfolio_charts_busy,
+                        busy_kpi,
+                        rx.el.p(
+                            "Cargue el resumen KPI para ver el análisis avanzado de cartera.",
+                            class_name="text-xs text-gray-400",
+                        ),
                     ),
                 ),
                 rx.cond(
@@ -597,7 +620,7 @@ def cartera_panel() -> rx.Component:
                     busy_kpi,
                     rx.cond(
                         State.cartera_donut_ok,
-                        rx.plotly(data=State.cartera_donut_figure),
+                        plotly_chart_wrap(State.cartera_donut_figure),
                         rx.el.p("—", class_name="text-xs text-gray-400"),
                     ),
                 ),
@@ -618,7 +641,7 @@ def cartera_panel() -> rx.Component:
                     rx.button(
                         copy.CARTERA_API_ERROR_ACTION,
                         on_click=State.load_kpi,
-                        loading=State.busy,
+                        loading=State.kpi_refresh_busy,
                         size="2",
                         color_scheme="purple",
                         class_name="rounded-lg",
