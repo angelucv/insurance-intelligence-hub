@@ -318,7 +318,7 @@ body.dashboard #content > br.clear {
 
 .iihub-quick-actions {
   margin-bottom: 2rem;
-  max-width: 56rem;
+  max-width: 40rem;
   margin-right: auto;
 }
 
@@ -331,11 +331,25 @@ body.dashboard #content > br.clear {
   margin: 0 0 0.75rem;
 }
 
+/* Portada: lista vertical clara (evita que los vínculos se “peguen” en una línea si falla el grid). */
+body.dashboard .iihub-quick-actions .iihub-quick-grid {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+  min-width: 0;
+}
+
 .iihub-quick-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
   gap: 1rem;
   min-width: 0;
+}
+
+body.dashboard .iihub-quick-actions .iihub-card {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .iihub-card {
