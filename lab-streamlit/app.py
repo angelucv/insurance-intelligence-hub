@@ -21,6 +21,7 @@ import requests
 import streamlit as st
 
 from cohort_visuals import (
+    _analitica_section_banner,
     fetch_cohort_portfolio,
     render_portfolio_pack,
     render_resumen_gauges,
@@ -38,6 +39,95 @@ _LOGO_FE1 = Path(__file__).resolve().parent / "assets" / "logo-fe-1.jpg"
 _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
 _MARKET_TOTAL_LINE = "#0284c7"
+
+_MERCADO_SECTION_LABELS = (
+    "Primas vs mercado",
+    "Último cierre",
+    "Métricas resumen",
+    "Cuadro de resultados",
+)
+_MERCADO_SECTION_COLORS: dict[str, str] = {
+    "Primas vs mercado": "#0284c7",
+    "Último cierre": "#0d9488",
+    "Métricas resumen": "#d97706",
+    "Cuadro de resultados": "#7c3aed",
+}
+_MERCADO_SECTION_SUB: dict[str, str] = {
+    "Primas vs mercado": "Comparación La Fe vs total mercado (rango y modo en la barra lateral)",
+    "Último cierre": "Instantánea YTD al último mes con dato La Fe",
+    "Métricas resumen": "Series extendidas La Fe y totales de mercado",
+    "Cuadro de resultados": "Resultado técnico y operativo La Fe vs mercado",
+}
+
+# Misma familia de estilos que analítica de cartera (pills coloreadas en área principal)
+_MERCADO_PILLS_CSS = """
+<style>
+[data-testid="stMain"] [data-testid="stPills"] {
+    gap: 0.45rem !important;
+    flex-wrap: wrap !important;
+    padding: 0.25rem 0 0.15rem 0 !important;
+}
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"] {
+    border-radius: 999px !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+    background: #ffffff !important;
+}
+/* 1 Primas — azul mercado */
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(1),
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(1) {
+    border: 1px solid rgba(2, 132, 199, 0.45) !important;
+    color: #0369a1 !important;
+}
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(1)[aria-pressed="true"],
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(1)[aria-pressed="true"] {
+    background: linear-gradient(160deg, rgba(2, 132, 199, 0.2) 0%, #ffffff 72%) !important;
+    border-color: #0284c7 !important;
+    color: #0c4a6e !important;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.22) !important;
+}
+/* 2 Último cierre — teal */
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(2),
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(2) {
+    border: 1px solid rgba(13, 148, 136, 0.45) !important;
+    color: #0f766e !important;
+}
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(2)[aria-pressed="true"],
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(2)[aria-pressed="true"] {
+    background: linear-gradient(160deg, rgba(13, 148, 136, 0.2) 0%, #ffffff 72%) !important;
+    border-color: #0d9488 !important;
+    color: #115e59 !important;
+    box-shadow: 0 2px 10px rgba(13, 148, 136, 0.2) !important;
+}
+/* 3 Métricas — ámbar */
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(3),
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(3) {
+    border: 1px solid rgba(217, 119, 6, 0.45) !important;
+    color: #b45309 !important;
+}
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(3)[aria-pressed="true"],
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(3)[aria-pressed="true"] {
+    background: linear-gradient(160deg, rgba(217, 119, 6, 0.2) 0%, #ffffff 72%) !important;
+    border-color: #d97706 !important;
+    color: #92400e !important;
+    box-shadow: 0 2px 10px rgba(217, 119, 6, 0.2) !important;
+}
+/* 4 Cuadro — violeta */
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(4),
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(4) {
+    border: 1px solid rgba(124, 58, 237, 0.42) !important;
+    color: #6d28d9 !important;
+}
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(4)[aria-pressed="true"],
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(4)[aria-pressed="true"] {
+    background: linear-gradient(160deg, rgba(124, 58, 237, 0.2) 0%, #ffffff 72%) !important;
+    border-color: #7c3aed !important;
+    color: #5b21b6 !important;
+    box-shadow: 0 2px 10px rgba(124, 58, 237, 0.2) !important;
+}
+</style>
+"""
 
 # Estilos: barra lateral en paneles, pestañas principales y separación en contenido
 st.markdown(
@@ -603,7 +693,7 @@ else:
         )
         st.caption(
             "SUDEASEG vía API compute (Postgres). Miles de bolívares salvo ratios. "
-            "Ajuste período en la barra lateral (pasos 2–3); cada pestaña es un bloque de análisis independiente."
+            "Ajuste período en la barra lateral (pasos 2–3); use las secciones inferiores para cada bloque de análisis."
         )
     st.divider()
 
@@ -612,18 +702,33 @@ else:
     else:
         mb = _mercado_bundle_cached(base, int(m_from), int(m_to), str(m_mode)) if precarga_paralela else None
 
-        tab_primas, tab_snapshot, tab_extend, tab_cuadro = st.tabs(
-            [
-                "Primas vs mercado",
-                "Último cierre",
-                "Métricas resumen",
-                "Cuadro de resultados",
-            ]
+        st.caption(
+            "**Secciones mercado:** solo se dibuja la elegida (misma lógica que analítica de cartera)."
+        )
+        st.markdown(_MERCADO_PILLS_CSS, unsafe_allow_html=True)
+        mercado_sec = (
+            st.pills(
+                "Sección mercado",
+                options=list(_MERCADO_SECTION_LABELS),
+                selection_mode="single",
+                default=_MERCADO_SECTION_LABELS[0],
+                label_visibility="collapsed",
+                key="mercado_section_pills",
+            )
+            or _MERCADO_SECTION_LABELS[0]
+        )
+        _mcol = _MERCADO_SECTION_COLORS.get(mercado_sec, "#64748b")
+        st.markdown(
+            f'<div style="height:4px;border-radius:4px;background:linear-gradient(90deg,{_mcol},#e2e8f0);margin:0.35rem 0 0.5rem 0;"></div>',
+            unsafe_allow_html=True,
+        )
+        _analitica_section_banner(
+            mercado_sec,
+            _mcol,
+            _MERCADO_SECTION_SUB.get(mercado_sec, ""),
         )
 
-        with tab_primas:
-            st.markdown("##### Primas vs mercado")
-            st.caption("Comparación La Fe frente al total mercado en el rango y modo elegidos en la barra lateral.")
+        if mercado_sec == "Primas vs mercado":
             st.divider()
             la_payload: dict[str, Any] | None = None
             tot_payload: dict[str, Any] | None = None
@@ -709,9 +814,7 @@ else:
                         st.write(la_payload.get("empresa_filter_note", ""))
                         st.write(tot_payload.get("empresa_filter_note", ""))
 
-        with tab_snapshot:
-            st.markdown("##### Último cierre")
-            st.caption("Instantánea YTD al último mes con dato La Fe (independiente del rango lateral).")
+        elif mercado_sec == "Último cierre":
             st.divider()
             snap: dict[str, Any] | None = None
             snap_err: Exception | None = None
@@ -766,9 +869,7 @@ else:
                     mime="application/json",
                 )
 
-        with tab_extend:
-            st.markdown("##### Métricas resumen")
-            st.caption("Serie extendida — resumen por empresa (La Fe) y comparación con totales de mercado.")
+        elif mercado_sec == "Métricas resumen":
             st.divider()
             la_ext: dict[str, Any] | None = None
             tot_ext: dict[str, Any] | None = None
@@ -884,9 +985,7 @@ else:
                             key="dl_mk_ext",
                         )
 
-        with tab_cuadro:
-            st.markdown("##### Cuadro de resultados")
-            st.caption("La Fe frente al total mercado — líneas de resultado técnico y operativo.")
+        elif mercado_sec == "Cuadro de resultados":
             st.divider()
             la_c: dict[str, Any] | None = None
             tot_c: dict[str, Any] | None = None
