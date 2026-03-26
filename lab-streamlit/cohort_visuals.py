@@ -467,22 +467,87 @@ def render_portfolio_pack(
         + (f" · ratio pagado/prima **{lr:.2f} %**" if lr is not None else "")
         + " · **Secciones:** solo se dibuja la elegida (más rápido al cambiar)."
     )
+    # Estilos pills: color por posición (misma orden que _ANALITICA_SECTION_LABELS).
     st.markdown(
         """
         <style>
-        /* Pills analítica: acento por fila */
-        div[data-testid="stMain"] [data-testid="stPills"] {
-            gap: 0.4rem !important;
+        /* Analítica: pills con color por sección (inactivo = borde suave; activo = relleno + sombra) */
+        [data-testid="stMain"] [data-testid="stPills"] {
+            gap: 0.45rem !important;
             flex-wrap: wrap !important;
+            padding: 0.25rem 0 0.15rem 0 !important;
         }
-        div[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"] {
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"] {
             border-radius: 999px !important;
             font-weight: 600 !important;
-            font-size: 0.84rem !important;
-            border: 1px solid #e2e8f0 !important;
+            font-size: 0.82rem !important;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+            background: #ffffff !important;
         }
-        div[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"][aria-pressed="true"] {
-            box-shadow: 0 1px 4px rgba(79, 70, 229, 0.2) !important;
+        /* Panorama — índigo */
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(1),
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(1) {
+            border: 1px solid rgba(79, 70, 229, 0.42) !important;
+            color: #4338ca !important;
+        }
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(1)[aria-pressed="true"],
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(1)[aria-pressed="true"] {
+            background: linear-gradient(160deg, rgba(79, 70, 229, 0.22) 0%, #ffffff 72%) !important;
+            border-color: #4f46e5 !important;
+            color: #312e81 !important;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.22) !important;
+        }
+        /* Emisión — verde */
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(2),
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(2) {
+            border: 1px solid rgba(5, 150, 105, 0.45) !important;
+            color: #047857 !important;
+        }
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(2)[aria-pressed="true"],
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(2)[aria-pressed="true"] {
+            background: linear-gradient(160deg, rgba(5, 150, 105, 0.2) 0%, #ffffff 72%) !important;
+            border-color: #059669 !important;
+            color: #065f46 !important;
+            box-shadow: 0 2px 10px rgba(5, 150, 105, 0.2) !important;
+        }
+        /* Siniestralidad — ámbar */
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(3),
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(3) {
+            border: 1px solid rgba(217, 119, 6, 0.45) !important;
+            color: #b45309 !important;
+        }
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(3)[aria-pressed="true"],
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(3)[aria-pressed="true"] {
+            background: linear-gradient(160deg, rgba(217, 119, 6, 0.2) 0%, #ffffff 72%) !important;
+            border-color: #d97706 !important;
+            color: #92400e !important;
+            box-shadow: 0 2px 10px rgba(217, 119, 6, 0.2) !important;
+        }
+        /* Prima vs siniestro — violeta */
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(4),
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(4) {
+            border: 1px solid rgba(124, 58, 237, 0.42) !important;
+            color: #6d28d9 !important;
+        }
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(4)[aria-pressed="true"],
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(4)[aria-pressed="true"] {
+            background: linear-gradient(160deg, rgba(124, 58, 237, 0.2) 0%, #ffffff 72%) !important;
+            border-color: #7c3aed !important;
+            color: #5b21b6 !important;
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.2) !important;
+        }
+        /* Riesgo avanzado — rojo */
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(5),
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(5) {
+            border: 1px solid rgba(190, 18, 60, 0.4) !important;
+            color: #be123c !important;
+        }
+        [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(5)[aria-pressed="true"],
+        [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(5)[aria-pressed="true"] {
+            background: linear-gradient(160deg, rgba(190, 18, 60, 0.18) 0%, #ffffff 72%) !important;
+            border-color: #be123c !important;
+            color: #881337 !important;
+            box-shadow: 0 2px 10px rgba(190, 18, 60, 0.2) !important;
         }
         </style>
         """,
