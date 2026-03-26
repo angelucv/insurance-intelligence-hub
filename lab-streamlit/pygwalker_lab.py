@@ -88,9 +88,25 @@ def mercado_bundle_to_tables(
 
     snap = mb.get("snapshot")
     if not isinstance(snap, Exception) and isinstance(snap, dict) and snap:
-        out["Snapshot último cierre (JSON aplanado)"] = pd.json_normalize(snap)
+        try:
+            out["Snapshot último cierre (JSON aplanado)"] = pd.json_normalize(snap)
+        except Exception:
+            pass
 
     return out
+
+
+def _init_pygwalker_streamlit_comm() -> None:
+    """PyGWalker en Streamlit suele requerir init una vez por sesión."""
+    if st.session_state.get("_pygwalker_comm_ready"):
+        return
+    try:
+        from pygwalker.api.streamlit import init_streamlit_comm
+
+        init_streamlit_comm()
+    except Exception:
+        pass
+    st.session_state["_pygwalker_comm_ready"] = True
 
 
 def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str) -> None:
@@ -104,17 +120,23 @@ def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str) -> None:
     except ImportError:
         st.warning(
             "PyGWalker no está instalado en este entorno. "
-            "Ejecute: `pip install pygwalker` (Python 3.10–3.12 recomendado en Windows)."
+            "Añada `pygwalker` al entorno (p. ej. `pip install pygwalker`). "
+            "Python 3.10–3.12 suele ser el más compatible."
         )
         st.dataframe(df.head(2000), use_container_width=True, hide_index=True)
         st.caption(f"Vista previa (primeras filas). Total filas: {len(df):,}.")
         return
 
+    _init_pygwalker_streamlit_comm()
     try:
-        # API estable en pygwalker 0.4+
-        pyg.walk(df, env="Streamlit")
+        try:
+            pyg.walk(df, env="Streamlit")
+        except TypeError:
+            pyg.walk(df, env="streamlit")
     except Exception as e:
         st.error(f"No se pudo iniciar PyGWalker: {e}")
+        with st.expander("Detalle técnico"):
+            st.exception(e)
         st.dataframe(df.head(500), use_container_width=True, hide_index=True)
 
 
