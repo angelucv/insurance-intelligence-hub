@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from loguru import logger
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
@@ -19,7 +20,7 @@ from app.config import get_settings
 from app.database import get_engine, init_engine
 from app.deps import get_db, verify_ingest_key
 from app.ingest_service import ingest_policies_bytes
-from app.kpi_service import kpi_summary_payload
+from app.kpi_service import kpi_cohort_bundle_payload, kpi_summary_payload
 from app.portfolio_analytics import cohort_portfolio_payload
 from app.market_service import (
     la_fe_cuadro_series,
@@ -91,6 +92,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.get("/")
@@ -100,6 +102,7 @@ def root() -> dict[str, str]:
         "health": "/health",
         "docs": "/docs",
         "kpi": "/api/v1/kpi/summary",
+        "kpi_bundle": "/api/v1/kpi/cohort-bundle",
         "market_la_fe": "/api/v1/market/la-fe/resumen-series",
         "market_totals": "/api/v1/market/resumen/totals-series",
         "market_la_fe_resumen_extended": "/api/v1/market/la-fe/resumen-extended",
@@ -371,6 +374,27 @@ def kpi_summary(
         prefer_db=use_db and db is not None,
     )
     return KpiSummary.model_validate(raw)
+
+
+@app.get("/api/v1/kpi/cohort-bundle")
+def kpi_cohort_bundle(
+    cohort_year: int = 2022,
+    seed: int = 42,
+    n_policies: int = 8000,
+    use_db: bool = True,
+    db: Session | None = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    KPI + agregados de cartera en una sola respuesta HTTP.
+    Evita duplicar la lectura de `policies` que ocurría al llamar summary y cohort-portfolio en paralelo.
+    """
+    return kpi_cohort_bundle_payload(
+        session=db,
+        cohort_year=cohort_year,
+        seed=seed,
+        n_policies=n_policies,
+        prefer_db=use_db and db is not None,
+    )
 
 
 @app.get("/api/v1/kpi/cohort-portfolio")

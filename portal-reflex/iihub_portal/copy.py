@@ -6,6 +6,7 @@ BTN_CARGA_SINIESTROS = "Carga de siniestros"
 LINK_ANALISIS_BI_DETALLADO = "Análisis BI detallado"
 
 # Sidebar
+SIDEBAR_BRAND_TITLE = "Portal BI Ejecutivo"
 SIDEBAR_BRAND_SHORT = "IIH"
 SIDEBAR_BRAND_LONG = "Insurance Intelligence Hub"
 SIDEBAR_SECTION_VIEWS = "Vistas"
@@ -82,7 +83,10 @@ CARTERA_DONUT_TITLE = "Composición de la cartera"
 CARTERA_DONUT_SUB = "Distribución entre pólizas activas y lapsos"
 
 PORTFOLIO_SECTION_TITLE = "Análisis de cartera (base de datos)"
-PORTFOLIO_SECTION_LEAD = "Agregados de pólizas/siniestros en PostgreSQL para el año de cartera."
+PORTFOLIO_SECTION_LEAD = (
+    "Sunburst, treemap, waterfall, Sankey y demás vistas usan el detalle en PostgreSQL; "
+    "si no hay filas para el año, se muestran gráficos demostrativos alineados al KPI."
+)
 PORTFOLIO_SUNBURST_T = "Sunburst"
 PORTFOLIO_SUNBURST_S = "Jerarquía cartera → estado → tramo de edad al emitir"
 PORTFOLIO_TREEMAP_T = "Treemap"

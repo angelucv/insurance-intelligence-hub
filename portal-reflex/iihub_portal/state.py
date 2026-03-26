@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import reflex as rx
 from plotly.graph_objects import Figure as PlotlyFigure
 
-from iihub_portal.portfolio_plotly import build_all_portfolio_figures
+from iihub_portal.portfolio_plotly import build_all_portfolio_figures, demo_portfolio_payload_from_kpi
 from iihub_portal.plotly_charts import (
     build_cartera_donut_figure,
     build_kpi_gauge_figure,
@@ -26,6 +26,10 @@ from iihub_portal.plotly_charts import (
     trace_primas_la_fe,
     trace_primas_mercado,
 )
+
+# HTTP: conexiones reutilizadas y tiempos acotados.
+_HTTP_TIMEOUT = httpx.Timeout(90.0, connect=15.0)
+_HTTP_LIMITS = httpx.Limits(max_keepalive_connections=20, max_connections=30)
 
 
 class State(rx.State):
@@ -228,11 +232,13 @@ class State(rx.State):
 
     async def portal_on_load(self):
         await self.hydrate_urls()
+        # KPI + snapshot primero (lo que ve el usuario en cartera); mercado SUDEASEG en segundo plano
+        # para no alargar el tiempo hasta datos de cartera/listo.
         await asyncio.gather(
-            self.load_sudeaseg_preview(),
             self.load_market_snapshot(),
             self.load_kpi(),
         )
+        asyncio.create_task(self.load_sudeaseg_preview())
 
     async def load_sudeaseg_preview(self):
         self.market_plot_ok = False
@@ -274,7 +280,7 @@ class State(rx.State):
             params = {"from_year": fy, "to_year": ty, "mode": mode}
             rla1 = rla2 = rt1 = rt2 = None
             try:
-                async with httpx.AsyncClient(timeout=120.0) as client:
+                async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, limits=_HTTP_LIMITS) as client:
                     if yoy_a != yoy_b:
                         py1 = {"from_year": yoy_a, "to_year": yoy_a, "mode": mode}
                         py2 = {"from_year": yoy_b, "to_year": yoy_b, "mode": mode}
@@ -413,7 +419,7 @@ class State(rx.State):
         self.snap_mk_lr = "—"
         base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, limits=_HTTP_LIMITS) as client:
                 r = await client.get(f"{base}/api/v1/market/la-fe/snapshot-latest")
                 if r.status_code == 404:
                     return
@@ -519,13 +525,15 @@ class State(rx.State):
             return
         base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, limits=_HTTP_LIMITS) as client:
                 r = await client.get(
-                    f"{base}/api/v1/kpi/summary",
+                    f"{base}/api/v1/kpi/cohort-bundle",
                     params={"cohort_year": year, "use_db": "true"},
                 )
                 r.raise_for_status()
-                d = r.json()
+                bundle = r.json()
+                d = bundle["summary"]
+                raw_pf = bundle.get("portfolio")
                 per = float(d["persistency_rate_pct"])
                 act = int(d["policies_active"])
                 lap = int(d["policies_lapsed"])
@@ -545,49 +553,58 @@ class State(rx.State):
                     persistency_pct=per,
                     technical_loss_pct=tlr_f,
                     active_share_pct=active_share,
-                    height=280,
+                    height=320,
                 )
                 gpj = gfig.to_plotly_json()
                 self.kpi_gauge_data = gpj["data"]
                 self.kpi_gauge_layout = gpj.get("layout") or {}
                 self.kpi_gauge_ok = True
 
-                dfig = build_cartera_donut_figure(active=act, lapsed=lap, height=260)
+                dfig = build_cartera_donut_figure(active=act, lapsed=lap, height=300)
                 dj = dfig.to_plotly_json()
                 self.cartera_donut_data = dj["data"]
                 self.cartera_donut_layout = dj.get("layout") or {}
                 self.cartera_donut_ok = True
 
+                avg_pr = float(d["avg_annual_premium"])
                 try:
-                    rp = await client.get(
-                        f"{base}/api/v1/kpi/cohort-portfolio",
-                        params={"cohort_year": year},
-                    )
-                    if rp.status_code == 200:
-                        raw_pf = rp.json()
-                        figs = build_all_portfolio_figures(raw_pf)
-                        self.portfolio_bundle = {
-                            k: {"data": d, "layout": l} for k, (d, l) in figs.items()
-                        }
-                        self.portfolio_viz_ok = True
+                    if raw_pf is not None:
                         self.portfolio_note = ""
-                    elif rp.status_code == 404:
-                        self.portfolio_viz_ok = False
-                        self.portfolio_note = (
-                            "No hay pólizas en base para este año: cargue datos en Admin "
-                            "para activar sunburst, treemap, waterfall, Sankey y el resto."
-                        )
-                    elif rp.status_code == 503:
-                        self.portfolio_viz_ok = False
-                        self.portfolio_note = (
-                            "El servidor de cómputo no tiene base de datos configurada (DATABASE_URL)."
-                        )
                     else:
-                        self.portfolio_viz_ok = False
-                        self.portfolio_note = f"Paquete de cartera no disponible (HTTP {rp.status_code})."
+                        raw_pf = demo_portfolio_payload_from_kpi(
+                            cohort_year=year,
+                            policies_active=act,
+                            policies_lapsed=lap,
+                            avg_annual_premium=avg_pr,
+                        )
+                        note_low = str(d.get("data_note", "")).lower()
+                        if "sin filas" in note_low or "sintética" in note_low or "synthetic" in note_low:
+                            self.portfolio_note = (
+                                "Sin datos de cohorte en BD para gráficos avanzados: demostración alineada al KPI. "
+                                "Cargue pólizas en Admin para vistas reales."
+                            )
+                        else:
+                            self.portfolio_note = (
+                                "Visualización demostrativa alineada al resumen KPI (sin detalle de cohorte en BD)."
+                            )
+                    figs = await asyncio.to_thread(build_all_portfolio_figures, raw_pf)
+                    self.portfolio_bundle = {
+                        k: {"data": fd, "layout": fl} for k, (fd, fl) in figs.items()
+                    }
+                    self.portfolio_viz_ok = True
                 except Exception as pe:  # noqa: BLE001
-                    self.portfolio_viz_ok = False
-                    self.portfolio_note = f"No se pudo cargar el análisis de cartera. ({pe})"
+                    raw_pf = demo_portfolio_payload_from_kpi(
+                        cohort_year=year,
+                        policies_active=act,
+                        policies_lapsed=lap,
+                        avg_annual_premium=float(d["avg_annual_premium"]),
+                    )
+                    figs = await asyncio.to_thread(build_all_portfolio_figures, raw_pf)
+                    self.portfolio_bundle = {
+                        k: {"data": fd, "layout": fl} for k, (fd, fl) in figs.items()
+                    }
+                    self.portfolio_viz_ok = True
+                    self.portfolio_note = f"Error al construir gráficos de cartera ({pe}). Demostración con KPI."
         except Exception as e:  # noqa: BLE001
             self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
             self.portfolio_viz_ok = False

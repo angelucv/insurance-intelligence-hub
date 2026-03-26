@@ -94,6 +94,7 @@ def _read_policies(session: Session, cohort_year: int) -> pd.DataFrame:
         """
         SELECT
           policy_id,
+          cohort_year,
           issue_age,
           annual_premium::float AS annual_premium,
           status,
@@ -110,6 +111,7 @@ def _read_policies(session: Session, cohort_year: int) -> pd.DataFrame:
             """
             SELECT
               policy_id,
+              cohort_year,
               issue_age,
               annual_premium::float AS annual_premium,
               status,
@@ -144,13 +146,15 @@ def _read_claims(session: Session, cohort_year: int) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def cohort_portfolio_payload(session: Session, cohort_year: int) -> dict[str, Any] | None:
-    df_p = _read_policies(session, cohort_year)
-    if df_p.empty:
-        return None
-
-    df_c = _read_claims(session, cohort_year)
-
+def build_cohort_portfolio_payload(
+    df_p: pd.DataFrame,
+    df_c: pd.DataFrame,
+    cohort_year: int,
+) -> dict[str, Any]:
+    """Construye el JSON de cartera a partir de dataframes ya cargados (evita releer BD)."""
+    df_p = df_p.copy()
+    if not df_c.empty:
+        df_c = df_c.copy()
     df_p["issue_d"] = pd.to_datetime(df_p["issue_d"])
     df_p["issue_ym"] = df_p["issue_d"].dt.strftime("%Y-%m")
 
@@ -472,3 +476,11 @@ def cohort_portfolio_payload(session: Session, cohort_year: int) -> dict[str, An
             "note": "Estado VE asignado por hash de policy_id (demo visual, no geocodificación real).",
         },
     }
+
+
+def cohort_portfolio_payload(session: Session, cohort_year: int) -> dict[str, Any] | None:
+    df_p = _read_policies(session, cohort_year)
+    if df_p.empty:
+        return None
+    df_c = _read_claims(session, cohort_year)
+    return build_cohort_portfolio_payload(df_p, df_c, cohort_year)

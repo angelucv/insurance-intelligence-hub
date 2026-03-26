@@ -55,27 +55,20 @@ def _duckdb_aggregate(df: pd.DataFrame, cohort_year: int) -> dict[str, Any]:
     }
 
 
-def kpi_from_database(session: Session, cohort_year: int) -> dict[str, Any] | None:
-    q = text(
-        """
-        SELECT policy_id, cohort_year, issue_age, annual_premium, status, issue_date
-        FROM policies
-        WHERE cohort_year = :y
-        """
-    )
-    try:
-        conn = session.connection()
-        df = pd.read_sql(q, conn, params={"y": cohort_year})
-    except Exception as e:  # noqa: BLE001
-        logger.exception("No se pudieron leer pólizas para KPI: {}", e)
+def kpi_from_policies_dataframe(
+    df: pd.DataFrame,
+    cohort_year: int,
+    session: Session,
+) -> dict[str, Any] | None:
+    """Mismos KPI que `kpi_from_database` pero sobre un DataFrame ya cargado (sin segundo SELECT)."""
+    df = df.copy()
+    df["annual_premium"] = pd.to_numeric(df["annual_premium"], errors="coerce")
+    df = df.dropna(subset=["annual_premium"])
+    df = df[df["annual_premium"] > 0]
+    if df.empty:
         return None
-
-    if not df.empty:
-        df = df.copy()
-        df["annual_premium"] = pd.to_numeric(df["annual_premium"], errors="coerce")
-        df = df.dropna(subset=["annual_premium"])
-        df = df[df["annual_premium"] > 0]
-
+    if "cohort_year" not in df.columns:
+        df["cohort_year"] = cohort_year
     out = _duckdb_aggregate(df, cohort_year)
     if not out:
         return None
@@ -84,6 +77,20 @@ def kpi_from_database(session: Session, cohort_year: int) -> dict[str, Any] | No
         prev = str(out.get("data_note", "")).strip()
         out["data_note"] = (prev + " " + bridge).strip() if prev else bridge
     return out
+
+
+def kpi_from_database(session: Session, cohort_year: int) -> dict[str, Any] | None:
+    """Misma lectura de pólizas que el análisis de cartera (`_read_policies`)."""
+    from app.portfolio_analytics import _read_policies
+
+    try:
+        df = _read_policies(session, cohort_year)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("No se pudieron leer pólizas para KPI: {}", e)
+        return None
+    if df.empty:
+        return None
+    return kpi_from_policies_dataframe(df, cohort_year, session)
 
 
 def _operational_claims_note(session: Session, cohort_year: int) -> str:
@@ -150,3 +157,39 @@ def kpi_summary_payload(
         )
     raw["data_note"] = note
     return raw
+
+
+def kpi_cohort_bundle_payload(
+    *,
+    session: Session | None,
+    cohort_year: int,
+    seed: int,
+    n_policies: int,
+    prefer_db: bool,
+) -> dict[str, Any]:
+    """
+    Resumen KPI + payload de cartera en una sola respuesta.
+    Cuando hay BD, lee pólizas y claims una sola vez por cohorte (sin duplicar el SELECT de pólizas).
+    """
+    if prefer_db and session is not None and session.bind is not None:
+        try:
+            from app.portfolio_analytics import _read_claims, _read_policies, build_cohort_portfolio_payload
+
+            df_p = _read_policies(session, cohort_year)
+            if not df_p.empty:
+                df_c = _read_claims(session, cohort_year)
+                kpi = kpi_from_policies_dataframe(df_p, cohort_year, session)
+                if kpi:
+                    portfolio = build_cohort_portfolio_payload(df_p, df_c, cohort_year)
+                    return {"summary": kpi, "portfolio": portfolio}
+        except Exception as e:  # noqa: BLE001
+            logger.exception("kpi_cohort_bundle desde BD falló: {}", e)
+
+    summary = kpi_summary_payload(
+        session=session,
+        cohort_year=cohort_year,
+        seed=seed,
+        n_policies=n_policies,
+        prefer_db=prefer_db,
+    )
+    return {"summary": summary, "portfolio": None}

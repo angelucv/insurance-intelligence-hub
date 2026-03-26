@@ -360,3 +360,75 @@ def build_all_portfolio_figures(payload: dict[str, Any]) -> dict[str, tuple[list
         "violin_age": build_violin_age(samples_age),
         "box_status": build_box_status(samples_st),
     }
+
+
+def demo_portfolio_payload_from_kpi(
+    *,
+    cohort_year: int,
+    policies_active: int,
+    policies_lapsed: int,
+    avg_annual_premium: float,
+) -> dict[str, Any]:
+    """
+    Datos sintéticos alineados con el resumen KPI cuando no hay filas en BD
+    para `/api/v1/kpi/cohort-portfolio` — mantiene visibles todos los gráficos.
+    """
+    act = max(0, int(policies_active))
+    lap = max(0, int(policies_lapsed))
+    total = act + lap
+    if total == 0:
+        act, lap, total = 100, 20, 120
+
+    bands = ("≤35", "36–45", "46–55", "56–65", "66+")
+    w_act = (22, 28, 25, 18, 7)
+    w_lap = (18, 22, 26, 22, 12)
+    sunburst_rows: list[dict[str, Any]] = []
+    for i, b in enumerate(bands):
+        na = max(0, int(round(act * w_act[i] / 100.0)))
+        nl = max(0, int(round(lap * w_lap[i] / 100.0)))
+        if na:
+            sunburst_rows.append({"status": "active", "age_band": b, "n": na})
+        if nl:
+            sunburst_rows.append({"status": "lapsed", "age_band": b, "n": nl})
+
+    ap = float(avg_annual_premium) if avg_annual_premium > 0 else 3000.0
+    tp = ap * float(total)
+    paid = tp * 0.32
+
+    issue_by_month: list[dict[str, Any]] = []
+    for m in range(1, 13):
+        ym = f"{cohort_year}-{m:02d}"
+        pol_m = max(1, total // 12 + (m % 3) - 1)
+        issue_by_month.append(
+            {
+                "month": ym,
+                "policies": pol_m,
+                "premium_sum": round(ap * pol_m * (0.85 + 0.03 * (m % 7)), 2),
+            }
+        )
+
+    def _samples(n: int, base: float, salt: int) -> list[float]:
+        k = min(500, max(8, n))
+        out: list[float] = []
+        for i in range(k):
+            jitter = 0.65 + 0.7 * (((i + salt) * 7919) % 100) / 100.0
+            out.append(round(base * jitter, 2))
+        return out
+
+    box_samples_age_band = {
+        bands[i]: _samples(max(5, act // 5), ap, i + 1) for i in range(5)
+    }
+    box_samples_status = {
+        "active": _samples(max(8, act), ap, 11),
+        "lapsed": _samples(max(8, lap), ap * 1.08, 13),
+    }
+
+    return {
+        "cohort_year": cohort_year,
+        "sunburst_age_status": sunburst_rows,
+        "issue_by_month": issue_by_month,
+        "total_annual_premium": round(tp, 2),
+        "total_paid_claims": round(paid, 2),
+        "box_samples_age_band": box_samples_age_band,
+        "box_samples_status": box_samples_status,
+    }

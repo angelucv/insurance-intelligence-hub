@@ -449,42 +449,10 @@ def cartera_panel() -> rx.Component:
         ),
         rx.el.section(
             rx.el.div(
-                rx.el.p(copy.CARTERA_GAUGE_TITLE, class_name="text-xs font-semibold text-gray-900"),
-                rx.el.p(copy.CARTERA_GAUGE_SUB, class_name="text-[10px] text-gray-500 mb-2"),
+                rx.el.p(copy.CARTERA_METRICS_TITLE, class_name="text-xs font-semibold text-gray-800 mb-2"),
                 rx.cond(
                     State.busy,
                     busy_kpi,
-                    rx.cond(
-                        State.kpi_gauge_ok,
-                        rx.plotly(data=State.kpi_gauge_figure),
-                        rx.el.p("Sin tacómetros.", class_name="text-xs text-gray-400"),
-                    ),
-                ),
-                class_name="p-3 sm:p-4",
-            ),
-            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden",
-        ),
-        rx.el.div(
-            rx.el.section(
-                rx.el.div(
-                    rx.el.p(copy.CARTERA_DONUT_TITLE, class_name="text-xs font-semibold text-gray-900"),
-                    rx.el.p(copy.CARTERA_DONUT_SUB, class_name="text-[10px] text-gray-500 mb-2"),
-                    rx.cond(
-                        State.busy,
-                        busy_kpi,
-                        rx.cond(
-                            State.cartera_donut_ok,
-                            rx.plotly(data=State.cartera_donut_figure),
-                            rx.el.p("—", class_name="text-xs text-gray-400"),
-                        ),
-                    ),
-                    class_name="p-3 sm:p-4",
-                ),
-                class_name="rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden min-h-0",
-            ),
-            rx.el.section(
-                rx.el.div(
-                    rx.el.p(copy.CARTERA_METRICS_TITLE, class_name="text-xs font-semibold text-gray-800 mb-2"),
                     rx.el.div(
                         metric_strip_cell("Persistencia", State.persistency),
                         metric_strip_cell("Ratio técnico", State.tlr),
@@ -493,11 +461,30 @@ def cartera_panel() -> rx.Component:
                         metric_strip_cell("Lapsos", State.lapsed_n),
                         class_name="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full",
                     ),
-                    class_name="p-3 sm:p-4",
                 ),
-                class_name="rounded-xl bg-white border border-gray-100 shadow-sm",
+                class_name="p-3 sm:p-4",
             ),
-            class_name="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start",
+            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm",
+        ),
+        rx.el.div(
+            rx.cond(
+                State.portfolio_viz_ok,
+                rx.el.div(
+                    portfolio_chart_card(
+                        copy.PORTFOLIO_WATERFALL_T,
+                        copy.PORTFOLIO_WATERFALL_S,
+                        State.portfolio_waterfall_figure,
+                    ),
+                    portfolio_chart_card(
+                        copy.PORTFOLIO_VIOLIN_T,
+                        copy.PORTFOLIO_VIOLIN_S,
+                        State.portfolio_violin_age_figure,
+                    ),
+                    class_name="flex flex-col gap-4",
+                ),
+                rx.fragment(),
+            ),
+            class_name="mt-4",
         ),
         rx.el.section(
             rx.el.div(
@@ -512,61 +499,36 @@ def cartera_panel() -> rx.Component:
                 rx.cond(
                     State.portfolio_viz_ok,
                     rx.el.div(
-                        rx.el.div(
-                            portfolio_chart_card(
-                                copy.PORTFOLIO_SUNBURST_T,
-                                copy.PORTFOLIO_SUNBURST_S,
-                                State.portfolio_sunburst_figure,
-                                compact=True,
-                            ),
-                            portfolio_chart_card(
-                                copy.PORTFOLIO_WATERFALL_T,
-                                copy.PORTFOLIO_WATERFALL_S,
-                                State.portfolio_waterfall_figure,
-                                compact=True,
-                            ),
-                            class_name="grid grid-cols-1 xl:grid-cols-2 gap-4",
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_SUNBURST_T,
+                            copy.PORTFOLIO_SUNBURST_S,
+                            State.portfolio_sunburst_figure,
                         ),
-                        rx.el.div(
-                            portfolio_chart_card(
-                                copy.PORTFOLIO_TREEMAP_T,
-                                copy.PORTFOLIO_TREEMAP_S,
-                                State.portfolio_treemap_figure,
-                                compact=True,
-                            ),
-                            portfolio_chart_card(
-                                copy.PORTFOLIO_SANKEY_T,
-                                copy.PORTFOLIO_SANKEY_S,
-                                State.portfolio_sankey_figure,
-                                compact=True,
-                            ),
-                            class_name="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4",
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_TREEMAP_T,
+                            copy.PORTFOLIO_TREEMAP_S,
+                            State.portfolio_treemap_figure,
                         ),
-                        rx.el.div(
-                            portfolio_chart_card(
-                                copy.PORTFOLIO_STACKED_T,
-                                copy.PORTFOLIO_STACKED_S,
-                                State.portfolio_stacked_figure,
-                                compact=True,
-                            ),
-                            portfolio_chart_card(
-                                copy.PORTFOLIO_VIOLIN_T,
-                                copy.PORTFOLIO_VIOLIN_S,
-                                State.portfolio_violin_age_figure,
-                                compact=True,
-                            ),
-                            class_name="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4",
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_SANKEY_T,
+                            copy.PORTFOLIO_SANKEY_S,
+                            State.portfolio_sankey_figure,
                         ),
-                        rx.el.div(
-                            portfolio_chart_card(
-                                copy.PORTFOLIO_BOX_T,
-                                copy.PORTFOLIO_BOX_S,
-                                State.portfolio_box_status_figure,
-                                compact=True,
-                            ),
-                            class_name="mt-4 max-w-4xl",
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_STACKED_T,
+                            copy.PORTFOLIO_STACKED_S,
+                            State.portfolio_stacked_figure,
                         ),
-                        class_name="space-y-0",
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_BOX_T,
+                            copy.PORTFOLIO_BOX_S,
+                            State.portfolio_box_status_figure,
+                        ),
+                        class_name="flex flex-col gap-4",
+                    ),
+                    rx.el.p(
+                        "Cargue el resumen KPI para ver el análisis avanzado de cartera.",
+                        class_name="text-xs text-gray-400",
                     ),
                 ),
                 rx.cond(
@@ -584,6 +546,40 @@ def cartera_panel() -> rx.Component:
                 class_name="p-3 sm:p-4",
             ),
             class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm",
+        ),
+        rx.el.section(
+            rx.el.div(
+                rx.el.p(copy.CARTERA_DONUT_TITLE, class_name="text-xs font-semibold text-gray-900"),
+                rx.el.p(copy.CARTERA_DONUT_SUB, class_name="text-[10px] text-gray-500 mb-2"),
+                rx.cond(
+                    State.busy,
+                    busy_kpi,
+                    rx.cond(
+                        State.cartera_donut_ok,
+                        rx.plotly(data=State.cartera_donut_figure),
+                        rx.el.p("—", class_name="text-xs text-gray-400"),
+                    ),
+                ),
+                class_name="p-3 sm:p-4",
+            ),
+            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden min-h-0",
+        ),
+        rx.el.section(
+            rx.el.div(
+                rx.el.p(copy.CARTERA_GAUGE_TITLE, class_name="text-xs font-semibold text-gray-900"),
+                rx.el.p(copy.CARTERA_GAUGE_SUB, class_name="text-[10px] text-gray-500 mb-2"),
+                rx.cond(
+                    State.busy,
+                    busy_kpi,
+                    rx.cond(
+                        State.kpi_gauge_ok,
+                        rx.plotly(data=State.kpi_gauge_figure),
+                        rx.el.p("Sin tacómetros.", class_name="text-xs text-gray-400"),
+                    ),
+                ),
+                class_name="p-3 sm:p-4",
+            ),
+            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden",
         ),
         rx.cond(
             State.note != "",

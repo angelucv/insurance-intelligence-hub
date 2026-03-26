@@ -66,13 +66,9 @@ def sidebar() -> rx.Component:
                 alt="Seguros La Fe",
                 class_name="h-9 w-auto object-contain max-w-[140px]",
             ),
-            rx.el.div(
-                rx.el.span(copy.SIDEBAR_BRAND_SHORT, class_name="text-lg font-bold text-gray-900 tracking-tight"),
-                rx.el.span(
-                    " · La Fe",
-                    class_name="text-xs font-medium text-violet-600 ml-1",
-                ),
-                class_name="flex items-baseline flex-wrap mt-2",
+            rx.el.p(
+                copy.SIDEBAR_BRAND_TITLE,
+                class_name="mt-2 text-sm font-semibold text-gray-900 tracking-tight leading-snug",
             ),
             class_name="px-4 py-5 border-b border-gray-100",
         ),

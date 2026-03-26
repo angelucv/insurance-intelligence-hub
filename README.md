@@ -41,6 +41,7 @@ uvicorn app.main:app --reload --port 8000
 
 - `GET /health`, `GET /api/v1/health/db`
 - `GET /api/v1/kpi/summary?cohort_year=2022&use_db=true`
+- `GET /api/v1/kpi/cohort-bundle?cohort_year=2022&use_db=true` — KPI + cartera en una respuesta (usa el portal Reflex)
 - `POST /api/v1/ingest/policies` (multipart `file`) + `X-API-Key` si configuraste clave
 
 ### 3. Django Admin (`backend-ingest`)
