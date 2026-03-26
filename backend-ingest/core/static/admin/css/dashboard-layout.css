@@ -14,8 +14,9 @@ body.dashboard .main > #nav-sidebar + .content {
 @media (min-width: 900px) {
   body.dashboard #content.colMS {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 280px) !important;
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 24vw, 360px) !important;
     grid-template-rows: auto auto !important;
+    column-gap: 1.75rem !important;
     margin-right: 0 !important;
     margin-left: 0 !important;
   }
@@ -31,10 +32,11 @@ body.dashboard .main > #nav-sidebar + .content {
     float: none !important;
     margin-right: 0 !important;
     margin-left: 0 !important;
+    max-width: none !important;
   }
 
   body.dashboard #content.colMS > .iihub-dashboard-reference {
-    grid-column: 1 / -1 !important;
+    grid-column: 1 !important;
     grid-row: 2 !important;
   }
 }

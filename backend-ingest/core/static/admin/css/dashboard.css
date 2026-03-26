@@ -53,11 +53,15 @@ body.dashboard .iihub-dashboard-top #content-main {
 }
 
 @media (min-width: 900px) {
+  /*
+   * Col 1 = acciones + tablas + texto largo (misma anchura; respira a la derecha del menú).
+   * Col 2 = solo fila 1: Enlaces / Recientes (ancho fluido con clamp, no solo 280px fijos).
+   */
   body.dashboard #content.colMS {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 24vw, 360px);
     grid-template-rows: auto auto;
-    column-gap: 1.25rem;
+    column-gap: 1.75rem;
     row-gap: 0;
     align-items: start;
     margin-right: 0 !important;
@@ -76,16 +80,19 @@ body.dashboard .iihub-dashboard-top #content-main {
     margin-right: 0 !important;
     margin-left: 0 !important;
     width: 100% !important;
-    max-width: 280px;
+    max-width: none;
+    min-width: 0;
     position: sticky;
     top: 0.75rem;
     align-self: start;
   }
 
+  /* Solo columna principal: alinea con tablas y deja hueco respecto al menú (no ocupar debajo de la barra). */
   body.dashboard #content.colMS > .iihub-dashboard-reference {
-    grid-column: 1 / -1;
+    grid-column: 1;
     grid-row: 2;
     min-width: 0;
+    padding-right: 0.25rem;
   }
 
   body.dashboard #content.colMS > br.clear {
@@ -126,11 +133,21 @@ body.dashboard .iihub-dashboard-page-title {
   letter-spacing: -0.02em;
 }
 
-/* Texto explicativo e ilustraciones debajo del bloque operativo (acciones, tablas, enlaces). */
+/* Texto explicativo e ilustraciones: aire lateral y lectura cómoda. */
 body.dashboard .iihub-dashboard-reference {
   margin-top: 0;
   padding-top: 1.75rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.15rem;
+  padding-right: 0.5rem;
   border-top: 1px solid var(--hairline-color, #e2e8f0);
+  box-sizing: border-box;
+}
+
+@media (min-width: 900px) {
+  body.dashboard .iihub-dashboard-reference {
+    padding-right: 1.25rem;
+  }
 }
 
 body.dashboard #content > br.clear {
@@ -377,13 +394,21 @@ body.dashboard #content > br.clear {
   margin: 0 0 0.75rem;
 }
 
-/* Portada: lista vertical clara (evita que los vínculos se “peguen” en una línea si falla el grid). */
+/* Portada: lista vertical clara (los <a class="iihub-card"> deben ser bloque flex, no inline). */
 body.dashboard .iihub-quick-actions .iihub-quick-grid {
   display: flex !important;
-  flex-direction: column;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
   gap: 0.85rem;
   width: 100%;
   min-width: 0;
+}
+
+body.dashboard .iihub-quick-actions .iihub-quick-grid > a.iihub-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  white-space: normal !important;
 }
 
 .iihub-quick-grid {
