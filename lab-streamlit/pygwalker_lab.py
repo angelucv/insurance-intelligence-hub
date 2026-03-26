@@ -129,12 +129,38 @@ def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str, table_label: str =
     )
 
     with st.container(border=True):
+        st.markdown("##### Explorador visual")
+        st.caption("Lienzo interactivo (dimensiones, medidas, gráficos).")
+        try:
+            from pygwalker.api.streamlit import StreamlitRenderer
+        except ImportError:
+            st.warning(
+                "El **explorador visual interactivo** no está disponible en este entorno (falta el paquete opcional del lienzo). "
+                "Use la sección **Tabla de datos** debajo para revisar y exportar CSV. "
+                "Si administra el despliegue: añada la dependencia opcional del explorador en `requirements` o equivalente."
+            )
+        else:
+            gid = _stable_gid(key, table_label) if table_label else key
+            _init_pygwalker_streamlit_comm()
+            try:
+                renderer = StreamlitRenderer(df, gid=gid, default_tab="data")
+                renderer.explorer(key=f"{key}_explorer", default_tab="data")
+            except Exception as e:
+                st.error(f"No se pudo abrir el explorador visual: {e}")
+                with st.expander("Detalle técnico"):
+                    st.exception(e)
+                st.dataframe(df.head(500), use_container_width=True, hide_index=True)
+        st.caption("Debajo: vista tabular y descarga CSV.")
+
+    st.divider()
+
+    with st.container(border=True):
         st.markdown("##### Tabla de datos")
         st.caption("Vista tabular y exportación CSV.")
         st.dataframe(df.head(5000), use_container_width=True, hide_index=True)
         st.caption(
             f"Filas mostradas (máx. 5.000 de {len(df):,}). "
-            "La sección siguiente ofrece gráficos y pivotes interactivos."
+            "Arriba está el explorador interactivo; aquí revisa filas al detalle."
         )
         csv_bytes = df.to_csv(index=False).encode("utf-8")
         _dl_key = hashlib.sha256(f"{key}|{table_label}".encode("utf-8")).hexdigest()[:14]
@@ -145,32 +171,6 @@ def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str, table_label: str =
             mime="text/csv",
             key=f"{key}_csv_{_dl_key}",
         )
-
-    st.divider()
-
-    with st.container(border=True):
-        st.markdown("##### Explorador visual")
-        st.caption("Lienzo interactivo (dimensiones, medidas, gráficos).")
-        try:
-            from pygwalker.api.streamlit import StreamlitRenderer
-        except ImportError:
-            st.warning(
-                "El **explorador visual interactivo** no está disponible en este entorno (falta el paquete opcional del lienzo). "
-                "Use la sección **Tabla de datos** arriba para revisar y exportar CSV. "
-                "Si administra el despliegue: añada la dependencia opcional del explorador en `requirements` o equivalente."
-            )
-            return
-
-        gid = _stable_gid(key, table_label) if table_label else key
-        _init_pygwalker_streamlit_comm()
-        try:
-            renderer = StreamlitRenderer(df, gid=gid, default_tab="data")
-            renderer.explorer(key=f"{key}_explorer", default_tab="data")
-        except Exception as e:
-            st.error(f"No se pudo abrir el explorador visual: {e}")
-            with st.expander("Detalle técnico"):
-                st.exception(e)
-            st.dataframe(df.head(500), use_container_width=True, hide_index=True)
 
 
 def render_table_picker_and_walker(
@@ -194,6 +194,6 @@ def render_table_picker_and_walker(
         df = pd.DataFrame()
     st.caption(
         f"**{pick}** · {len(df):,} filas × {len(df.columns)} columnas. "
-        "Abajo hay dos bloques: **Tabla de datos** y **Explorador visual**."
+        "Abajo hay dos bloques: **Explorador visual** y **Tabla de datos**."
     )
     render_pygwalker_streamlit(df, key=walker_key, table_label=pick)
