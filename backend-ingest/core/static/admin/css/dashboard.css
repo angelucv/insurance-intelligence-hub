@@ -87,12 +87,17 @@ body.dashboard .iihub-dashboard-top #content-main {
     align-self: start;
   }
 
-  /* Solo columna principal: alinea con tablas y deja hueco respecto al menú (no ocupar debajo de la barra). */
+  /*
+   * Mismo criterio que cortex_index (Gestión Social): aire a la derecha del texto largo
+   * (#content padding-right / #content-main max-width). La regla colMS debe ganar a
+   * .iihub-dashboard-reference genérica; antes 0.25rem anulaba el padding y pegaba el texto a la columna.
+   */
   body.dashboard #content.colMS > .iihub-dashboard-reference {
     grid-column: 1;
     grid-row: 2;
     min-width: 0;
-    padding-right: 0.25rem;
+    padding-right: clamp(1.5rem, 2.5vw, 2.75rem);
+    box-sizing: border-box;
   }
 
   body.dashboard #content.colMS > br.clear {
@@ -139,14 +144,14 @@ body.dashboard .iihub-dashboard-reference {
   padding-top: 1.75rem;
   padding-bottom: 0.5rem;
   padding-left: 0.15rem;
-  padding-right: 0.5rem;
+  padding-right: 1rem;
   border-top: 1px solid var(--hairline-color, #e2e8f0);
   box-sizing: border-box;
 }
 
 @media (min-width: 900px) {
   body.dashboard .iihub-dashboard-reference {
-    padding-right: 1.25rem;
+    padding-right: 1.5rem;
   }
 }
 
