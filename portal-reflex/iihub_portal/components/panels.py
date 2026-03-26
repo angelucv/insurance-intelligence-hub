@@ -449,6 +449,23 @@ def cartera_panel() -> rx.Component:
         ),
         rx.el.section(
             rx.el.div(
+                rx.el.p(copy.CARTERA_GAUGE_TITLE, class_name="text-xs font-semibold text-gray-900"),
+                rx.el.p(copy.CARTERA_GAUGE_SUB, class_name="text-[10px] text-gray-500 mb-2"),
+                rx.cond(
+                    State.busy,
+                    busy_kpi,
+                    rx.cond(
+                        State.kpi_gauge_ok,
+                        rx.plotly(data=State.kpi_gauge_figure),
+                        rx.el.p("Sin tacómetros.", class_name="text-xs text-gray-400"),
+                    ),
+                ),
+                class_name="p-3 sm:p-4",
+            ),
+            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden",
+        ),
+        rx.el.section(
+            rx.el.div(
                 rx.el.p(copy.CARTERA_METRICS_TITLE, class_name="text-xs font-semibold text-gray-800 mb-2"),
                 rx.cond(
                     State.busy,
@@ -563,23 +580,6 @@ def cartera_panel() -> rx.Component:
                 class_name="p-3 sm:p-4",
             ),
             class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden min-h-0",
-        ),
-        rx.el.section(
-            rx.el.div(
-                rx.el.p(copy.CARTERA_GAUGE_TITLE, class_name="text-xs font-semibold text-gray-900"),
-                rx.el.p(copy.CARTERA_GAUGE_SUB, class_name="text-[10px] text-gray-500 mb-2"),
-                rx.cond(
-                    State.busy,
-                    busy_kpi,
-                    rx.cond(
-                        State.kpi_gauge_ok,
-                        rx.plotly(data=State.kpi_gauge_figure),
-                        rx.el.p("Sin tacómetros.", class_name="text-xs text-gray-400"),
-                    ),
-                ),
-                class_name="p-3 sm:p-4",
-            ),
-            class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden",
         ),
         rx.cond(
             State.note != "",

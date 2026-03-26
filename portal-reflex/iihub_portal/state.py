@@ -553,7 +553,8 @@ class State(rx.State):
                     persistency_pct=per,
                     technical_loss_pct=tlr_f,
                     active_share_pct=active_share,
-                    height=320,
+                    height=360,
+                    cohort_year=year,
                 )
                 gpj = gfig.to_plotly_json()
                 self.kpi_gauge_data = gpj["data"]

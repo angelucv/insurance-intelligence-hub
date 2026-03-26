@@ -317,29 +317,43 @@ def build_kpi_gauge_figure(
     persistency_pct: float,
     technical_loss_pct: float | None,
     active_share_pct: float,
-    height: int = 320,
+    height: int = 360,
+    cohort_year: int | None = None,
 ) -> Figure:
-    """Tacómetros (Plotly Indicator) — resumen visual de KPIs de cartera."""
+    """Tacómetros (Plotly Indicator) con referencias, umbrales y delta respecto a benchmarks."""
     from plotly.subplots import make_subplots
 
     tlr = float(technical_loss_pct) if technical_loss_pct is not None else 0.0
     tlr_axis_max = max(120.0, tlr * 1.15, 1.0)
+    ref_persist = 85.0
+    ref_active = 80.0
+    thr_tlr_warn = min(100.0, tlr_axis_max)
 
     fig = make_subplots(
         rows=1,
         cols=3,
-        horizontal_spacing=0.06,
+        horizontal_spacing=0.07,
         specs=[[{"type": "indicator"}, {"type": "indicator"}, {"type": "indicator"}]],
     )
     fig.add_trace(
         go.Indicator(
-            mode="gauge+number",
+            mode="gauge+number+delta",
             value=min(100.0, max(0.0, persistency_pct)),
-            number={"suffix": "%", "font": {"size": 28}},
-            title={"text": "Persistencia", "font": {"size": 13}},
+            number={"suffix": "%", "font": {"size": 26}, "valueformat": ".1f"},
+            delta={"reference": ref_persist, "relative": False, "valueformat": ".1f", "suffix": "%"},
+            title={
+                "text": "Persistencia<br><sup style='font-size:10px;color:#64748b'>activas / cartera</sup>",
+                "font": {"size": 13},
+            },
             gauge={
-                "axis": {"range": [0, 100], "tickwidth": 1},
-                "bar": {"color": BRAND_PURPLE},
+                "axis": {
+                    "range": [0, 100],
+                    "tickwidth": 1,
+                    "tickcolor": "#94a3b8",
+                    "tickvals": [0, 25, 50, 75, 100],
+                    "ticktext": ["0", "25", "50", "75", "100"],
+                },
+                "bar": {"color": BRAND_PURPLE, "thickness": 0.35},
                 "bgcolor": "white",
                 "borderwidth": 1,
                 "bordercolor": "#e2e8f0",
@@ -348,6 +362,11 @@ def build_kpi_gauge_figure(
                     {"range": [40, 70], "color": "#f1f5f9"},
                     {"range": [70, 100], "color": "#e8e2f4"},
                 ],
+                "threshold": {
+                    "line": {"color": "#16a34a", "width": 3},
+                    "thickness": 0.85,
+                    "value": 90.0,
+                },
             },
         ),
         row=1,
@@ -357,11 +376,18 @@ def build_kpi_gauge_figure(
         go.Indicator(
             mode="gauge+number",
             value=min(tlr_axis_max, max(0.0, tlr)),
-            number={"suffix": "%", "font": {"size": 28}},
-            title={"text": "Ratio técnico (demo)", "font": {"size": 13}},
+            number={"suffix": "%", "font": {"size": 26}, "valueformat": ".1f"},
+            title={
+                "text": "Ratio técnico<br><sup style='font-size:10px;color:#64748b'>demo · menor es mejor</sup>",
+                "font": {"size": 13},
+            },
             gauge={
-                "axis": {"range": [0, tlr_axis_max]},
-                "bar": {"color": MARKET_BLUE},
+                "axis": {
+                    "range": [0, tlr_axis_max],
+                    "tickwidth": 1,
+                    "tickcolor": "#94a3b8",
+                },
+                "bar": {"color": MARKET_BLUE, "thickness": 0.35},
                 "bgcolor": "white",
                 "borderwidth": 1,
                 "bordercolor": "#e2e8f0",
@@ -370,6 +396,11 @@ def build_kpi_gauge_figure(
                     {"range": [tlr_axis_max * 0.5, tlr_axis_max * 0.8], "color": "#fef9c3"},
                     {"range": [tlr_axis_max * 0.8, tlr_axis_max], "color": "#fee2e2"},
                 ],
+                "threshold": {
+                    "line": {"color": "#dc2626", "width": 3},
+                    "thickness": 0.85,
+                    "value": thr_tlr_warn,
+                },
             },
         ),
         row=1,
@@ -377,13 +408,22 @@ def build_kpi_gauge_figure(
     )
     fig.add_trace(
         go.Indicator(
-            mode="gauge+number",
+            mode="gauge+number+delta",
             value=min(100.0, max(0.0, active_share_pct)),
-            number={"suffix": "%", "font": {"size": 28}},
-            title={"text": "Pólizas activas (share)", "font": {"size": 13}},
+            number={"suffix": "%", "font": {"size": 26}, "valueformat": ".1f"},
+            delta={"reference": ref_active, "relative": False, "valueformat": ".1f", "suffix": "%"},
+            title={
+                "text": "Activas (share)<br><sup style='font-size:10px;color:#64748b'>activas / (activas+lapsos)</sup>",
+                "font": {"size": 13},
+            },
             gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {"color": "#7c3aed"},
+                "axis": {
+                    "range": [0, 100],
+                    "tickwidth": 1,
+                    "tickcolor": "#94a3b8",
+                    "tickvals": [0, 25, 50, 75, 100],
+                },
+                "bar": {"color": "#7c3aed", "thickness": 0.35},
                 "bgcolor": "white",
                 "borderwidth": 1,
                 "bordercolor": "#e2e8f0",
@@ -392,17 +432,37 @@ def build_kpi_gauge_figure(
                     {"range": [33, 66], "color": "#f1f5f9"},
                     {"range": [66, 100], "color": "#ede9fe"},
                 ],
+                "threshold": {
+                    "line": {"color": "#0d9488", "width": 3},
+                    "thickness": 0.85,
+                    "value": 50.0,
+                },
             },
         ),
         row=1,
         col=3,
     )
+    ann: list[dict[str, Any]] = []
+    if cohort_year is not None:
+        ann.append(
+            {
+                "text": f"Cohorte {cohort_year} · benchmarks orientativos",
+                "xref": "paper",
+                "yref": "paper",
+                "x": 0.5,
+                "y": 1.12,
+                "showarrow": False,
+                "font": {"size": 11, "color": "#64748b"},
+                "xanchor": "center",
+            }
+        )
     fig.update_layout(
         template="plotly_white",
         paper_bgcolor="rgba(255,255,255,0)",
         font=_FONT,
         height=height,
-        margin=dict(l=24, r=24, t=40, b=24),
+        margin=dict(l=20, r=20, t=56 if cohort_year else 44, b=28),
+        annotations=ann,
     )
     return fig
 

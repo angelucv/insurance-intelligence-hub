@@ -77,7 +77,10 @@ CARTERA_HERO_TITLE = "Referencia"
 CARTERA_PARAMS_TITLE = "Filtro"
 CARTERA_PARAMS_BODY = "Año = cartera API · mes = etiqueta visual."
 CARTERA_GAUGE_TITLE = "Indicadores clave"
-CARTERA_GAUGE_SUB = "Persistencia · ratio técnico · share activas"
+CARTERA_GAUGE_SUB = (
+    "Delta vs referencia (85 % persistencia, 80 % share). Umbrales en verde/teal. "
+    "Ratio técnico: franja demo; línea roja = zona de alerta."
+)
 CARTERA_METRICS_TITLE = "Cifras"
 CARTERA_DONUT_TITLE = "Composición de la cartera"
 CARTERA_DONUT_SUB = "Distribución entre pólizas activas y lapsos"
