@@ -59,6 +59,11 @@ class State(rx.State):
     show_snap_more: bool = False
     show_portal_guide: bool = True
 
+    # Vista «La suite»: documentación completa vs. resumen ejecutivo
+    suite_docs_mode: str = "full"
+    # KPI: fallo de red/API (para mensaje y acciones de recuperación)
+    kpi_load_failed: bool = False
+
     market_plot_data: list[Any] = []
     market_plot_layout: dict[str, Any] = {}
     market_plot_ok: bool = False
@@ -513,8 +518,15 @@ class State(rx.State):
     def dismiss_portal_guide(self):
         self.show_portal_guide = False
 
+    def set_suite_docs_full(self):
+        self.suite_docs_mode = "full"
+
+    def set_suite_docs_summary(self):
+        self.suite_docs_mode = "summary"
+
     async def load_kpi(self):
         self.busy = True
+        self.kpi_load_failed = False
         self.kpi_gauge_ok = False
         self.kpi_gauge_data = []
         self.kpi_gauge_layout = {}
@@ -614,6 +626,7 @@ class State(rx.State):
                     self.portfolio_viz_ok = True
                     self.portfolio_note = f"Error al construir gráficos de cartera ({pe}). Demostración con KPI."
         except Exception as e:  # noqa: BLE001
+            self.kpi_load_failed = True
             self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
             self.portfolio_viz_ok = False
             self.portfolio_bundle = {}

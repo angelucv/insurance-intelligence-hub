@@ -360,10 +360,34 @@ def mercado_panel() -> rx.Component:
         ),
         rx.cond(
             State.market_plot_error != "",
-            rx.callout(
-                State.market_plot_error,
-                icon="triangle_alert",
-                color_scheme="red",
+            rx.vstack(
+                rx.callout(
+                    State.market_plot_error,
+                    icon="triangle_alert",
+                    color_scheme="red",
+                    width="100%",
+                ),
+                rx.hstack(
+                    rx.button(
+                        copy.MERCADO_API_ERROR_ACTION,
+                        on_click=State.load_sudeaseg_preview,
+                        loading=State.market_charts_busy,
+                        size="2",
+                        color_scheme="purple",
+                        class_name="rounded-lg",
+                    ),
+                    rx.link(
+                        copy.MERCADO_API_ERROR_LINK,
+                        href=State.admin_upload_url,
+                        is_external=True,
+                        class_name="text-sm text-violet-700 underline underline-offset-2 hover:text-violet-900",
+                    ),
+                    spacing="4",
+                    align_items="center",
+                    flex_wrap="wrap",
+                ),
+                spacing="2",
+                align_items="start",
                 width="100%",
             ),
         ),
@@ -582,12 +606,45 @@ def cartera_panel() -> rx.Component:
             class_name="mt-4 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden min-h-0",
         ),
         rx.cond(
-            State.note != "",
-            rx.callout(
-                State.note,
-                icon="info",
-                color_scheme="blue",
+            State.kpi_load_failed,
+            rx.vstack(
+                rx.callout(
+                    State.note,
+                    icon="triangle_alert",
+                    color_scheme="red",
+                    width="100%",
+                ),
+                rx.hstack(
+                    rx.button(
+                        copy.CARTERA_API_ERROR_ACTION,
+                        on_click=State.load_kpi,
+                        loading=State.busy,
+                        size="2",
+                        color_scheme="purple",
+                        class_name="rounded-lg",
+                    ),
+                    rx.link(
+                        copy.CARTERA_API_ERROR_LINK,
+                        href=State.admin_upload_url,
+                        is_external=True,
+                        class_name="text-sm text-violet-700 underline underline-offset-2 hover:text-violet-900",
+                    ),
+                    spacing="4",
+                    align_items="center",
+                    flex_wrap="wrap",
+                ),
+                spacing="2",
+                align_items="start",
                 width="100%",
+            ),
+            rx.cond(
+                State.note != "",
+                rx.callout(
+                    State.note,
+                    icon="info",
+                    color_scheme="blue",
+                    width="100%",
+                ),
             ),
         ),
         class_name="w-full pb-8 space-y-0",
