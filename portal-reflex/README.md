@@ -8,7 +8,8 @@ SPA en Python que consume la API de cómputo (FastAPI). Endpoints usados:
 ## Configuración
 
 - **`COMPUTE_API_URL`**: URL pública de `backend-compute` (sin barra final).
-- **`DJANGO_ADMIN_BASE_URL`** (obligatoria en producción): URL pública del Django Admin (sin barra final). Los enlaces a **Carga de pólizas / siniestros** se construyen como `{base}/admin/upload-policies/` y `{base}/admin/upload-claims/`. Si no está definida, el portal usa `http://127.0.0.1:8080` (solo desarrollo local). También se aceptan **`ADMIN_BASE_URL`** o **`PUBLIC_DJANGO_ADMIN_URL`** como alias.
+- **`DJANGO_ADMIN_BASE_URL`** (obligatoria en producción): URL pública del Django Admin (sin barra final). Los enlaces a **Carga de pólizas / siniestros** se construyen como `{base}/admin/upload-policies/` y `{base}/admin/upload-claims/`. Si no está definida, el portal usa `http://127.0.0.1:8080` (solo desarrollo local; si usas `runserver` sin puerto, suele ser **8000** → define `DJANGO_ADMIN_BASE_URL=http://127.0.0.1:8000`). También se aceptan **`ADMIN_BASE_URL`** o **`PUBLIC_DJANGO_ADMIN_URL`** como alias.  
+  **Nota técnica:** esos enlaces se renderizan con `<a href>` HTML real (`iihub_portal.external_links`), no con `rx.el.a`: en Reflex 0.8 `rx.el.a` se sustituye por React Router y las URLs absolutas no navegan bien.
 - **`STREAMLIT_LAB_URL`**: URL pública del app Streamlit (sin barra final), botón **«Análisis BI detallado»** en la barra superior. Por defecto local: `http://127.0.0.1:8501`.
 
 Vea `.env.example` para un ejemplo con URLs de demo en Render.
