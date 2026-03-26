@@ -76,6 +76,37 @@ def _md_block(anchor: str, md: str, zebra: int) -> rx.Component:
     )
 
 
+def _suite_block3_with_figure() -> rx.Component:
+    """Bloque Acsel/x–Rector con figura de coexistencia / paralelo / suite."""
+    zebra = 2
+    bg = (
+        "rounded-xl p-4 sm:p-5 mb-4 border bg-slate-50/90 border-slate-100/90"
+        if zebra % 2 == 0
+        else "rounded-xl p-4 sm:p-5 mb-4 border bg-white border-gray-100/90"
+    )
+    return rx.el.div(
+        rx.markdown(copy.SUITE_MD_BLOCK3.strip(), class_name=_MD_PROSE),
+        rx.el.div(
+            rx.image(
+                src="/infografia/suite-core-coexistencia.png",
+                alt=copy.SUITE_CORE_FIG_ALT,
+                loading="lazy",
+                class_name=(
+                    "w-full min-w-0 max-h-[min(65vh,480px)] sm:max-h-none object-contain "
+                    "rounded-lg border border-gray-200 bg-white shadow-sm"
+                ),
+            ),
+            class_name="mt-5 w-full max-w-full overflow-x-auto [scrollbar-width:thin]",
+        ),
+        rx.markdown(
+            copy.SUITE_CORE_FIG_CAPTION,
+            class_name=_MD_PROSE + " mt-3",
+        ),
+        id="suite-3",
+        class_name=bg,
+    )
+
+
 def _suite_toc() -> rx.Component:
     links: list[rx.Component] = []
     for anchor, label in copy.SUITE_TOC_ENTRIES:
@@ -149,14 +180,18 @@ def _suite_doc_blocks_full() -> rx.Component:
     blocks = [
         ("suite-1", copy.SUITE_MD_BLOCK1, 0),
         ("suite-2", copy.SUITE_MD_BLOCK2, 1),
-        ("suite-3", copy.SUITE_MD_BLOCK3, 2),
         ("suite-4", copy.SUITE_MD_BLOCK4, 3),
         ("suite-5", copy.SUITE_MD_BLOCK5, 4),
         ("suite-6", copy.SUITE_MD_BLOCK6, 5),
         ("suite-7", copy.SUITE_MD_BLOCK7, 6),
         ("suite-8", copy.SUITE_MD_BLOCK8, 7),
     ]
-    return rx.fragment(*[_md_block(a, m, z) for a, m, z in blocks])
+    return rx.fragment(
+        _md_block(*blocks[0][:3]),
+        _md_block(*blocks[1][:3]),
+        _suite_block3_with_figure(),
+        *[_md_block(a, m, z) for a, m, z in blocks[2:]],
+    )
 
 
 def _suite_toolbar() -> rx.Component:

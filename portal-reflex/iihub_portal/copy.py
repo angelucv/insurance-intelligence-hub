@@ -151,6 +151,15 @@ SUITE_HEART_CAPTION = (
     "Sin **ingesta ordenada**, **repositorio único** y **reglas de cálculo centralizadas**, el cuadro de mando carece de sustento consistente. "
     "La **visualización** constituye la capa final; el **proceso de datos** es el que garantiza **coherencia numérica** entre usuarios."
 )
+# Figura del bloque «Cores tradicionales…» (suite-3): coexistencia core / paralelo / suite
+SUITE_CORE_FIG_ALT = (
+    "Diagrama: core tradicional frente a paralelo informal y suite demostrativa; "
+    "flecha de coexistencia hacia la suite y sustitución del paralelo."
+)
+SUITE_CORE_FIG_CAPTION = (
+    "**Lectura del esquema.** El **core** sigue siendo el lugar donde la compañía registra la operación; la **suite** puede **convivir** con él. "
+    "El **paralelo informal** (Excel, extractos) es lo que esta propuesta busca **ir sustituyendo** al unificar datos e indicadores."
+)
 HEADER_SUB_SUITE = (
     "Núcleo actuarial integrado: operaciones con control de acceso, almacén PostgreSQL, servicio de indicadores y analítica "
     "(portal ejecutivo y laboratorio). Despliegue demostrativo en nube; arquitectura adaptable a entorno on-premise."
