@@ -13,6 +13,65 @@
   max-width: 48rem;
 }
 
+.iihub-guide {
+  margin-bottom: 2rem;
+}
+
+.iihub-guide__main-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+.iihub-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 1rem;
+}
+
+.iihub-guide-card {
+  margin: 0;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.iihub-guide-card__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5a1f94;
+  margin: 0 0 0.65rem;
+}
+
+.iihub-guide-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.iihub-guide-list li {
+  margin-bottom: 0.45rem;
+}
+
+.iihub-guide-list li:last-child {
+  margin-bottom: 0;
+}
+
+.iihub-guide-list code {
+  font-size: 0.78rem;
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
 .iihub-quick-actions {
   margin-bottom: 2rem;
 }
@@ -82,6 +141,13 @@
   font-size: 0.85rem !important;
 }
 
+.iihub-sidebar-lead {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0 0 0.75rem;
+}
+
 .iihub-link-list {
   margin: 0;
   padding-left: 1.1rem;
@@ -103,6 +169,32 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .iihub-guide__main-title {
+    color: #f1f5f9;
+  }
+
+  .iihub-guide-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .iihub-guide-card__title {
+    color: #e9d5ff;
+  }
+
+  .iihub-guide-list {
+    color: #cbd5e1;
+  }
+
+  .iihub-guide-list code {
+    background: #334155;
+    color: #e2e8f0;
+  }
+
+  .iihub-sidebar-lead {
+    color: #94a3b8;
+  }
+
   .iihub-dashboard-lead {
     color: #94a3b8;
   }

@@ -12,9 +12,50 @@
 {% block content %}
 <div class="iihub-dashboard-hero">
   <p class="iihub-dashboard-lead">
-    {% blocktranslate %}Carga maestros de pólizas y siniestros; el API de cómputo y el portal Reflex consumen la misma base PostgreSQL.{% endblocktranslate %}
+    {% blocktranslate %}Este panel concentra la <strong>ingestión</strong> de maestros y la <strong>consulta</strong> de lo ya cargado. La misma base PostgreSQL alimenta el API de cómputo (KPI, cohortes) y el portal Reflex (visualización).{% endblocktranslate %}
   </p>
 </div>
+
+<section class="iihub-guide" aria-labelledby="iihub-guide-title">
+  <h2 id="iihub-guide-title" class="iihub-guide__main-title">{% translate "Funcionalidades de este panel" %}</h2>
+
+  <div class="iihub-guide-grid">
+    <article class="iihub-guide-card">
+      <h3 class="iihub-guide-card__title">{% translate "Carga de archivos" %}</h3>
+      <ul class="iihub-guide-list">
+        <li>{% blocktranslate %}<strong>Pólizas:</strong> suba CSV o Excel validado (columnas según contrato hub-contracts). Cada carga genera un lote y filas insertadas u omitidas por duplicado.{% endblocktranslate %}</li>
+        <li>{% blocktranslate %}<strong>Siniestros:</strong> enlaza <code>claim_id</code> a <code>policy_id</code> que ya exista en pólizas; montos opcionales alimentan análisis de siniestralidad.{% endblocktranslate %}</li>
+        <li>{% translate "Tras cargar, el resumen muestra batch_id, insertadas, omitidas y errores por fila (JSON detallado en desplegable)." %}</li>
+      </ul>
+    </article>
+
+    <article class="iihub-guide-card">
+      <h3 class="iihub-guide-card__title">{% translate "Consulta y listados" %}</h3>
+      <ul class="iihub-guide-list">
+        <li>{% translate "En «Pólizas» y «Siniestros» puede buscar, filtrar y ordenar registros ya persistidos (vista de solo lectura)." %}</li>
+        <li>{% translate "No está habilitado crear, editar ni eliminar desde este Admin: los datos llegan por archivos o por API de ingestión según su política." %}</li>
+        <li>{% translate "Use los filtros laterales (año, estado, fechas) para acotar listas grandes." %}</li>
+      </ul>
+    </article>
+
+    <article class="iihub-guide-card">
+      <h3 class="iihub-guide-card__title">{% translate "Usuarios y sesión" %}</h3>
+      <ul class="iihub-guide-list">
+        <li>{% translate "Solo usuarios autorizados (staff) acceden a este sitio; inicie sesión con la cuenta creada por el administrador." %}</li>
+        <li>{% translate "«Acciones recientes» resume cambios registrados en el admin (útil para auditoría básica)." %}</li>
+      </ul>
+    </article>
+
+    <article class="iihub-guide-card">
+      <h3 class="iihub-guide-card__title">{% translate "Otros entornos" %}</h3>
+      <ul class="iihub-guide-list">
+        <li>{% blocktranslate %}<strong>Portal Reflex:</strong> KPI, tacómetros y gráficos de cartera/mercado sobre los mismos datos (solo lectura).{% endblocktranslate %}</li>
+        <li>{% blocktranslate %}<strong>Streamlit:</strong> laboratorio BI exploratorio si está configurado (variable de entorno).{% endblocktranslate %}</li>
+        <li>{% translate "El API de cómputo se consume con URL y claves definidas en cada despliegue, no desde esta pantalla." %}</li>
+      </ul>
+    </article>
+  </div>
+</section>
 
 <section class="iihub-quick-actions" aria-label="{% translate 'Acciones rápidas' %}">
   <h2 class="iihub-quick-actions__title">{% translate "Acciones rápidas" %}</h2>
@@ -45,6 +86,9 @@
 <div id="content-related">
   <div class="module iihub-sidebar-help">
     <h2>{% translate "Enlaces útiles" %}</h2>
+    <p class="iihub-sidebar-lead">
+      {% translate "Accesos externos al portal de solo lectura y al laboratorio; la configuración del API es en cada despliegue." %}
+    </p>
     <ul class="iihub-link-list">
       {% if reflex_portal_url %}
       <li><a href="{{ reflex_portal_url }}" target="_blank" rel="noopener noreferrer">{% translate "Portal BI (Reflex)" %}</a></li>
