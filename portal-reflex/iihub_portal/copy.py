@@ -192,14 +192,18 @@ La **arquitectura de software** es **parametrizable** según organización (regl
 SUITE_MD_BLOCK3 = """
 ### Cores tradicionales en seguros (Acsel/x, Rector) y aportación de la presente suite
 
-En **Latinoamérica** y en **Venezuela**, numerosas aseguradoras sustentan la operación en **sistemas core** consolidados. Entre los referentes de mayor difusión figuran:
+En **Latinoamérica** y en **Venezuela**, muchas aseguradoras trabajan con **sistemas centrales de gestión** muy completos. Dos nombres que suelen citarse son:
 
-- **Acsel/x** — oferta de **Consis International**: plataforma de gestión aseguradora (pólizas, siniestros, cobranzas, canales, contabilidad, entre otros), con implantación regional amplia.
-- **Rector** — solución de **Indra** para administración de seguros (emisión, reservas técnicas, reaseguro, entre otros), presente asimismo en el mercado venezolano y regional.
+- **Acsel/x** (Consis International): cubre pólizas, siniestros, cobranzas, canales, contabilidad y más; está muy extendido en la región.
+- **Rector** (Indra): también orientado a la administración de seguros (emisión, reservas, reaseguro, entre otros), con presencia en Venezuela y el entorno regional.
 
-Dichas soluciones constituyen el **sistema de registro operativo**. **La presentación demostrativa no sustituye de forma integral un despliegue Acsel/x o Rector**: sustituye la **capa paralela informal** habitual —**hojas de cálculo, bases de escritorio y extractos manuales** para actuaría, reporting y seguimiento—, con el **riesgo asociado a versiones divergentes** entre unidades.
+Esos sistemas son, en la práctica, **donde la compañía “oficializa” la operación** (pólizas, siniestros, etc.). **Esta demostración no pretende reemplazar por completo un despliegue como Acsel/x o Rector.** Lo que sí busca sustituir es el **trabajo paralelo en Excel, bases sueltas y reportes armados a mano** —el típico “mundo aparte” junto al sistema grande—, que suele generar **cifras distintas según quien calcule**.
 
-**Lo que aporta el “core actuarial” aquí descrito:** **ingesta validada**, **PostgreSQL** como repositorio analítico, **servicio unificado de indicadores** y **capa de inteligencia de negocio** (portal y laboratorio). La solución puede **coexistir** con el core legado (alimentación vía ficheros, integraciones posteriores) o evaluarse como **capa de datos** conforme a la política de cada entidad.
+**Qué ofrece la suite aquí presentada:** **carga de datos con validación**, una **base de datos única (PostgreSQL)** para analítica, **un solo punto** donde las aplicaciones piden **indicadores ya calculados**, y **pantallas de consulta** (portal ejecutivo y laboratorio). Puede **convivir** con el sistema que la empresa ya tenga (por ejemplo cargando ficheros o enlazando después) o usarse como **capa de datos** según convenga.
+
+**Poca escala, huecos o tareas fuera del sistema grande.** En compañías con **menos movimiento de operaciones**, o cuando el sistema central **no llega** a un área, deja un proceso fuera o obliga a reportes paralelos, esta línea de trabajo puede **ir tomando**, paso a paso, la **carga ordenada de información**, las **reglas de los indicadores** y las **consultas** sobre una **misma base**, siempre **acotando** cada fase: no se promete desde el día uno el mismo alcance que un **paquete completo** de los grandes proveedores.
+
+**Cuando no hay aún un “cerebro” único.** Si la organización **no cuenta** con un sistema central fuerte, el mismo conjunto (**panel de operaciones**, **base de datos**, **servicio que entrega indicadores**, portal y laboratorio) puede, **con un plan claro por etapas**, **crecer** hacia un **núcleo propio de datos y reglas** alineado al negocio. No es una **caja cerrada** que solo el proveedor entiende: se puede **revisar y adaptar** con mayor libertad —reglas claras para todos, **tecnología abierta** y ajustes de productos, informes o enlaces **sin depender solo** de filas largas de soporte ante un único fabricante.
 """
 
 SUITE_MD_BLOCK4 = """
