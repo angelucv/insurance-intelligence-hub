@@ -28,6 +28,7 @@ import random
 import sys
 import uuid
 from datetime import date, timedelta
+from urllib.parse import urlparse
 
 import requests
 
@@ -41,6 +42,39 @@ def _normalize_url(url: str) -> str:
     if url.startswith("postgresql://") and "+psycopg" not in url.split("://", 1)[0]:
         return "postgresql://" + url.removeprefix("postgresql://")
     return url
+
+
+def _prepare_and_validate_database_url(raw: str) -> str:
+    """
+    Evita fallos crípticos de psycopg/IDNA (p. ej. host vacío) y guía al usuario.
+    """
+    s = raw.strip().strip('"').strip("'").strip()
+    if not s:
+        raise SystemExit("DATABASE_URL está vacío. Defina --database-url o la variable de entorno.")
+
+    dsn = _normalize_url(s)
+    parsed = urlparse(dsn)
+    scheme = (parsed.scheme or "").lower().replace("+psycopg", "").replace("+asyncpg", "")
+    if scheme not in ("postgres", "postgresql"):
+        raise SystemExit(
+            f"DATABASE_URL debe usar esquema postgresql:// (recibido: {parsed.scheme!r})."
+        )
+
+    host = parsed.hostname
+    if host is None or str(host).strip() == "":
+        raise SystemExit(
+            "DATABASE_URL no incluye un host de PostgreSQL válido (nombre tras @).\n"
+            "  Ejemplo: postgresql://usuario:clave@db.xxxxx.supabase.co:5432/postgres\n"
+            "  Evite URLs del tipo postgresql://user:pass@/solo_db (host vacío)."
+        )
+
+    if ".." in host or any(part == "" for part in host.split(".")):
+        raise SystemExit(
+            f"El host en DATABASE_URL parece mal formado: {host!r}. "
+            "Revise que no falte el servidor ni haya puntos dobles."
+        )
+
+    return dsn
 
 
 def fetch_snapshot(api_base: str) -> dict:
@@ -131,7 +165,7 @@ def main() -> None:
     target_sum_premium = primas_ytd_k * 1000.0 * args.premium_scale
     mean_premium = target_sum_premium / max(args.n_policies, 1)
 
-    dsn = _normalize_url(args.database_url.strip())
+    dsn = _prepare_and_validate_database_url(args.database_url)
     policies_rows: list[tuple] = []
     claims_rows: list[tuple] = []
 
@@ -158,7 +192,18 @@ def main() -> None:
             reported = round(paid * rng.uniform(1.0, 1.25), 2)
             claims_rows.append((cid, pid, loss_day, reported, paid, "paid"))
 
-    with psycopg.connect(dsn) as conn:
+    try:
+        conn_cm = psycopg.connect(dsn)
+    except UnicodeError as e:
+        raise SystemExit(
+            "Fallo al resolver el host de DATABASE_URL (IDNA). Suele deberse a un host vacío, "
+            "demasiado largo o caracteres inválidos al copiar la URL.\n"
+            f"  Host interpretado: {urlparse(dsn).hostname!r}\n"
+            f"  Detalle: {e}\n"
+            "  Compruebe la cadena en el panel de Supabase / Neon y vuelva a pegarla sin saltos de línea."
+        ) from e
+
+    with conn_cm as conn:
         conn.execute("DELETE FROM policy_claims WHERE claim_id LIKE 'ALIGN-%'")
         conn.execute("DELETE FROM policies WHERE policy_id LIKE 'ALIGN-%'")
         batch_id = str(uuid.uuid4())
