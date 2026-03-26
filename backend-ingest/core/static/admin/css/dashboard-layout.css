@@ -14,5 +14,4 @@ body.dashboard .main > #nav-sidebar + .content {
 body.dashboard .iihub-dashboard-top #content-related {
   float: none !important;
   margin-left: 0 !important;
-  margin-right: 0 !important;
 }
