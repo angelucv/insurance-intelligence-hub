@@ -57,6 +57,7 @@ class State(rx.State):
     market_yoy_a: str = "2023"
     market_yoy_b: str = "2024"
     show_snap_more: bool = False
+    show_portal_guide: bool = True
 
     market_plot_data: list[Any] = []
     market_plot_layout: dict[str, Any] = {}
@@ -505,6 +506,9 @@ class State(rx.State):
 
     def toggle_snap_more(self):
         self.show_snap_more = not self.show_snap_more
+
+    def dismiss_portal_guide(self):
+        self.show_portal_guide = False
 
     async def load_kpi(self):
         self.busy = True

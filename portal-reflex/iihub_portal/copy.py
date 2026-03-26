@@ -49,6 +49,19 @@ HEADER_GREETING = "Panel ejecutivo"
 HEADER_SUB_MERCADO = "Referencia SUDEASEG · último cierre y series La Fe vs mercado"
 HEADER_SUB_CARTERA = "Indicadores de cartera · lectura rápida y cargas en Admin"
 
+# Bloque introductorio (se puede ocultar con el botón)
+PORTAL_INTRO_TITLE = "Acerca de este portal"
+PORTAL_INTRO_MD = """
+**Qué es.** Vista de lectura de KPI y visualizaciones de cartera y mercado. Los datos provienen del **API de cómputo** (FastAPI) sobre **PostgreSQL**; si no hay filas para un año, el resumen puede ser sintético o demostrativo según indiquen los avisos azules.
+
+**Mi cartera.** Tacómetros, cifras, donut y gráficos avanzados (sunburst, treemap, waterfall, Sankey, etc.). El **año** del filtro corresponde a la **cohorte** consultada por la API. La **carga de pólizas y siniestros** no se hace aquí: use los enlaces del menú lateral hacia **Django Admin**.
+
+**Mercado SUDEASEG.** Series de referencia pública (La Fe frente al mercado total), mapas de calor y comparativas YoY según los selectores. No sustituye los informes regulatorios oficiales.
+
+**Análisis BI detallado.** Abre el **laboratorio Streamlit** para exploración interactiva adicional (misma línea de datos vía API, distinta experiencia).
+"""
+PORTAL_INTRO_DISMISS = "Ocultar"
+
 # Mercado
 MERCADO_PARAMS_TITLE = "Series SUDEASEG"
 MERCADO_PARAMS_BODY = (
