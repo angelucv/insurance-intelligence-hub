@@ -35,17 +35,24 @@ body.dashboard #content {
 }
 
 /*
- * Portada colMS: el contenido custom iba fuera de #content-main; el float de Django solo alineaba
- * content-main + sidebar, dejando la barra «abajo». .iihub-dashboard-main agrupa todo el bloque
- * izquierdo; el grid de dos columnas (y dashboard-layout.css tras responsive.css) fija la derecha.
+ * Portada colMS: .iihub-dashboard-top = acciones + tablas; #content-related a la derecha en la misma fila;
+ * .iihub-dashboard-reference = título «Panel…» + ayuda, ancho completo debajo (grid fila 2).
  */
-body.dashboard .iihub-dashboard-main {
+body.dashboard .iihub-dashboard-top {
   min-width: 0;
 }
 
-/* Texto explicativo e ilustraciones debajo del listado «Panel de administración». */
+body.dashboard .iihub-dashboard-page-title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--body-fg, #0f172a);
+  letter-spacing: -0.02em;
+}
+
+/* Texto explicativo e ilustraciones debajo del bloque operativo + barra lateral. */
 body.dashboard .iihub-dashboard-reference {
-  margin-top: 2rem;
+  margin-top: 0;
   padding-top: 1.75rem;
   border-top: 1px solid var(--hairline-color, #e2e8f0);
 }
@@ -54,13 +61,16 @@ body.dashboard .iihub-dashboard-reference {
   body.dashboard #content.colMS {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
-    gap: 0 1.25rem;
+    grid-template-rows: auto auto;
+    column-gap: 1.25rem;
+    row-gap: 0;
     align-items: start;
     margin-right: 0 !important;
   }
 
-  body.dashboard #content.colMS > .iihub-dashboard-main {
+  body.dashboard #content.colMS > .iihub-dashboard-top {
     grid-column: 1;
+    grid-row: 1;
     min-width: 0;
   }
 
@@ -77,7 +87,13 @@ body.dashboard .iihub-dashboard-reference {
     align-self: start;
   }
 
-  body.dashboard #content.colMS .iihub-dashboard-main #content-main {
+  body.dashboard #content.colMS > .iihub-dashboard-reference {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  body.dashboard #content.colMS .iihub-dashboard-top #content-main {
     float: none !important;
     width: 100% !important;
   }
@@ -88,13 +104,27 @@ body.dashboard .iihub-dashboard-reference {
 }
 
 @media (max-width: 899px) {
+  body.dashboard #content.colMS {
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-top {
+    order: 1;
+  }
+
   body.dashboard #content.colMS > #content-related {
+    order: 2;
     float: none !important;
     clear: both;
     width: 100% !important;
     max-width: 100%;
     margin-right: 0 !important;
     margin-left: 0 !important;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-reference {
+    order: 3;
   }
 }
 

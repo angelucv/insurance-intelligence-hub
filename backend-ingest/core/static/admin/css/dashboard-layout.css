@@ -3,13 +3,27 @@
 @media (min-width: 900px) {
   body.dashboard #content.colMS {
     display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important;
+    grid-template-rows: auto auto !important;
     margin-right: 0 !important;
     margin-left: 0 !important;
   }
 
+  body.dashboard #content.colMS > .iihub-dashboard-top {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
   body.dashboard #content.colMS > #content-related {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
     float: none !important;
     margin-right: 0 !important;
     margin-left: 0 !important;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-reference {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
   }
 }
