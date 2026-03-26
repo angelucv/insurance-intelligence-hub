@@ -31,6 +31,13 @@ class State(rx.State):
     tlr: str = "—"
     note: str = ""
     busy: bool = False
+    market_charts_busy: bool = False
+
+    ui_main_tab: str = "mercado"
+    market_fy: str = "2023"
+    market_ty: str = "2026"
+    market_mode: str = "monthly_flow"
+    show_snap_more: bool = False
 
     market_plot_data: list[Any] = []
     market_plot_layout: dict[str, Any] = {}
@@ -83,6 +90,13 @@ class State(rx.State):
         else:
             self.streamlit_lab_url = "http://127.0.0.1:8501"
 
+        fy = os.environ.get("MARKET_PREVIEW_FROM_YEAR", "").strip()
+        ty = os.environ.get("MARKET_PREVIEW_TO_YEAR", "").strip()
+        if fy.isdigit():
+            self.market_fy = fy
+        if ty.isdigit():
+            self.market_ty = ty
+
     async def portal_on_load(self):
         await self.hydrate_urls()
         await self.load_sudeaseg_preview()
@@ -96,127 +110,139 @@ class State(rx.State):
         self.market_plot_layout = {}
         self.market_ratio_plot_data = []
         self.market_ratio_plot_layout = {}
-        base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
-        fy = int(os.environ.get("MARKET_PREVIEW_FROM_YEAR", "2023"))
-        ty = int(os.environ.get("MARKET_PREVIEW_TO_YEAR", "2026"))
+        self.market_charts_busy = True
+        yield
         try:
-            async with httpx.AsyncClient(timeout=90.0) as client:
-                r1 = await client.get(
-                    f"{base}/api/v1/market/la-fe/resumen-series",
-                    params={"from_year": fy, "to_year": ty, "mode": "monthly_flow"},
-                )
-                r2 = await client.get(
-                    f"{base}/api/v1/market/resumen/totals-series",
-                    params={"from_year": fy, "to_year": ty, "mode": "monthly_flow"},
-                )
-                r1.raise_for_status()
-                r2.raise_for_status()
-        except Exception as e:  # noqa: BLE001
-            self.market_plot_error = f"No se pudo cargar la referencia de mercado. ({e})"
-            return
+            base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
+            try:
+                fy = int(self.market_fy.strip())
+                ty = int(self.market_ty.strip())
+            except ValueError:
+                self.market_plot_error = "Indique años válidos (desde / hasta)."
+                return
+            mode = (self.market_mode or "monthly_flow").strip()
+            if mode not in ("monthly_flow", "ytd"):
+                mode = "monthly_flow"
+            try:
+                async with httpx.AsyncClient(timeout=90.0) as client:
+                    r1 = await client.get(
+                        f"{base}/api/v1/market/la-fe/resumen-series",
+                        params={"from_year": fy, "to_year": ty, "mode": mode},
+                    )
+                    r2 = await client.get(
+                        f"{base}/api/v1/market/resumen/totals-series",
+                        params={"from_year": fy, "to_year": ty, "mode": mode},
+                    )
+                    r1.raise_for_status()
+                    r2.raise_for_status()
+            except Exception as e:  # noqa: BLE001
+                self.market_plot_error = f"No se pudo cargar la referencia de mercado. ({e})"
+                return
 
-        import plotly.graph_objects as go
-        from plotly.subplots import make_subplots
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
 
-        la = r1.json().get("points") or []
-        tot = r2.json().get("points") or []
+            la = r1.json().get("points") or []
+            tot = r2.json().get("points") or []
 
-        def primas_map(rows: list[dict[str, Any]]) -> dict[tuple[int, int], float | None]:
-            out: dict[tuple[int, int], float | None] = {}
-            for row in rows:
-                key = (int(row["period_year"]), int(row["period_month"]))
-                out[key] = row.get("primas_netas_thousands_bs")
-            return out
+            def primas_map(rows: list[dict[str, Any]]) -> dict[tuple[int, int], float | None]:
+                out: dict[tuple[int, int], float | None] = {}
+                for row in rows:
+                    key = (int(row["period_year"]), int(row["period_month"]))
+                    out[key] = row.get("primas_netas_thousands_bs")
+                return out
 
-        m1 = primas_map(la)
-        m2 = primas_map(tot)
-        keys = sorted(set(m1.keys()) | set(m2.keys()))
-        if not keys:
-            self.market_plot_error = "Sin puntos de mercado en el rango configurado."
-            return
+            m1 = primas_map(la)
+            m2 = primas_map(tot)
+            keys = sorted(set(m1.keys()) | set(m2.keys()))
+            if not keys:
+                self.market_plot_error = "Sin puntos de mercado en el rango configurado."
+                return
 
-        xs = [f"{y}-{m:02d}" for y, m in keys]
-        y_la = [m1.get(k) for k in keys]
-        y_tot = [m2.get(k) for k in keys]
+            xs = [f"{y}-{m:02d}" for y, m in keys]
+            y_la = [m1.get(k) for k in keys]
+            y_tot = [m2.get(k) for k in keys]
 
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
-        fig.add_trace(
-            go.Scatter(
-                x=xs,
-                y=y_la,
-                name="La Fe (eje izq.)",
-                mode="lines+markers",
-                line={"color": _BRAND_PURPLE},
-            ),
-            secondary_y=False,
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=xs,
-                y=y_tot,
-                name="Mercado total (eje der.)",
-                mode="lines+markers",
-                line={"color": "#0284c7"},
-            ),
-            secondary_y=True,
-        )
-        fig.update_xaxes(title_text="Período")
-        fig.update_yaxes(title_text="La Fe · miles de Bs.", secondary_y=False)
-        fig.update_yaxes(title_text="Mercado total · miles de Bs.", secondary_y=True)
-        fig.update_layout(
-            height=360,
-            margin=dict(l=24, r=56, t=40, b=24),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            hovermode="x unified",
-        )
-        pj = fig.to_plotly_json()
-        self.market_plot_data = pj["data"]
-        self.market_plot_layout = pj.get("layout") or {}
-        self.market_plot_ok = True
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            fig.add_trace(
+                go.Scatter(
+                    x=xs,
+                    y=y_la,
+                    name="La Fe (eje izq.)",
+                    mode="lines+markers",
+                    line={"color": _BRAND_PURPLE},
+                ),
+                secondary_y=False,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=xs,
+                    y=y_tot,
+                    name="Mercado total (eje der.)",
+                    mode="lines+markers",
+                    line={"color": "#0284c7"},
+                ),
+                secondary_y=True,
+            )
+            fig.update_xaxes(title_text="Período")
+            fig.update_yaxes(title_text="La Fe · miles de Bs.", secondary_y=False)
+            fig.update_yaxes(title_text="Mercado total · miles de Bs.", secondary_y=True)
+            fig.update_layout(
+                height=360,
+                margin=dict(l=24, r=56, t=40, b=24),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                hovermode="x unified",
+            )
+            pj = fig.to_plotly_json()
+            self.market_plot_data = pj["data"]
+            self.market_plot_layout = pj.get("layout") or {}
+            self.market_plot_ok = True
 
-        def lr_map(rows: list[dict[str, Any]]) -> dict[tuple[int, int], float | None]:
-            out: dict[tuple[int, int], float | None] = {}
-            for row in rows:
-                key = (int(row["period_year"]), int(row["period_month"]))
-                vlr = row.get("loss_ratio_proxy")
-                out[key] = float(vlr) if vlr is not None else None
-            return out
+            def lr_map(rows: list[dict[str, Any]]) -> dict[tuple[int, int], float | None]:
+                out: dict[tuple[int, int], float | None] = {}
+                for row in rows:
+                    key = (int(row["period_year"]), int(row["period_month"]))
+                    vlr = row.get("loss_ratio_proxy")
+                    out[key] = float(vlr) if vlr is not None else None
+                return out
 
-        lr1 = lr_map(la)
-        lr2 = lr_map(tot)
-        y_lr_la = [lr1.get(k) for k in keys]
-        y_lr_mk = [lr2.get(k) for k in keys]
-        fig_r = go.Figure()
-        fig_r.add_trace(
-            go.Scatter(
-                x=xs,
-                y=y_lr_la,
-                name="Loss ratio La Fe (siniestros/primas)",
-                mode="lines+markers",
-                line={"color": _BRAND_PURPLE},
-            ),
-        )
-        fig_r.add_trace(
-            go.Scatter(
-                x=xs,
-                y=y_lr_mk,
-                name="Loss ratio mercado",
-                mode="lines+markers",
-                line={"color": "#0284c7"},
-            ),
-        )
-        fig_r.update_layout(
-            height=300,
-            margin=dict(l=24, r=24, t=40, b=24),
-            yaxis_title="Ratio (fracción)",
-            xaxis_title="Período",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            hovermode="x unified",
-        )
-        pjr = fig_r.to_plotly_json()
-        self.market_ratio_plot_data = pjr["data"]
-        self.market_ratio_plot_layout = pjr.get("layout") or {}
-        self.market_ratio_ok = True
+            lr1 = lr_map(la)
+            lr2 = lr_map(tot)
+            y_lr_la = [lr1.get(k) for k in keys]
+            y_lr_mk = [lr2.get(k) for k in keys]
+            fig_r = go.Figure()
+            fig_r.add_trace(
+                go.Scatter(
+                    x=xs,
+                    y=y_lr_la,
+                    name="Loss ratio La Fe (siniestros/primas)",
+                    mode="lines+markers",
+                    line={"color": _BRAND_PURPLE},
+                ),
+            )
+            fig_r.add_trace(
+                go.Scatter(
+                    x=xs,
+                    y=y_lr_mk,
+                    name="Loss ratio mercado",
+                    mode="lines+markers",
+                    line={"color": "#0284c7"},
+                ),
+            )
+            fig_r.update_layout(
+                height=300,
+                margin=dict(l=24, r=24, t=40, b=24),
+                yaxis_title="Ratio (fracción)",
+                xaxis_title="Período",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                hovermode="x unified",
+            )
+            pjr = fig_r.to_plotly_json()
+            self.market_ratio_plot_data = pjr["data"]
+            self.market_ratio_plot_layout = pjr.get("layout") or {}
+            self.market_ratio_ok = True
+        finally:
+            self.market_charts_busy = False
 
     async def load_market_snapshot(self):
         self.snap_ok = False
@@ -271,6 +297,24 @@ class State(rx.State):
 
     def set_input_year(self, v: str):
         self.input_year = v
+
+    def set_market_fy(self, v: str):
+        self.market_fy = v
+
+    def set_market_ty(self, v: str):
+        self.market_ty = v
+
+    def set_market_mode(self, v: str):
+        self.market_mode = v
+
+    def pick_tab_mercado(self):
+        self.ui_main_tab = "mercado"
+
+    def pick_tab_cohorte(self):
+        self.ui_main_tab = "cohorte"
+
+    def toggle_snap_more(self):
+        self.show_snap_more = not self.show_snap_more
 
     async def load_kpi(self):
         self.busy = True
@@ -380,7 +424,7 @@ def _hero_strip() -> rx.Component:
                     style={"color": "white", "margin": 0},
                 ),
                 rx.text(
-                    "Seguros La Fe · Indicadores de cohorte y accesos operativos",
+                    "Seguros La Fe · Mercado SUDEASEG y cohorte operativa (demo)",
                     size="3",
                     style={"color": "rgba(255,255,255,0.9)"},
                 ),
@@ -398,6 +442,61 @@ def _hero_strip() -> rx.Component:
         style={
             "background": f"linear-gradient(115deg, {_BRAND_DEEP} 0%, {_BRAND_PURPLE} 45%, {_BRAND_LAVENDER} 100%)",
         },
+    )
+
+
+def _snap_hero_cell(label: str, value: rx.Var) -> rx.Component:
+    return rx.box(
+        rx.vstack(
+            rx.text(
+                label,
+                size="2",
+                style={"color": "rgba(255,255,255,0.88)", "font_weight": "600"},
+            ),
+            rx.heading(value, size="7", style={"color": "white", "margin": 0, "line_height": "1.1"}),
+            spacing="1",
+            align_items="start",
+            width="100%",
+        ),
+        padding="1.1rem",
+        border_radius="14px",
+        width="100%",
+        style={
+            "background": "rgba(255,255,255,0.12)",
+            "border": "1px solid rgba(255,255,255,0.28)",
+            "backdrop_filter": "blur(10px)",
+        },
+    )
+
+
+def _tab_bar() -> rx.Component:
+    return rx.box(
+        rx.box(
+            rx.hstack(
+                rx.button(
+                    "Mercado SUDEASEG",
+                    on_click=State.pick_tab_mercado,
+                    color_scheme="purple",
+                    variant=rx.cond(State.ui_main_tab == "mercado", "solid", "outline"),
+                ),
+                rx.button(
+                    "Cartera cohorte",
+                    on_click=State.pick_tab_cohorte,
+                    color_scheme="purple",
+                    variant=rx.cond(State.ui_main_tab == "cohorte", "solid", "outline"),
+                ),
+                spacing="3",
+                flex_wrap="wrap",
+                align_items="center",
+            ),
+            width="100%",
+            max_width="1200px",
+            margin_x="auto",
+            padding_x="6",
+            padding_y="4",
+        ),
+        width="100%",
+        style={"background": "white", "border_bottom": "1px solid var(--gray-5)"},
     )
 
 
@@ -419,113 +518,262 @@ def _kpi_card(title: str, value: rx.Var) -> rx.Component:
     )
 
 
+def _mercado_panel() -> rx.Component:
+    return rx.vstack(
+        rx.box(
+            rx.box(
+                rx.vstack(
+                    rx.text(
+                        "Último cierre con dato La Fe · YTD (miles Bs.; ratios como fracción)",
+                        size="2",
+                        style={"color": "rgba(255,255,255,0.9)", "font_weight": "600"},
+                    ),
+                    rx.cond(
+                        State.snap_ok,
+                        rx.grid(
+                            _snap_hero_cell("Período", State.snap_period),
+                            _snap_hero_cell("Primas YTD La Fe", State.snap_primas),
+                            _snap_hero_cell("Loss ratio La Fe", State.snap_lr),
+                            _snap_hero_cell("Cuota primas", State.snap_cuota),
+                            columns="4",
+                            spacing="3",
+                            width="100%",
+                        ),
+                        rx.text("Sin snapshot disponible.", color="white"),
+                    ),
+                    rx.button(
+                        rx.cond(State.show_snap_more, "Ocultar detalle del cierre", "Ver más indicadores del cierre"),
+                        on_click=State.toggle_snap_more,
+                        variant="outline",
+                        style={
+                            "color": "white",
+                            "border_color": "rgba(255,255,255,0.55)",
+                            "margin_top": "0.5rem",
+                        },
+                    ),
+                    rx.cond(
+                        State.show_snap_more,
+                        rx.cond(
+                            State.snap_ok,
+                            rx.box(
+                                rx.grid(
+                                    _snap_hero_cell("Siniestros tot. La Fe", State.snap_sini),
+                                    _snap_hero_cell("Comisiones YTD", State.snap_comisiones),
+                                    _snap_hero_cell("Gasto adm. YTD", State.snap_gadm),
+                                    _snap_hero_cell("Loss ratio mercado", State.snap_mk_lr),
+                                    columns="4",
+                                    spacing="3",
+                                    width="100%",
+                                ),
+                                margin_top="0.75rem",
+                                width="100%",
+                            ),
+                        ),
+                    ),
+                    spacing="3",
+                    width="100%",
+                ),
+                width="100%",
+                max_width="1200px",
+                margin_x="auto",
+                padding_x="6",
+                padding_y="6",
+            ),
+            width="100%",
+            style={
+                "background": f"linear-gradient(120deg, {_BRAND_DEEP} 0%, {_BRAND_PURPLE} 50%, #4c1d95 100%)",
+            },
+        ),
+        rx.box(
+            rx.card(
+                rx.vstack(
+                    rx.text("Parámetros de las series", weight="bold", size="3", color=_BRAND_DEEP),
+                    rx.text(
+                        "Rango de años y modo (monthly_flow = flujo del mes; ytd = acumulado a cierre). "
+                        "Laboratorio Streamlit ofrece tablas y CSV descargables.",
+                        size="2",
+                        color="gray",
+                    ),
+                    rx.hstack(
+                        rx.vstack(
+                            rx.text("Desde", size="1", color="gray"),
+                            rx.input(
+                                value=State.market_fy,
+                                on_change=State.set_market_fy,
+                                width="90px",
+                            ),
+                            spacing="1",
+                            align_items="start",
+                        ),
+                        rx.vstack(
+                            rx.text("Hasta", size="1", color="gray"),
+                            rx.input(
+                                value=State.market_ty,
+                                on_change=State.set_market_ty,
+                                width="90px",
+                            ),
+                            spacing="1",
+                            align_items="start",
+                        ),
+                        rx.vstack(
+                            rx.text("Modo", size="1", color="gray"),
+                            rx.select(
+                                ["monthly_flow", "ytd"],
+                                value=State.market_mode,
+                                on_change=State.set_market_mode,
+                                size="2",
+                                width="160px",
+                            ),
+                            spacing="1",
+                            align_items="start",
+                        ),
+                        rx.button(
+                            "Actualizar gráficos",
+                            on_click=State.load_sudeaseg_preview,
+                            loading=State.market_charts_busy,
+                            color_scheme="purple",
+                            style={"align_self": "flex-end"},
+                        ),
+                        spacing="4",
+                        align_items="end",
+                        flex_wrap="wrap",
+                        width="100%",
+                    ),
+                    spacing="3",
+                    width="100%",
+                ),
+                style={"border": f"1px solid {_BRAND_PURPLE}22", "box_shadow": "0 8px 28px rgba(88,28,135,0.08)"},
+                width="100%",
+            ),
+            width="100%",
+            max_width="1200px",
+            margin_x="auto",
+            padding_x="6",
+            padding_top="5",
+        ),
+        rx.box(
+            rx.text(
+                "Primas netas (miles Bs.): La Fe vs total sector. Abajo: evolución del loss ratio proxy.",
+                size="2",
+                color="gray",
+            ),
+            rx.cond(
+                State.market_plot_ok,
+                rx.plotly(data=State.market_plot_figure),
+            ),
+            rx.cond(
+                State.market_ratio_ok,
+                rx.plotly(data=State.market_ratio_figure),
+            ),
+            rx.cond(
+                State.market_plot_error != "",
+                rx.callout(
+                    State.market_plot_error,
+                    icon="triangle_alert",
+                    color_scheme="red",
+                    width="100%",
+                ),
+            ),
+            spacing="4",
+            width="100%",
+            max_width="1200px",
+            margin_x="auto",
+            padding_x="6",
+            padding_bottom="8",
+            align_items="stretch",
+        ),
+        spacing="0",
+        width="100%",
+    )
+
+
+def _cohorte_panel() -> rx.Component:
+    return rx.vstack(
+        rx.heading("Cartera por cohorte (operativo)", size="5", style={"color": _BRAND_DEEP}),
+        rx.text(
+            "Indicadores desde la API de KPIs (BD demo o sintético). Coherencia narrativa con siniestros cargados en Admin.",
+            size="2",
+            color="gray",
+        ),
+        rx.hstack(
+            rx.text("Año cohorte:", weight="medium", color=_BRAND_MUTED),
+            rx.input(
+                value=State.input_year,
+                on_change=State.set_input_year,
+                width="100px",
+            ),
+            rx.button(
+                "Actualizar indicadores",
+                on_click=State.load_kpi,
+                loading=State.busy,
+                color_scheme="purple",
+            ),
+            spacing="3",
+            align_items="center",
+            flex_wrap="wrap",
+        ),
+        rx.grid(
+            _kpi_card("Persistencia", State.persistency),
+            _kpi_card("Pólizas activas", State.active_n),
+            _kpi_card("Prima media anual", State.avg_premium),
+            columns="3",
+            spacing="3",
+            width="100%",
+        ),
+        rx.grid(
+            _kpi_card("Lapsos", State.lapsed_n),
+            _kpi_card("Ratio técnico (demo)", State.tlr),
+            columns="2",
+            spacing="3",
+            width="100%",
+            max_width="720px",
+        ),
+        rx.cond(
+            State.note != "",
+            rx.callout(
+                State.note,
+                icon="info",
+                color_scheme="blue",
+                width="100%",
+            ),
+        ),
+        spacing="5",
+        width="100%",
+        max_width="1200px",
+        margin_x="auto",
+        padding_x="6",
+        padding_y="8",
+        align_items="stretch",
+    )
+
+
 def index() -> rx.Component:
     return rx.fragment(
         rx.box(
             rx.color_mode.button(position="top-right"),
             _shell_header(),
             _hero_strip(),
+            _tab_bar(),
             rx.box(
-                rx.container(
-                    rx.vstack(
-                        rx.heading("Referencia de mercado (SUDEASEG)", size="5", style={"color": _BRAND_DEEP}),
-                        rx.text(
-                            "Último cierre con dato La Fe (YTD miles de Bs.; ratios como fracción). Laboratorio Streamlit: series completas y CSV.",
-                            size="2",
-                            color="gray",
-                        ),
-                        rx.cond(
-                            State.snap_ok,
-                            rx.grid(
-                                _kpi_card("Cierre", State.snap_period),
-                                _kpi_card("Primas YTD La Fe", State.snap_primas),
-                                _kpi_card("Siniestros tot. La Fe", State.snap_sini),
-                                _kpi_card("Loss ratio La Fe", State.snap_lr),
-                                _kpi_card("Cuota primas", State.snap_cuota),
-                                _kpi_card("Comisiones YTD", State.snap_comisiones),
-                                _kpi_card("Gasto adm. YTD", State.snap_gadm),
-                                _kpi_card("Loss ratio mercado", State.snap_mk_lr),
-                                columns="4",
-                                spacing="3",
-                                width="100%",
-                            ),
-                        ),
-                        rx.text(
-                            "Primas netas mensuales (miles de Bs.): La Fe (eje izquierdo) y total del sector (eje derecho).",
-                            size="2",
-                            color="gray",
-                            style={"marginTop": "0.75rem"},
-                        ),
-                        rx.cond(
-                            State.market_plot_ok,
-                            rx.plotly(data=State.market_plot_figure),
-                        ),
-                        rx.cond(
-                            State.market_ratio_ok,
-                            rx.plotly(data=State.market_ratio_figure),
-                        ),
-                        rx.cond(
-                            State.market_plot_error != "",
-                            rx.callout(
-                                State.market_plot_error,
-                                icon="triangle_alert",
-                                color_scheme="red",
-                                width="100%",
-                            ),
-                        ),
-                        rx.heading("Resumen de cohorte", size="5", style={"color": _BRAND_DEEP}),
-                        rx.hstack(
-                            rx.text("Año:", weight="medium", color=_BRAND_MUTED),
-                            rx.input(
-                                value=State.input_year,
-                                on_change=State.set_input_year,
-                                width="100px",
-                            ),
-                            rx.button(
-                                "Actualizar indicadores",
-                                on_click=State.load_kpi,
-                                loading=State.busy,
-                                color_scheme="purple",
-                            ),
-                            spacing="3",
-                            align_items="center",
-                            flex_wrap="wrap",
-                        ),
-                        rx.grid(
-                            _kpi_card("Persistencia", State.persistency),
-                            _kpi_card("Pólizas activas", State.active_n),
-                            _kpi_card("Lapsos", State.lapsed_n),
-                            _kpi_card("Prima media", State.avg_premium),
-                            _kpi_card("Ratio técnico (demo)", State.tlr),
-                            columns="5",
-                            spacing="3",
-                            width="100%",
-                        ),
-                        rx.cond(
-                            State.note != "",
-                            rx.callout(
-                                State.note,
-                                icon="info",
-                                color_scheme="blue",
-                                width="100%",
-                            ),
-                        ),
-                        rx.text(
-                            "Seguros La Fe · RIF J-000467382 · Inscrita en la SUDEASEG bajo el N.º 62",
-                            size="1",
-                            color="gray",
-                            text_align="center",
-                            width="100%",
-                        ),
-                        spacing="5",
-                        width="100%",
-                        padding_y="8",
-                        padding_x="2",
-                    ),
-                    size="4",
+                rx.cond(
+                    State.ui_main_tab == "mercado",
+                    _mercado_panel(),
+                    _cohorte_panel(),
                 ),
                 width="100%",
                 min_height="50vh",
+                style={"background": "var(--gray-2)"},
+            ),
+            rx.box(
+                rx.text(
+                    "Seguros La Fe · RIF J-000467382 · Inscrita en la SUDEASEG bajo el N.º 62",
+                    size="1",
+                    color="gray",
+                    text_align="center",
+                    width="100%",
+                ),
+                padding_y="4",
+                width="100%",
                 style={"background": "var(--gray-2)"},
             ),
             min_height="100vh",

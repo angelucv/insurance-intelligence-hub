@@ -224,19 +224,67 @@ st.markdown(
 )
 
 with st.sidebar:
-    st.markdown("### Parámetros de análisis")
-    use_db = st.toggle("Usar datos en base de datos", value=True)
-    cohort_year = st.slider("Año cohorte", 2019, 2024, 2022)
-    seed = st.number_input("Semilla (datos sintéticos de respaldo)", min_value=1, max_value=9999, value=42, step=1)
-    n_policies = st.select_slider(
-        "Tamaño cohorte sintética (respaldo)",
-        options=[1000, 2000, 4000, 8000, 15000],
-        value=8000,
+    st.markdown("### Módulo")
+    lab_module = st.radio(
+        "Área activa",
+        options=["cohorte", "mercado"],
+        format_func=lambda x: "Cohorte demo (KPI cartera)" if x == "cohorte" else "Mercado SUDEASEG",
+        horizontal=False,
     )
+    st.divider()
+    if lab_module == "cohorte":
+        st.markdown("**Parámetros cohorte**")
+        use_db = st.toggle("Usar datos en base de datos", value=True)
+        cohort_year = st.slider("Año cohorte", 2019, 2024, 2022)
+        seed = st.number_input(
+            "Semilla (datos sintéticos de respaldo)",
+            min_value=1,
+            max_value=9999,
+            value=42,
+            step=1,
+        )
+        n_policies = st.select_slider(
+            "Tamaño cohorte sintética (respaldo)",
+            options=[1000, 2000, 4000, 8000, 15000],
+            value=8000,
+        )
+        m_from = m_to = 2023
+        m_mode = "monthly_flow"
+        mercado_vista = "primas"
+    else:
+        use_db = True
+        cohort_year = 2022
+        seed = 42
+        n_policies = 8000
+        st.markdown("**Series de mercado**")
+        m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1, key="sb_m_from")
+        m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1, key="sb_m_to")
+        m_mode = st.selectbox(
+            "Modo temporal",
+            options=["monthly_flow", "ytd"],
+            format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)",
+            key="sb_m_mode",
+        )
+        st.divider()
+        st.markdown("**Vista del mercado**")
+        mercado_vista = st.radio(
+            "Contenido principal",
+            options=["primas", "snapshot", "extendido", "cuadro"],
+            format_func=lambda x: {
+                "primas": "Primas vs mercado",
+                "snapshot": "Último cierre",
+                "extendido": "Métricas resumen",
+                "cuadro": "Cuadro de resultados",
+            }[x],
+        )
 
-tab_demo, tab_mercado = st.tabs(["Cohorte demo", "Mercado SUDEASEG"])
-
-with tab_demo:
+if lab_module == "cohorte":
+    st.markdown(
+        f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+        "Cohorte demo</p>",
+        unsafe_allow_html=True,
+    )
+    st.caption("KPI de cartera vía API compute; parámetros en la barra lateral.")
     try:
         data = _fetch_kpi(base, cohort_year, int(seed), int(n_policies), use_db)
     except Exception as e:
@@ -294,32 +342,21 @@ with tab_demo:
         mime="text/csv",
     )
 
-with tab_mercado:
+else:
+    st.markdown(
+        f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+        "Mercado SUDEASEG</p>",
+        unsafe_allow_html=True,
+    )
     st.caption(
         "SUDEASEG en Postgres (API compute). Miles de bolívares salvo ratios. "
-        "Modo mensual = flujo del mes; YTD = acumulado a cierre de mes."
+        "Modo mensual = flujo del mes; YTD = acumulado a cierre de mes. "
+        "Ajusta rango y modo en la barra lateral; elige la vista abajo en el mismo menú."
     )
-    mc1, mc2, mc3 = st.columns(3)
-    with mc1:
-        m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1, key="m_from")
-    with mc2:
-        m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1, key="m_to")
-    with mc3:
-        m_mode = st.selectbox(
-            "Modo",
-            options=["monthly_flow", "ytd"],
-            format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)",
-            key="m_mode",
-        )
 
     if m_from > m_to:
         st.warning("Ajusta el rango de años (desde ≤ hasta).")
-    else:
-        mt1, mt2, mt3, mt4 = st.tabs(
-            ["Primas vs mercado", "Último cierre", "Métricas resumen", "Cuadro de resultados"],
-        )
-
-        with mt1:
+    elif mercado_vista == "primas":
             st.subheader("Primas netas: La Fe vs total de mercado")
             try:
                 la_payload = _fetch_market_series(
@@ -389,7 +426,7 @@ with tab_mercado:
                         st.write(la_payload.get("empresa_filter_note", ""))
                         st.write(tot_payload.get("empresa_filter_note", ""))
 
-        with mt2:
+    elif mercado_vista == "snapshot":
             st.subheader("Último cierre con dato La Fe (YTD a ese mes)")
             try:
                 snap_r = requests.get(f"{base}/api/v1/market/la-fe/snapshot-latest", timeout=60)
@@ -434,7 +471,7 @@ with tab_mercado:
                     mime="application/json",
                 )
 
-        with mt3:
+    elif mercado_vista == "extendido":
             st.subheader("Serie extendida — resumen por empresa (La Fe)")
             try:
                 la_ext = _fetch_market_series(
@@ -534,7 +571,7 @@ with tab_mercado:
                             key="dl_mk_ext",
                         )
 
-        with mt4:
+    elif mercado_vista == "cuadro":
             st.subheader("Cuadro de resultados — La Fe vs total mercado")
             try:
                 la_c = _fetch_market_series(

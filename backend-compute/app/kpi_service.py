@@ -77,7 +77,39 @@ def kpi_from_database(session: Session, cohort_year: int) -> dict[str, Any] | No
         df = df[df["annual_premium"] > 0]
 
     out = _duckdb_aggregate(df, cohort_year)
-    return out if out else None
+    if not out:
+        return None
+    bridge = _operational_claims_note(session, cohort_year)
+    if bridge:
+        prev = str(out.get("data_note", "")).strip()
+        out["data_note"] = (prev + " " + bridge).strip() if prev else bridge
+    return out
+
+
+def _operational_claims_note(session: Session, cohort_year: int) -> str:
+    """Si existe `policy_claims`, resume siniestros enlazados a la cohorte (puente operativo ↔ financiero)."""
+    try:
+        q = text(
+            """
+            SELECT COUNT(*)::int, COALESCE(SUM(c.paid_amount_bs), 0)::float
+            FROM policy_claims c
+            INNER JOIN policies p ON p.policy_id = c.policy_id
+            WHERE p.cohort_year = :y
+            """
+        )
+        row = session.execute(q, {"y": cohort_year}).first()
+        if not row:
+            return ""
+        n_claims, paid_sum = int(row[0] or 0), float(row[1] or 0)
+        if n_claims == 0:
+            return ""
+        return (
+            f"Operativo: {n_claims:,} siniestros en BD para cohorte {cohort_year} "
+            f"(pagado acum. demo {paid_sum:,.2f} Bs.). "
+            "Las cifras SUDEASEG del laboratorio son referencia de mercado (no consolidación de esta cartera)."
+        )
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 def kpi_summary_payload(
