@@ -13,6 +13,8 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 
+from cohort_visuals import fetch_cohort_portfolio, render_portfolio_pack
+
 st.set_page_config(
     page_title="Insurance Intelligence Hub — Laboratorio",
     layout="wide",
@@ -277,6 +279,7 @@ if lab_module == "cohorte":
         "Indicadores desde la API sobre pólizas del año elegido en la barra lateral. "
         "Si no hay filas en base para ese año, la API muestra una cartera de respaldo (solo demo)."
     )
+    data: dict[str, Any] | None = None
     try:
         data = _fetch_kpi(
             base,
@@ -287,6 +290,8 @@ if lab_module == "cohorte":
         )
     except Exception as e:
         st.error(f"No se pudo obtener los indicadores. Comprueba la conexión o inténtalo más tarde. ({e})")
+        st.stop()
+    if data is None:
         st.stop()
 
     if data.get("data_note"):
@@ -331,14 +336,39 @@ if lab_module == "cohorte":
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    port_pack = fetch_cohort_portfolio(base, cohort_year)
+    if port_pack is None:
+        st.warning(
+            "No hay paquete analítico de cartera para este año (sin pólizas en base o la API devolvió 404). "
+            "Cargue pólizas para la cohorte o ejecute el script `seed_operational_aligned.py` y asegúrese de que "
+            "`COMPUTE_API_URL` apunte a la API con `DATABASE_URL`."
+        )
+    else:
+        render_portfolio_pack(
+            port_pack,
+            brand_purple=_BRAND_PURPLE,
+            brand_deep=_BRAND_DEEP,
+            accent_blue=_MARKET_TOTAL_LINE,
+        )
+
     st.subheader("Exportación")
-    df = pd.DataFrame([data])
-    st.download_button(
-        "Descargar KPIs como CSV",
-        data=df.to_csv(index=False).encode("utf-8"),
-        file_name="kpi_summary_demo.csv",
-        mime="text/csv",
-    )
+    ex1, ex2 = st.columns(2)
+    with ex1:
+        df = pd.DataFrame([data])
+        st.download_button(
+            "Descargar KPIs (CSV)",
+            data=df.to_csv(index=False).encode("utf-8"),
+            file_name="kpi_summary_demo.csv",
+            mime="text/csv",
+        )
+    with ex2:
+        if port_pack:
+            st.download_button(
+                "Descargar paquete analítico (JSON)",
+                data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
+                file_name=f"cohort_portfolio_{cohort_year}.json",
+                mime="application/json",
+            )
 
 else:
     st.markdown(

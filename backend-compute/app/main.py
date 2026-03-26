@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 import os
 import sys
 from contextlib import asynccontextmanager
@@ -19,6 +20,7 @@ from app.database import get_engine, init_engine
 from app.deps import get_db, verify_ingest_key
 from app.ingest_service import ingest_policies_bytes
 from app.kpi_service import kpi_summary_payload
+from app.portfolio_analytics import cohort_portfolio_payload
 from app.market_service import (
     la_fe_cuadro_series,
     la_fe_market_snapshot_latest,
@@ -369,6 +371,29 @@ def kpi_summary(
         prefer_db=use_db and db is not None,
     )
     return KpiSummary.model_validate(raw)
+
+
+@app.get("/api/v1/kpi/cohort-portfolio")
+def cohort_portfolio_charts(
+    cohort_year: int,
+    db: Session | None = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Agregados listos para Plotly: emisión mensual, siniestralidad, histogramas,
+    dispersión prima vs pagado, etc. Requiere pólizas en BD para la cohorte.
+    """
+    if db is None or db.bind is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Base de datos no configurada (defina DATABASE_URL)",
+        )
+    raw = cohort_portfolio_payload(db, cohort_year)
+    if raw is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Sin pólizas en base para esta cohorte",
+        )
+    return raw
 
 
 @app.post("/api/v1/ingest/policies", response_model=IngestResult, dependencies=[Depends(verify_ingest_key)])
