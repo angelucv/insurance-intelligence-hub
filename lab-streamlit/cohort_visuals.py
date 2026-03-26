@@ -392,18 +392,16 @@ _COHORT_PORTFOLIO_CACHE_TTL = 300
 
 @st.cache_data(ttl=_COHORT_PORTFOLIO_CACHE_TTL, show_spinner=False)
 def fetch_cohort_portfolio(base: str, cohort_year: int) -> dict[str, Any] | None:
-    try:
-        r = requests.get(
-            f"{base}/api/v1/kpi/cohort-portfolio",
-            params={"cohort_year": cohort_year},
-            timeout=90,
-        )
-        if r.status_code == 404:
-            return None
-        r.raise_for_status()
-        return r.json()
-    except Exception:
+    """404 = sin datos en API; cualquier otro error se propaga (no se cachea `None` por fallos transitorios)."""
+    r = requests.get(
+        f"{base}/api/v1/kpi/cohort-portfolio",
+        params={"cohort_year": cohort_year},
+        timeout=(12, 78),
+    )
+    if r.status_code == 404:
         return None
+    r.raise_for_status()
+    return r.json()
 
 
 def _brand_layout(fig: go.Figure, *, height: int | None = None) -> None:

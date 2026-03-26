@@ -129,10 +129,11 @@ def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str) -> None:
 
     _init_pygwalker_streamlit_comm()
     try:
-        try:
-            pyg.walk(df, env="Streamlit")
-        except TypeError:
-            pyg.walk(df, env="streamlit")
+        with st.spinner("Iniciando lienzo PyGWalker…"):
+            try:
+                pyg.walk(df, env="Streamlit")
+            except TypeError:
+                pyg.walk(df, env="streamlit")
     except Exception as e:
         st.error(f"No se pudo iniciar PyGWalker: {e}")
         with st.expander("Detalle técnico"):

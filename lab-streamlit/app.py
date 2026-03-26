@@ -226,6 +226,29 @@ def _api_base() -> str:
     return default.rstrip("/")
 
 
+def _compute_api_url_is_default_localhost(base: str) -> bool:
+    return base.rstrip("/") in ("http://127.0.0.1:8000", "http://localhost:8000")
+
+
+def _compute_api_url_explicitly_set() -> bool:
+    try:
+        if "COMPUTE_API_URL" in st.secrets:
+            return bool(str(st.secrets["COMPUTE_API_URL"]).strip())
+    except FileNotFoundError:
+        pass
+    return bool(os.environ.get("COMPUTE_API_URL", "").strip())
+
+
+def _likely_streamlit_cloud_runtime() -> bool:
+    """Heurística: despliegue remoto (p. ej. Cloud) donde localhost no alcanza la API."""
+    if os.environ.get("STREAMLIT_CLOUD", "").lower() in ("1", "true", "yes"):
+        return True
+    try:
+        return Path("/mount/src").exists()
+    except OSError:
+        return False
+
+
 def _admin_upload_hint() -> str:
     try:
         if "DJANGO_ADMIN_BASE_URL" in st.secrets:
@@ -418,7 +441,7 @@ def _fetch_kpi_impl(
             "n_policies": n_policies,
             "use_db": str(use_db).lower(),
         },
-        timeout=60,
+        timeout=(12, 55),
     )
     r.raise_for_status()
     return r.json()
@@ -459,6 +482,13 @@ else:
     )
 
 base = _api_base()
+if _likely_streamlit_cloud_runtime() and _compute_api_url_is_default_localhost(base) and not _compute_api_url_explicitly_set():
+    st.error(
+        "Falta **COMPUTE_API_URL** en Secrets (Streamlit Cloud) o en variables de entorno. "
+        "Sin una URL alcanzable, la app usa `http://127.0.0.1:8000` y no obtendrá datos."
+    )
+    st.stop()
+
 upload_path = _admin_upload_hint()
 upload_claims_path = _admin_upload_claims_hint()
 portal = _portal_reflex_url()
@@ -566,21 +596,34 @@ with st.sidebar:
 
 if lab_module == "cohorte":
     data: dict[str, Any] | None = None
-    try:
-        data = _fetch_kpi_cached(
-            base,
-            cohort_year,
-            _KPI_SEED_FALLBACK,
-            _KPI_N_POLICIES_FALLBACK,
-            True,
-        )
-    except Exception as e:
-        st.error(f"No se pudo obtener los indicadores. Comprueba la conexión o inténtalo más tarde. ({e})")
-        st.stop()
+    port_pack: dict[str, Any] | None = None
+    with st.spinner("Cargando datos desde la API de cómputo (KPI + cartera)…"):
+        try:
+            data = _fetch_kpi_cached(
+                base,
+                cohort_year,
+                _KPI_SEED_FALLBACK,
+                _KPI_N_POLICIES_FALLBACK,
+                True,
+            )
+        except Exception as e:
+            st.error(
+                "No se pudo obtener los indicadores. Revise **COMPUTE_API_URL**, que la API responda "
+                f"y que no haya cortafuegos. ({e})"
+            )
+            st.stop()
+        try:
+            port_pack = fetch_cohort_portfolio(base, cohort_year)
+        except Exception as e:
+            st.warning(
+                "El paquete analítico de cartera no está disponible (timeout, error HTTP o red). "
+                "Se muestran los KPIs; gráficos de cartera y export JSON pueden faltar. "
+                f"Detalle: {e}"
+            )
+            port_pack = None
+
     if data is None:
         st.stop()
-
-    port_pack = fetch_cohort_portfolio(base, cohort_year)
 
     with st.sidebar:
         st.divider()
