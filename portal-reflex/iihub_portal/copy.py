@@ -151,7 +151,7 @@ SUITE_HEART_CAPTION = (
     "Sin **ingesta ordenada**, **repositorio único** y **reglas de cálculo centralizadas**, el cuadro de mando carece de sustento consistente. "
     "La **visualización** constituye la capa final; el **proceso de datos** es el que garantiza **coherencia numérica** entre usuarios."
 )
-# Figuras del bloque «Cores tradicionales…» (suite-3): coexistencia con core / evolución sin core
+# Figuras del bloque «Cores tradicionales…» (ancla suite-cores): coexistencia con core / evolución sin core
 SUITE_CORE_FIG_PAIR_INTRO = (
     "**Dos lecturas del encaje.** A la **izquierda**, **coexistencia** con un core de referencia (Acsel/x, Rector u otro); "
     "a la **derecha**, **evolución por etapas** cuando aún **no** hay un sistema central único consolidado."
@@ -253,11 +253,9 @@ La **demostración** se exhibe habitualmente **en infraestructura de nube** (cos
 """
 
 SUITE_MD_BLOCK7 = """
-### Diferenciación frente a una solución exclusivamente orientada a tableros
-
 **Microsoft Power BI** constituye un referente en **visualización y autoservicio de inteligencia de negocio** sobre datos conectados o previamente modelados; en numerosas organizaciones desempeña la función de **capa de presentación** corporativa.
 
-La **presentación demostrativa** incorpora, además, **ingesta controlada**, **repositorio unificado**, **cálculo centralizado** y **dos modalidades de análisis**. Las figuras precedentes ilustran la **comparación de enfoques** y la **secuencia previa a la visualización**.
+La **presentación demostrativa** incorpora, además, **ingesta controlada**, **repositorio unificado**, **cálculo centralizado** y **dos modalidades de análisis**. La **figura** de esta misma sección resume el contraste entre un enfoque centrado en **tableros** y una **suite integral** de datos; el **proceso de datos** previo a los gráficos se trata en la sección siguiente.
 
 **Sobre estética y autoservicio.** **Microsoft Power BI** admite **personalización visual** amplia (temas de informe, formato de objetos visuales y, en muchos despliegues, **exploración por parte del negocio** sin depender del desarrollador). **No** se pretende aquí afirmar que esta suite «supera» al tablero por defecto en belleza de gráficos o en rapidez de maquetar un informe. El valor diferencial de la presentación demostrativa es otro: **experiencia de producto integrada** (portal ejecutivo y laboratorio) y **gobernanza del dato de extremo a extremo** —ingesta, almacén, reglas de indicadores y consulta— como **complemento** habitual al **cuadro de mando corporativo** cuando ambos conviven.
 
@@ -291,29 +289,27 @@ SUITE_MD_BLOCK8 = """
 *Las cifras operativas deben contrastarse siempre con los sistemas oficiales de registro.*
 """
 
+# Textos emparejados con cada infografía (vista documentación completa)
+SUITE_PAIR1_MD = "\n\n".join([SUITE_MD_BLOCK1, SUITE_MD_BLOCK4])
+SUITE_PAIR3_MD = "\n\n".join([SUITE_MD_BLOCK2, SUITE_MD_BLOCK5, SUITE_MD_BLOCK6])
+
 SUITE_ARCHITECTURE_MD = "\n\n".join(
     [
-        SUITE_MD_BLOCK1,
-        SUITE_MD_BLOCK2,
-        SUITE_MD_BLOCK3,
-        SUITE_MD_BLOCK4,
-        SUITE_MD_BLOCK5,
-        SUITE_MD_BLOCK6,
+        SUITE_PAIR1_MD,
         SUITE_MD_BLOCK7,
+        SUITE_PAIR3_MD,
+        SUITE_MD_BLOCK3,
         SUITE_MD_BLOCK8,
     ]
 )
 
-# Índice: ancla → etiqueta (misma numeración que bloques)
+# Índice: ancla → etiqueta (alineado a secciones con figura + texto)
 SUITE_TOC_ENTRIES: list[tuple[str, str]] = [
-    ("suite-1", "Contenido"),
-    ("suite-2", "Core actuarial"),
-    ("suite-3", "Acsel/x y Rector"),
-    ("suite-4", "Funcionalidades"),
-    ("suite-5", "Servicio de datos (API)"),
-    ("suite-6", "Despliegue"),
-    ("suite-7", "Diferenciación vs tableros"),
-    ("suite-8", "Roles"),
+    ("suite-1", "Mapa y alcance"),
+    ("suite-2", "Tablero vs suite"),
+    ("suite-3", "Proceso y plataforma"),
+    ("suite-cores", "Cores tradicionales"),
+    ("suite-roles", "Roles"),
 ]
 
 # Errores API — cartera / mercado

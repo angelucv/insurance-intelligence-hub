@@ -64,7 +64,7 @@ def sidebar() -> rx.Component:
             rx.image(
                 src="/logo-fe-1.jpg",
                 alt="Seguros La Fe",
-                class_name="h-9 w-auto object-contain max-w-[140px]",
+                class_name="h-14 w-auto object-contain max-w-[200px] sm:max-w-[220px]",
             ),
             rx.el.p(
                 copy.SIDEBAR_BRAND_TITLE,

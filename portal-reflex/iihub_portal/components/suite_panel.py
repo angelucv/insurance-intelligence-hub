@@ -63,6 +63,47 @@ def _responsive_figure(
     )
 
 
+def _suite_pair_section(
+    anchor: str,
+    heading: str,
+    src: str,
+    alt: str,
+    body_md: str,
+    zebra: int,
+    loading: str = "lazy",
+) -> rx.Component:
+    """Una infografía y el texto relacionado, en dos columnas en pantallas anchas."""
+    bg = (
+        "rounded-xl p-4 sm:p-5 mb-4 border bg-slate-50/90 border-slate-100/90"
+        if zebra % 2 == 0
+        else "rounded-xl p-4 sm:p-5 mb-4 border bg-white border-gray-100/90"
+    )
+    return rx.el.div(
+        rx.el.h3(
+            heading,
+            class_name="text-base font-semibold text-gray-900 mb-4 scroll-mt-24",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.image(
+                    src=src,
+                    alt=alt,
+                    loading=loading,
+                    class_name=(
+                        "w-full min-w-0 max-h-[min(55vh,440px)] xl:max-h-[min(72vh,560px)] "
+                        "object-contain rounded-xl border border-gray-200 bg-slate-50/80 shadow-sm"
+                    ),
+                ),
+                class_name="w-full overflow-x-auto [scrollbar-width:thin] xl:sticky xl:top-24",
+            ),
+            rx.markdown(body_md.strip(), class_name=_MD_PROSE + " min-w-0"),
+            class_name="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:gap-8 items-start",
+        ),
+        id=anchor,
+        class_name=bg,
+    )
+
+
 def _md_block(anchor: str, md: str, zebra: int) -> rx.Component:
     bg = (
         "rounded-xl p-4 sm:p-5 mb-4 border bg-slate-50/90 border-slate-100/90"
@@ -78,7 +119,7 @@ def _md_block(anchor: str, md: str, zebra: int) -> rx.Component:
 
 def _suite_block3_with_figure() -> rx.Component:
     """Bloque Acsel/x–Rector con dos figuras: coexistencia con core y evolución sin core."""
-    zebra = 2
+    zebra = 3
     bg = (
         "rounded-xl p-4 sm:p-5 mb-4 border bg-slate-50/90 border-slate-100/90"
         if zebra % 2 == 0
@@ -143,7 +184,7 @@ def _suite_block3_with_figure() -> rx.Component:
                 "items-stretch w-full"
             ),
         ),
-        id="suite-3",
+        id="suite-cores",
         class_name=bg,
     )
 
@@ -218,20 +259,37 @@ def _suite_infographics() -> rx.Component:
 
 
 def _suite_doc_blocks_full() -> rx.Component:
-    blocks = [
-        ("suite-1", copy.SUITE_MD_BLOCK1, 0),
-        ("suite-2", copy.SUITE_MD_BLOCK2, 1),
-        ("suite-4", copy.SUITE_MD_BLOCK4, 3),
-        ("suite-5", copy.SUITE_MD_BLOCK5, 4),
-        ("suite-6", copy.SUITE_MD_BLOCK6, 5),
-        ("suite-7", copy.SUITE_MD_BLOCK7, 6),
-        ("suite-8", copy.SUITE_MD_BLOCK8, 7),
-    ]
+    """Documentación completa: cada infografía principal va con su texto; luego cores y roles."""
     return rx.fragment(
-        _md_block(*blocks[0][:3]),
-        _md_block(*blocks[1][:3]),
+        _suite_pair_section(
+            "suite-1",
+            copy.SUITE_MAP_HEADING,
+            "/infografia/suite-arquitectura-reflex.png",
+            copy.SUITE_MAP_ALT_REFLEX,
+            copy.SUITE_PAIR1_MD,
+            0,
+            loading="eager",
+        ),
+        _suite_pair_section(
+            "suite-2",
+            copy.SUITE_COMPARISON_HEADING,
+            "/infografia/suite-comparativa-powerbi.png",
+            copy.SUITE_COMPARISON_ALT,
+            copy.SUITE_MD_BLOCK7,
+            1,
+            loading="lazy",
+        ),
+        _suite_pair_section(
+            "suite-3",
+            copy.SUITE_HEART_HEADING,
+            "/infografia/suite-corazon-proceso.png",
+            copy.SUITE_HEART_ALT,
+            copy.SUITE_PAIR3_MD,
+            2,
+            loading="lazy",
+        ),
         _suite_block3_with_figure(),
-        *[_md_block(a, m, z) for a, m, z in blocks[2:]],
+        _md_block("suite-roles", copy.SUITE_MD_BLOCK8, 4),
     )
 
 
@@ -281,7 +339,6 @@ def suite_panel() -> rx.Component:
     full_column = rx.el.div(
         _suite_toolbar(),
         _suite_toc(),
-        _suite_infographics(),
         _suite_doc_blocks_full(),
         _suite_glossary(),
         class_name="space-y-0",
