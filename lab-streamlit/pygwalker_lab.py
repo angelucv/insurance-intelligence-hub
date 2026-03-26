@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 import pandas as pd
@@ -96,8 +97,14 @@ def mercado_bundle_to_tables(
     return out
 
 
+def _stable_gid(walker_key: str, table_label: str) -> str:
+    """Identificador estable para el componente Streamlit / GraphicWalker (sin espacios raros en DOM)."""
+    h = hashlib.sha256(f"{walker_key}|{table_label}".encode("utf-8")).hexdigest()[:18]
+    return f"{walker_key}_{h}"
+
+
 def _init_pygwalker_streamlit_comm() -> None:
-    """PyGWalker en Streamlit suele requerir init una vez por sesión."""
+    """Alineación con la API streamlit de PyGWalker (init idempotente)."""
     if st.session_state.get("_pygwalker_comm_ready"):
         return
     try:
@@ -109,36 +116,54 @@ def _init_pygwalker_streamlit_comm() -> None:
     st.session_state["_pygwalker_comm_ready"] = True
 
 
-def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str) -> None:
-    """Embeds PyGWalker en Streamlit; si falla el import, muestra vista tabular."""
+def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str, table_label: str = "") -> None:
+    """Exploración visual tipo BI: datos siempre visibles + lienzo PyGWalker si está instalado."""
     if df is None or df.empty:
         st.info("Sin filas para explorar con PyGWalker.")
         return
 
-    try:
-        import pygwalker as pyg
-    except ImportError:
-        st.warning(
-            "PyGWalker no está instalado en este entorno. "
-            "Añada `pygwalker` al entorno (p. ej. `pip install pygwalker`). "
-            "Python 3.10–3.12 suele ser el más compatible."
-        )
-        st.dataframe(df.head(2000), use_container_width=True, hide_index=True)
-        st.caption(f"Vista previa (primeras filas). Total filas: {len(df):,}.")
-        return
+    st.markdown(
+        "**Qué es esto:** PyGWalker es un explorador visual (estilo Power BI / Tableau): "
+        "arrastra **dimensiones** y **medidas** al lienzo para cruzar y graficar. "
+        "**No** es un editor SQL: no escribe consultas parametrizadas en texto; la “parametrización” "
+        "es elegir campos, filtros y gráficos en el panel del explorador."
+    )
 
-    _init_pygwalker_streamlit_comm()
-    try:
-        with st.spinner("Iniciando lienzo PyGWalker…"):
-            try:
-                pyg.walk(df, env="Streamlit")
-            except TypeError:
-                pyg.walk(df, env="streamlit")
-    except Exception as e:
-        st.error(f"No se pudo iniciar PyGWalker: {e}")
-        with st.expander("Detalle técnico"):
-            st.exception(e)
-        st.dataframe(df.head(500), use_container_width=True, hide_index=True)
+    t_data, t_explorer = st.tabs(["Tabla de datos", "Explorador visual (PyGWalker)"])
+    with t_data:
+        st.dataframe(df.head(5000), use_container_width=True, hide_index=True)
+        st.caption(f"Filas mostradas (máx. 5.000 de {len(df):,}). Use la otra pestaña para gráficos y pivotes.")
+        csv_bytes = df.to_csv(index=False).encode("utf-8")
+        _dl_key = hashlib.sha256(f"{key}|{table_label}".encode("utf-8")).hexdigest()[:14]
+        st.download_button(
+            "Descargar esta tabla (CSV)",
+            data=csv_bytes,
+            file_name="pygwalker_tabla.csv",
+            mime="text/csv",
+            key=f"{key}_csv_{_dl_key}",
+        )
+
+    with t_explorer:
+        try:
+            from pygwalker.api.streamlit import StreamlitRenderer
+        except ImportError:
+            st.warning(
+                "**PyGWalker no está instalado** en este entorno. "
+                "En Streamlit Cloud puede añadir `pygwalker` a `requirements.txt` o a un archivo extra de dependencias. "
+                "Use la pestaña **Tabla de datos** mientras tanto."
+            )
+            return
+
+        gid = _stable_gid(key, table_label) if table_label else key
+        _init_pygwalker_streamlit_comm()
+        try:
+            renderer = StreamlitRenderer(df, gid=gid, default_tab="data")
+            renderer.explorer(key=f"{key}_explorer", default_tab="data")
+        except Exception as e:
+            st.error(f"No se pudo abrir el explorador PyGWalker: {e}")
+            with st.expander("Detalle técnico"):
+                st.exception(e)
+            st.dataframe(df.head(500), use_container_width=True, hide_index=True)
 
 
 def render_table_picker_and_walker(
@@ -162,6 +187,6 @@ def render_table_picker_and_walker(
         df = pd.DataFrame()
     st.caption(
         f"**{pick}** · {len(df):,} filas × {len(df.columns)} columnas. "
-        "Arrastre dimensiones y medidas en el lienzo PyGWalker."
+        "Pestaña «Explorador visual» para pivotes y gráficos; «Tabla de datos» para revisar o exportar CSV."
     )
-    render_pygwalker_streamlit(df, key=walker_key)
+    render_pygwalker_streamlit(df, key=walker_key, table_label=pick)
