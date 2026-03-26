@@ -387,6 +387,10 @@ def render_territorio_ve(
     st.dataframe(df_b, use_container_width=True, hide_index=True)
 
 
+_COHORT_PORTFOLIO_CACHE_TTL = 300
+
+
+@st.cache_data(ttl=_COHORT_PORTFOLIO_CACHE_TTL, show_spinner=False)
 def fetch_cohort_portfolio(base: str, cohort_year: int) -> dict[str, Any] | None:
     try:
         r = requests.get(
@@ -414,6 +418,39 @@ def _brand_layout(fig: go.Figure, *, height: int | None = None) -> None:
         fig.update_layout(height=height)
 
 
+def _analitica_section_banner(title: str, color_hex: str, subtitle: str) -> None:
+    st.markdown(
+        f'<div style="background:linear-gradient(90deg, {color_hex}1c 0%, transparent 75%);'
+        f'border-left:4px solid {color_hex};padding:0.65rem 1rem;border-radius:0 10px 10px 0;margin:0 0 1rem 0;">'
+        f'<span style="font-weight:700;color:{color_hex};font-size:1.05rem;">{title}</span>'
+        f'<span style="color:#64748b;font-size:0.88rem;"> · {subtitle}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+_ANALITICA_SECTION_LABELS = (
+    "Panorama",
+    "Emisión",
+    "Siniestralidad",
+    "Prima vs siniestro",
+    "Riesgo avanzado",
+)
+_ANALITICA_SECTION_COLORS: dict[str, str] = {
+    "Panorama": "#4f46e5",
+    "Emisión": "#059669",
+    "Siniestralidad": "#d97706",
+    "Prima vs siniestro": "#7c3aed",
+    "Riesgo avanzado": "#be123c",
+}
+_ANALITICA_SECTION_SUB: dict[str, str] = {
+    "Panorama": "Composición por edad/estado y estado de siniestro",
+    "Emisión": "Emisión mensual y distribución de primas y edades",
+    "Siniestralidad": "Siniestros por mes, pagado acumulado y severidad",
+    "Prima vs siniestro": "Dispersión prima–pagado y top pólizas",
+    "Riesgo avanzado": "Mapa de calor, supervivencia, boxplots y burn",
+}
+
+
 def render_portfolio_pack(
     pack: dict[str, Any],
     *,
@@ -428,13 +465,52 @@ def render_portfolio_pack(
         f"Cohorte **{cy}** · {pack['policies_total']:,} pólizas · {pack['claims_total']:,} siniestros · "
         f"prima total {pack['total_annual_premium']:,.0f} Bs. · pagado {pack['total_paid_claims']:,.0f} Bs."
         + (f" · ratio pagado/prima **{lr:.2f} %**" if lr is not None else "")
+        + " · **Secciones:** solo se dibuja la elegida (más rápido al cambiar)."
+    )
+    st.markdown(
+        """
+        <style>
+        /* Pills analítica: acento por fila */
+        div[data-testid="stMain"] [data-testid="stPills"] {
+            gap: 0.4rem !important;
+            flex-wrap: wrap !important;
+        }
+        div[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"] {
+            border-radius: 999px !important;
+            font-weight: 600 !important;
+            font-size: 0.84rem !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+        div[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"][aria-pressed="true"] {
+            box-shadow: 0 1px 4px rgba(79, 70, 229, 0.2) !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    section = (
+        st.pills(
+            "Sección analítica",
+            options=list(_ANALITICA_SECTION_LABELS),
+            selection_mode="single",
+            default=_ANALITICA_SECTION_LABELS[0],
+            label_visibility="collapsed",
+            key="analitica_inner_section",
+        )
+        or _ANALITICA_SECTION_LABELS[0]
+    )
+    _sec_color = _ANALITICA_SECTION_COLORS.get(section, "#64748b")
+    st.markdown(
+        f'<div style="height:4px;border-radius:4px;background:linear-gradient(90deg,{_sec_color},#e2e8f0);margin:0.35rem 0 0.5rem 0;"></div>',
+        unsafe_allow_html=True,
+    )
+    _analitica_section_banner(
+        section,
+        _sec_color,
+        _ANALITICA_SECTION_SUB.get(section, ""),
     )
 
-    tab_a, tab_b, tab_c, tab_d, tab_e = st.tabs(
-        ["Panorama", "Emisión", "Siniestralidad", "Prima vs siniestro", "Riesgo avanzado"],
-    )
-
-    with tab_a:
+    if section == "Panorama":
         c1, c2 = st.columns(2)
         with c1:
             sb = pack.get("sunburst_age_status") or []
@@ -513,7 +589,7 @@ def render_portfolio_pack(
                 _brand_layout(fig_cs, height=320)
                 st.plotly_chart(fig_cs, use_container_width=True)
 
-    with tab_b:
+    elif section == "Emisión":
         ibm = pack.get("issue_by_month") or []
         if ibm:
             months = [r["month"] for r in ibm]
@@ -587,7 +663,7 @@ def render_portfolio_pack(
                 _brand_layout(fig_a, height=360)
                 st.plotly_chart(fig_a, use_container_width=True)
 
-    with tab_c:
+    elif section == "Siniestralidad":
         lbm = pack.get("loss_by_month") or []
         if lbm:
             months = [r["month"] for r in lbm]
@@ -650,7 +726,7 @@ def render_portfolio_pack(
             _brand_layout(fig_s, height=340)
             st.plotly_chart(fig_s, use_container_width=True)
 
-    with tab_d:
+    elif section == "Prima vs siniestro":
         sc = pack.get("scatter_premium_vs_paid") or []
         if sc:
             df_sc = pd.DataFrame(sc)
@@ -690,7 +766,7 @@ def render_portfolio_pack(
             _brand_layout(fig_t, height=min(520, 80 + 22 * len(top)))
             st.plotly_chart(fig_t, use_container_width=True)
 
-    with tab_e:
+    elif section == "Riesgo avanzado":
         st.markdown("#### Mapa de calor: mes de emisión × mes de siniestro")
         hm = pack.get("heatmap_issue_loss_month") or {}
         if hm.get("note"):
