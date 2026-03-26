@@ -27,6 +27,11 @@ from cohort_visuals import (
     render_resumen_gauges,
     render_territorio_ve,
 )
+from pygwalker_lab import (
+    cohort_pack_to_tables,
+    mercado_bundle_to_tables,
+    render_table_picker_and_walker,
+)
 
 st.set_page_config(
     page_title="Insurance Intelligence Hub",
@@ -45,18 +50,21 @@ _MERCADO_SECTION_LABELS = (
     "Último cierre",
     "Métricas resumen",
     "Cuadro de resultados",
+    "Estudio PyGWalker",
 )
 _MERCADO_SECTION_COLORS: dict[str, str] = {
     "Primas vs mercado": "#0284c7",
     "Último cierre": "#0d9488",
     "Métricas resumen": "#d97706",
     "Cuadro de resultados": "#7c3aed",
+    "Estudio PyGWalker": "#db2777",
 }
 _MERCADO_SECTION_SUB: dict[str, str] = {
     "Primas vs mercado": "Comparación La Fe vs total mercado (rango y modo en la barra lateral)",
     "Último cierre": "Instantánea YTD al último mes con dato La Fe",
     "Métricas resumen": "Series extendidas La Fe y totales de mercado",
     "Cuadro de resultados": "Resultado técnico y operativo La Fe vs mercado",
+    "Estudio PyGWalker": "Exploración libre (PyGWalker) sobre series y tablas del período",
 }
 
 # Misma familia de estilos que analítica de cartera (pills coloreadas en área principal)
@@ -125,6 +133,19 @@ _MERCADO_PILLS_CSS = """
     border-color: #7c3aed !important;
     color: #5b21b6 !important;
     box-shadow: 0 2px 10px rgba(124, 58, 237, 0.2) !important;
+}
+/* 5 PyGWalker — fucsia */
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(5),
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(5) {
+    border: 1px solid rgba(219, 39, 119, 0.45) !important;
+    color: #be185d !important;
+}
+[data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(5)[aria-pressed="true"],
+[data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(5)[aria-pressed="true"] {
+    background: linear-gradient(160deg, rgba(219, 39, 119, 0.18) 0%, #ffffff 72%) !important;
+    border-color: #db2777 !important;
+    color: #9f1239 !important;
+    box-shadow: 0 2px 10px rgba(219, 39, 119, 0.22) !important;
 }
 </style>
 """
@@ -455,14 +476,22 @@ _VISTA_PILL_LABELS = (
     "Resumen + tacómetros",
     "Analítica avanzada",
     "Mapa Venezuela (demo)",
+    "Estudio PyGWalker",
 )
 _VISTA_PILL_TO_KEY: dict[str, str] = {
     "Resumen + tacómetros": "resumen",
     "Analítica avanzada": "analitica",
     "Mapa Venezuela (demo)": "territorio",
+    "Estudio PyGWalker": "estudio_pyg",
 }
 
 with st.sidebar:
+    with st.container(border=True):
+        st.caption("MARCA")
+        if _LOGO_FE1.is_file():
+            st.image(str(_LOGO_FE1), width=132, use_container_width=False)
+        st.caption("Seguros La Fe · demo IIH")
+    st.divider()
     with st.container(border=True):
         st.caption("PASO 1 · ÁMBITO")
         _amb = st.pills(
@@ -657,7 +686,7 @@ if lab_module == "cohorte":
                         key="dl_port_analitica",
                     )
 
-    else:
+    elif cohorte_seccion == "territorio":
         with st.container(border=True):
             st.markdown(
                 f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
@@ -683,6 +712,29 @@ if lab_module == "cohorte":
                     mime="application/json",
                     key="dl_port_mapa",
                 )
+
+    elif cohorte_seccion == "estudio_pyg":
+        with st.container(border=True):
+            st.markdown(
+                f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+                "Estudio PyGWalker · cartera</p>",
+                unsafe_allow_html=True,
+            )
+            st.caption(
+                "Exploración visual tipo BI sobre tablas derivadas del paquete de cohorte (emisión, siniestralidad, prima vs pagado, etc.)."
+            )
+        st.divider()
+        if port_pack is None:
+            st.warning(
+                "No hay paquete de cartera en base para este año. Cargue datos o use otro año de cohorte."
+            )
+        else:
+            tables = cohort_pack_to_tables(port_pack, cohort_year)
+            render_table_picker_and_walker(
+                tables,
+                select_key="pyg_cohort_table_pick",
+                walker_key="pyg_cohort_walk",
+            )
 
 else:
     with st.container(border=True):
@@ -1063,6 +1115,54 @@ else:
                             key="dl_cuad_mk",
                         )
 
+        elif mercado_sec == "Estudio PyGWalker":
+            st.divider()
+            merged_pyg: pd.DataFrame | None = None
+            if mb is not None:
+                _la_m = mb.get("la_resumen")
+                _tot_m = mb.get("tot_resumen")
+                if not isinstance(_la_m, Exception) and not isinstance(_tot_m, Exception) and _la_m and _tot_m:
+                    merged_pyg = _merge_market_primas(_la_m, _tot_m)
+            else:
+                try:
+                    _la_m = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/la-fe/resumen-series",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                    _tot_m = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/resumen/totals-series",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                    merged_pyg = _merge_market_primas(_la_m, _tot_m)
+                except Exception as e:
+                    st.warning(f"No se pudo obtener la serie fusionada de primas: {e}")
+            tables_m = mercado_bundle_to_tables(
+                mb,
+                merged_pyg,
+                m_from=int(m_from),
+                m_to=int(m_to),
+            )
+            with st.container(border=True):
+                st.markdown(
+                    f'<p style="font-size:1.1rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.35rem 0;">'
+                    "Estudio PyGWalker · mercado</p>",
+                    unsafe_allow_html=True,
+                )
+                st.caption(
+                    "Explore las series del período lateral: fusionado de primas, resúmenes, extendidos, cuadro y snapshot."
+                )
+            render_table_picker_and_walker(
+                tables_m,
+                select_key="pyg_mercado_table_pick",
+                walker_key="pyg_mercado_walk",
+            )
+
 with st.sidebar:
     st.divider()
     with st.container(border=True):
@@ -1085,10 +1185,12 @@ with st.sidebar:
                 use_container_width=True,
             )
     with st.container(border=True):
-        st.caption("MARCA")
-        if _LOGO_FE1.is_file():
-            st.image(str(_LOGO_FE1), width=132, use_container_width=False)
-        st.caption("Seguros La Fe · demo IIH")
+        st.caption("ELABORADO POR")
+        st.markdown(
+            "**Prof. Angel Colmenares**  \n"
+            "[angelc.ucv@gmail.com](mailto:angelc.ucv@gmail.com)",
+            unsafe_allow_html=True,
+        )
 
 st.caption(
     "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · Insurance Intelligence Hub (demo técnico)."
