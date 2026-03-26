@@ -38,17 +38,6 @@ _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
 _MARKET_TOTAL_LINE = "#0284c7"
 
-_BTN_STYLE = (
-    "display:inline-block;padding:0.55rem 1.25rem;background:{bg};color:white;"
-    "border-radius:10px;text-decoration:none;font-weight:600;font-size:0.95rem;"
-    "border:none;cursor:pointer;box-shadow:0 2px 8px rgba(88,28,135,0.25);"
-)
-_BTN_SECONDARY = (
-    "display:inline-block;padding:0.55rem 1.25rem;background:white;color:{c};"
-    "border-radius:10px;text-decoration:none;font-weight:600;font-size:0.95rem;"
-    "border:2px solid {c};cursor:pointer;"
-)
-
 
 def _api_base() -> str:
     default = "http://127.0.0.1:8000"
@@ -204,11 +193,17 @@ def _fetch_kpi(
     return r.json()
 
 
-# —— Cabecera compacta (el logo va en la barra lateral, abajo) ——
+# —— Cabecera: logo tamaño moderado + título ——
+_h_left, _h_mid, _h_right = st.columns([2.2, 1.35, 2.2])
+with _h_mid:
+    if _LOGO_FE1.is_file():
+        st.image(str(_LOGO_FE1), use_container_width=True)
+    else:
+        st.markdown("### Insurance Intelligence Hub")
 st.markdown(
-    f'<p style="text-align:center;font-size:1.45rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.35rem 0;">'
+    f'<p style="text-align:center;font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0.15rem 0 0.2rem 0;">'
     "Insurance Intelligence Hub</p>"
-    '<p style="text-align:center;color:#64748b;font-size:0.95rem;margin:0 0 0.75rem 0;">Laboratorio · visualización</p>',
+    '<p style="text-align:center;color:#64748b;font-size:0.92rem;margin:0 0 0.85rem 0;">Laboratorio · visualización</p>',
     unsafe_allow_html=True,
 )
 
@@ -216,23 +211,6 @@ base = _api_base()
 upload_path = _admin_upload_hint()
 upload_claims_path = _admin_upload_claims_hint()
 portal = _portal_reflex_url()
-
-st.markdown(
-    f"""
-    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0.5rem 0 1.25rem 0;">
-      <a href="{upload_path}" target="_blank" rel="noopener noreferrer"
-         style="{_BTN_STYLE.format(bg=_BRAND_PURPLE)}">
-        Carga de pólizas (Admin)
-      </a>
-      <a href="{upload_claims_path}" target="_blank" rel="noopener noreferrer"
-         style="{_BTN_SECONDARY.format(c=_BRAND_PURPLE)}">
-        Carga de siniestros (Admin)
-      </a>
-      {f'<a href="{portal}" target="_blank" rel="noopener noreferrer" style="{_BTN_SECONDARY.format(c=_BRAND_PURPLE)}">Portal ejecutivo (Reflex)</a>' if portal else ""}
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 # Respaldos fijos si la API no tiene datos en BD (no se exponen en la UI).
 _KPI_SEED_FALLBACK = 42
@@ -713,6 +691,25 @@ else:
 
 with st.sidebar:
     st.markdown("---")
+    st.caption("Enlaces rápidos")
+    st.link_button(
+        "Carga de pólizas (Admin)",
+        upload_path,
+        use_container_width=True,
+        type="primary",
+    )
+    st.link_button(
+        "Carga de siniestros (Admin)",
+        upload_claims_path,
+        use_container_width=True,
+    )
+    if portal:
+        st.link_button(
+            "Portal ejecutivo (Reflex)",
+            portal,
+            use_container_width=True,
+        )
+    st.markdown("")
     if _LOGO_FE1.is_file():
         st.image(str(_LOGO_FE1), width=108)
     st.caption("Seguros La Fe · demo IIH")

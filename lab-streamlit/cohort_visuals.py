@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -41,38 +39,40 @@ VE_CENTROIDS: dict[str, tuple[float, float]] = {
     "Zulia": (9.0, -71.5),
 }
 
-# Natural Earth (ne_10m) usa "Vargas" para el estado hoy conocido como La Guaira.
-VE_ESTADO_TO_NE_CHOROPLETH: dict[str, str] = {"La Guaira": "Vargas"}
-
-# GeoJSON recortado (solo estados VE, propiedades mínimas) — ver `assets/venezuela_admin1.geojson`.
-_VE_ADMIN1_GEOJSON_PATH = Path(__file__).resolve().parent / "assets" / "venezuela_admin1.geojson"
-
-
-@st.cache_data(ttl=7 * 24 * 3600, show_spinner="Cargando mapa de estados (Venezuela)…")
-def _ve_admin1_geojson() -> dict[str, Any] | None:
-    try:
-        if not _VE_ADMIN1_GEOJSON_PATH.is_file():
-            return None
-        raw = _VE_ADMIN1_GEOJSON_PATH.read_text(encoding="utf-8")
-        g = json.loads(raw)
-    except Exception:
-        return None
-    feats = [f for f in g.get("features", []) if f.get("properties", {}).get("name")]
-    if not feats:
-        return None
-    return {"type": "FeatureCollection", "features": feats}
-
-
-def _paid_by_ne_choropleth_name(rows: list[dict[str, Any]]) -> dict[str, float]:
+def _paid_by_estado(rows: list[dict[str, Any]]) -> dict[str, float]:
+    """Suma pagado/prima por nombre de estado (mismas claves que `VE_CENTROIDS`)."""
     out: dict[str, float] = {}
     for r in rows:
         en = r.get("estado") or ""
         if en not in VE_CENTROIDS:
             continue
-        ne = VE_ESTADO_TO_NE_CHOROPLETH.get(en, en)
         val = float(r.get("paid_total") or r.get("prima_total") or 0)
-        out[ne] = out.get(ne, 0.0) + val
+        out[en] = out.get(en, 0.0) + val
     return out
+
+
+@st.cache_data(show_spinner=False)
+def _ve_choropleth_geojson_squares() -> dict[str, Any]:
+    """Polígonos aproximados por estado (cuadrados alrededor del centroide), como en Actuarial Cortex Gestión Social."""
+    h = 0.42
+    feats: list[dict[str, Any]] = []
+    for nombre, (lat, lon) in VE_CENTROIDS.items():
+        ring = [
+            [lon - h, lat - h],
+            [lon + h, lat - h],
+            [lon + h, lat + h],
+            [lon - h, lat + h],
+            [lon - h, lat - h],
+        ]
+        feats.append(
+            {
+                "type": "Feature",
+                "id": nombre,
+                "properties": {"name": nombre},
+                "geometry": {"type": "Polygon", "coordinates": [ring]},
+            }
+        )
+    return {"type": "FeatureCollection", "features": feats}
 
 
 def _gauge(title: str, value: float, rng: tuple[float, float], color: str) -> go.Indicator:
@@ -180,61 +180,69 @@ def render_territorio_ve(
         oceancolor="#e0f2fe",
         showocean=True,
         projection_type="natural earth",
+        bgcolor="rgba(0,0,0,0)",
+        showframe=False,
     )
 
     if modo in ("estados", "calor"):
-        fc = _ve_admin1_geojson()
-        if not fc:
-            st.warning("No se pudo cargar el mapa de estados; se muestran pines.")
-            modo = "pines"
-        else:
-            val_by = _paid_by_ne_choropleth_name(rows)
-            locations: list[str] = []
-            zvals: list[float] = []
-            hover_texts: list[str] = []
-            for f in fc["features"]:
-                nm = f["properties"]["name"]
-                locations.append(nm)
-                zv = float(val_by.get(nm, 0.0))
-                zvals.append(zv)
-                row_hint = next((r for r in rows if VE_ESTADO_TO_NE_CHOROPLETH.get(r["estado"], r["estado"]) == nm), None)
-                if row_hint:
-                    hover_texts.append(
-                        f"{row_hint['estado']}<br>Pólizas: {row_hint['n_policies']:,}<br>"
-                        f"Siniestros: {row_hint['n_claims']:,}<br>Pagado: {row_hint['paid_total']:,.0f} Bs."
-                    )
-                else:
-                    hover_texts.append(f"{nm}<br>Pagado agregado: {zv:,.0f} Bs.")
-
-            if modo == "calor":
-                cscale = "YlOrRd"
-                title = "Venezuela — intensidad (escala tipo calor, pagado Bs. por estado)"
-            else:
-                cscale = [[0, "#f5f3ff"], [0.45, "#c4b5fd"], [1, brand_purple]]
-                title = "Venezuela — pagado por estado (relleno regional)"
-
-            fig = go.Figure(
-                go.Choropleth(
-                    geojson=fc,
-                    locations=locations,
-                    z=zvals,
-                    featureidkey="properties.name",
-                    colorscale=cscale,
-                    marker_line_color="#ffffff",
-                    marker_line_width=0.6,
-                    colorbar=dict(title="Pagado (Bs.)"),
-                    text=hover_texts,
-                    hoverinfo="text",
+        fc = _ve_choropleth_geojson_squares()
+        val_by = _paid_by_estado(rows)
+        locations: list[str] = []
+        zvals: list[float] = []
+        hover_texts: list[str] = []
+        for f in fc["features"]:
+            nm = f["properties"]["name"]
+            locations.append(nm)
+            zv = float(val_by.get(nm, 0.0))
+            zvals.append(zv)
+            row_hint = next((r for r in rows if r.get("estado") == nm), None)
+            if row_hint:
+                hover_texts.append(
+                    f"{row_hint['estado']}<br>Pólizas: {row_hint['n_policies']:,}<br>"
+                    f"Siniestros: {row_hint['n_claims']:,}<br>Pagado: {row_hint['paid_total']:,.0f} Bs."
                 )
+            else:
+                hover_texts.append(f"{nm}<br>Pagado: {zv:,.0f} Bs.")
+
+        zmax_data = max(zvals) if zvals else 0.0
+        zmax_plot = zmax_data if zmax_data > 0 else 1.0
+
+        if modo == "calor":
+            cscale = "YlOrRd"
+            title = "Venezuela — mapa tipo calor (pagado Bs. por estado)"
+        else:
+            cscale = [[0, "#f5f3ff"], [0.35, "#ddd6fe"], [0.65, "#a78bfa"], [1, brand_purple]]
+            title = "Venezuela — estados coloreados por pagado (polígonos demo)"
+
+        fig = go.Figure(
+            go.Choropleth(
+                geojson=fc,
+                locations=locations,
+                z=zvals,
+                zmin=0,
+                zmax=zmax_plot,
+                featureidkey="properties.name",
+                colorscale=cscale,
+                marker_line_color="#334155",
+                marker_line_width=0.9,
+                colorbar=dict(title="Pagado (Bs.)"),
+                text=hover_texts,
+                hoverinfo="text",
+                showscale=True,
             )
-            fig.update_geos(**_geo_common)
-            fig.update_layout(
-                title=title,
-                height=520,
-                margin=dict(l=0, r=0, t=48, b=0),
-                paper_bgcolor="rgba(0,0,0,0)",
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        )
+        fig.update_geos(**_geo_common)
+        fig.update_layout(
+            title=title,
+            height=520,
+            margin=dict(l=0, r=0, t=48, b=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption(
+            "Polígonos aproximados por estado (cuadrados desde centroides), mismo criterio que el tablero "
+            "[Actuarial Cortex — Gestión Social](https://github.com/angelucv/actuarial-cortex-suite-gestion-social)."
+        )
 
     if modo == "pines":
         lats, lons, sizes, colors, texts = [], [], [], [], []
