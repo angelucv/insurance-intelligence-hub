@@ -15,16 +15,16 @@
 
 {% block content %}
 <div class="iihub-dashboard-top">
-<section class="iihub-quick-actions" aria-labelledby="iihub-quick-actions-heading">
-  <nav class="iihub-quick-nav" aria-label="{% translate 'Acciones rápidas' %}">
-    <h2 id="iihub-quick-actions-heading" class="iihub-quick-nav__heading">{% translate "Acciones rápidas" %}</h2>
-    <a href="{% url 'upload_policies' %}" class="iihub-quick-nav__link" title="{% translate 'CSV / Excel · cohortes y KPI' %}">{% translate "Carga de pólizas" %}</a>
-    <a href="{% url 'upload_claims' %}" class="iihub-quick-nav__link" title="{% translate 'Enlazados a pólizas existentes' %}">{% translate "Carga de siniestros" %}</a>
+<section class="iihub-quick-actions">
+  <div class="iihub-admin-links" role="navigation" aria-label="{% translate 'Acciones rápidas' %}">
+    <strong>{% translate "Acciones rápidas" %}:</strong>
+    <a href="{% url 'upload_policies' %}" title="{% translate 'CSV / Excel · cohortes y KPI' %}">{% translate "Carga de pólizas" %}</a>
+    <a href="{% url 'upload_claims' %}" title="{% translate 'Enlazados a pólizas existentes' %}">{% translate "Carga de siniestros" %}</a>
     {% if reflex_portal_url %}
-    <a href="{{ reflex_portal_url }}" class="iihub-quick-nav__link" target="_blank" rel="noopener noreferrer" title="{% translate 'KPI y cartera (solo lectura)' %}">{% translate "Portal Reflex" %}</a>
+    <a href="{{ reflex_portal_url }}" target="_blank" rel="noopener noreferrer" title="{% translate 'KPI y cartera (solo lectura)' %}">{% translate "Portal Reflex" %}</a>
     {% endif %}
-    <a href="{% url 'data_model_doc' %}" class="iihub-quick-nav__link" title="{% translate 'Cómo se organizan los datos (con detalle técnico opcional)' %}">{% translate "Modelo de datos" %}</a>
-  </nav>
+    <a href="{% url 'data_model_doc' %}" title="{% translate 'Cómo se organizan los datos (con detalle técnico opcional)' %}">{% translate "Modelo de datos" %}</a>
+  </div>
 </section>
 
 <div id="content-main">

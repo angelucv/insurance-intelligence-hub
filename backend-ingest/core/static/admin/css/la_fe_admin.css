@@ -109,8 +109,42 @@ a:visited {
   color: var(--iihub-accent);
 }
 
+/*
+ * Modo oscuro del admin (html[data-theme="dark"] o prefers-color-scheme):
+ * el violeta fijo no contrasta con --body-bg oscuro. Usar variables de Django (dark_mode.css).
+ */
+html[data-theme="dark"] div.breadcrumbs a {
+  color: var(--breadcrumbs-link-fg);
+}
+
+html[data-theme="dark"] a:link,
+html[data-theme="dark"] a:visited {
+  color: var(--link-fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) div.breadcrumbs a {
+    color: var(--breadcrumbs-link-fg);
+  }
+
+  html:not([data-theme="light"]) a:link,
+  html:not([data-theme="light"]) a:visited {
+    color: var(--link-fg);
+  }
+}
+
 #changelist .results tbody tr:hover {
   background: #faf5ff;
+}
+
+html[data-theme="dark"] #changelist .results tbody tr:hover {
+  background: var(--selected-row);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) #changelist .results tbody tr:hover {
+    background: var(--selected-row);
+  }
 }
 
 .button.default,
@@ -136,6 +170,20 @@ object,
 .addlink,
 .changelink {
   color: var(--iihub-accent);
+}
+
+html[data-theme="dark"] object,
+html[data-theme="dark"] .addlink,
+html[data-theme="dark"] .changelink {
+  color: var(--link-fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) object,
+  html:not([data-theme="light"]) .addlink,
+  html:not([data-theme="light"]) .changelink {
+    color: var(--link-fg);
+  }
 }
 
 /* Diagramas y figuras en el contenido del Admin: nunca desbordan el ancho útil (Supabase, PNG, etc.). */
@@ -297,6 +345,16 @@ input[type="file"] {
   padding: 0.35rem 0;
 }
 
+html[data-theme="dark"] .iihub-json-details summary {
+  color: var(--link-fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .iihub-json-details summary {
+    color: var(--link-fg);
+  }
+}
+
 .iihub-json-pre {
   overflow: auto;
   max-height: 18rem;
@@ -349,5 +407,59 @@ input[type="file"] {
     background: #1e293b;
     border-color: #6366f1;
     color: #e2e8f0;
+  }
+}
+
+/* Mismo aspecto si el usuario fuerza tema oscuro con el interruptor (OS claro). */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] .iihub-callout {
+  background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%);
+  border-color: #4c1d95;
+}
+
+html[data-theme="dark"] .iihub-callout p {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .iihub-stat {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .iihub-stat__value {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .iihub-json-pre {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .iihub-error-list {
+  background: #422006;
+  border-color: #92400e;
+  color: #fef3c7;
+}
+
+html[data-theme="dark"] .iihub-file-input,
+html[data-theme="dark"] input[type="file"] {
+  background: #1e293b;
+  border-color: #6366f1;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .iihub-admin-footer,
+html[data-theme="dark"] .iihub-admin-footer__note {
+  color: var(--body-quiet-color);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .iihub-admin-footer,
+  html:not([data-theme="light"]) .iihub-admin-footer__note {
+    color: var(--body-quiet-color);
   }
 }

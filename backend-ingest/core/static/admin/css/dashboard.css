@@ -296,19 +296,33 @@ body.dashboard #content > br.clear {
 }
 
 @media (prefers-color-scheme: dark) {
-  .iihub-data-desk__card {
+  html:not([data-theme="light"]) .iihub-data-desk__card {
     background: #1e293b;
     border-color: #334155;
   }
 
-  .iihub-data-desk__lead,
-  .iihub-data-desk__text {
+  html:not([data-theme="light"]) .iihub-data-desk__lead,
+  html:not([data-theme="light"]) .iihub-data-desk__text {
     color: #cbd5e1;
   }
 
-  .iihub-data-desk__card-title {
+  html:not([data-theme="light"]) .iihub-data-desk__card-title {
     color: #e9d5ff;
   }
+}
+
+html[data-theme="dark"] .iihub-data-desk__card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .iihub-data-desk__lead,
+html[data-theme="dark"] .iihub-data-desk__text {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .iihub-data-desk__card-title {
+  color: #e9d5ff;
 }
 
 .iihub-dashboard-hero {
@@ -384,56 +398,55 @@ body.dashboard #content > br.clear {
   border-radius: 4px;
 }
 
-/* Barra tipo Gestión Social (cortex-admin-links): menú compacto, wrap + gap, no texto concatenado. */
+/*
+ * Acciones rápidas — réplica de cortex_index.html (Gestión Social):
+ * https://github.com/angelucv/actuarial-cortex-suite-gestion-social/blob/main/templates/admin/cortex_index.html
+ * Clase allí: .cortex-admin-links (flex + gap; strong para la etiqueta; sin h2 en la barra).
+ * Colores de acento: marca La Fe (#5a1f94) en lugar del teal #38666A del otro proyecto.
+ */
 .iihub-quick-actions {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   width: 100%;
   max-width: 100%;
   min-width: 0;
 }
 
-.iihub-quick-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--hairline-color, #e2e8f0);
-  background: #f8fafc;
-  font-size: 0.875rem;
-  line-height: 1.45;
-  box-sizing: border-box;
+body.dashboard .iihub-admin-links {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem 1rem !important;
+  align-items: center !important;
+  padding: 0.75rem 1rem !important;
+  background: #f0f4f4 !important;
+  border-radius: 6px !important;
+  margin-bottom: 1.5rem !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
 }
 
-.iihub-quick-nav__heading {
-  margin: 0;
-  padding: 0;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #64748b;
-  flex: 0 0 auto;
+body.dashboard .iihub-admin-links strong {
+  margin-right: 0.5rem !important;
+  color: #5a1f94 !important;
+  font-weight: 600 !important;
 }
 
-.iihub-quick-nav__heading::after {
-  content: ":";
+body.dashboard .iihub-admin-links a {
+  color: #5a1f94 !important;
+  text-decoration: none !important;
+  padding: 0.2rem 0.5rem !important;
+  border-radius: 4px !important;
+  display: inline !important;
+  font-weight: 500 !important;
 }
 
-.iihub-quick-nav__link {
-  color: #5a1f94;
-  font-weight: 500;
-  text-decoration: none;
-  padding: 0.2rem 0.45rem;
-  margin: 0;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-
-.iihub-quick-nav__link:hover {
-  background: rgba(90, 31, 148, 0.1);
-  text-decoration: underline;
+body.dashboard .iihub-admin-links a:hover {
+  background: rgba(90, 31, 148, 0.15) !important;
+  text-decoration: underline !important;
 }
 
 .iihub-sidebar-help h2 {
@@ -468,50 +481,97 @@ body.dashboard #content > br.clear {
 }
 
 @media (prefers-color-scheme: dark) {
-  .iihub-guide__main-title {
+  html:not([data-theme="light"]) .iihub-guide__main-title {
     color: #f1f5f9;
   }
 
-  .iihub-guide-card {
+  html:not([data-theme="light"]) .iihub-guide-card {
     background: #1e293b;
     border-color: #334155;
   }
 
-  .iihub-guide-card__title {
+  html:not([data-theme="light"]) .iihub-guide-card__title {
     color: #e9d5ff;
   }
 
-  .iihub-guide-list {
+  html:not([data-theme="light"]) .iihub-guide-list {
     color: #cbd5e1;
   }
 
-  .iihub-guide-list code {
+  html:not([data-theme="light"]) .iihub-guide-list code {
     background: #334155;
     color: #e2e8f0;
   }
 
-  .iihub-sidebar-lead {
+  html:not([data-theme="light"]) .iihub-sidebar-lead {
     color: #94a3b8;
   }
 
-  .iihub-dashboard-lead {
+  html:not([data-theme="light"]) .iihub-dashboard-lead {
     color: #94a3b8;
   }
 
-  .iihub-quick-nav {
-    background: rgba(30, 41, 59, 0.65);
-    border-color: #334155;
+  html:not([data-theme="light"]) body.dashboard .iihub-admin-links {
+    background: var(--darkened-bg) !important;
   }
 
-  .iihub-quick-nav__heading {
-    color: #94a3b8;
+  html:not([data-theme="light"]) body.dashboard .iihub-admin-links strong {
+    color: var(--body-loud-color) !important;
   }
 
-  .iihub-quick-nav__link {
-    color: #c4b5fd;
+  html:not([data-theme="light"]) body.dashboard .iihub-admin-links a {
+    color: var(--link-fg) !important;
   }
 
-  .iihub-quick-nav__link:hover {
-    background: rgba(124, 58, 237, 0.2);
+  html:not([data-theme="light"]) body.dashboard .iihub-admin-links a:hover {
+    background: rgba(129, 212, 250, 0.12) !important;
+    color: var(--link-hover-color) !important;
   }
+}
+
+html[data-theme="dark"] .iihub-guide__main-title {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .iihub-guide-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .iihub-guide-card__title {
+  color: #e9d5ff;
+}
+
+html[data-theme="dark"] .iihub-guide-list {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .iihub-guide-list code {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .iihub-sidebar-lead {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .iihub-dashboard-lead {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] body.dashboard .iihub-admin-links {
+  background: var(--darkened-bg) !important;
+}
+
+html[data-theme="dark"] body.dashboard .iihub-admin-links strong {
+  color: var(--body-loud-color) !important;
+}
+
+html[data-theme="dark"] body.dashboard .iihub-admin-links a {
+  color: var(--link-fg) !important;
+}
+
+html[data-theme="dark"] body.dashboard .iihub-admin-links a:hover {
+  background: rgba(129, 212, 250, 0.12) !important;
+  color: var(--link-hover-color) !important;
 }

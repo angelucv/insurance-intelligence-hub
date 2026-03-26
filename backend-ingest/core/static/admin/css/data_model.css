@@ -73,26 +73,49 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .iihub-doc h2 {
+  html:not([data-theme="light"]) .iihub-doc h2 {
     color: #f1f5f9;
   }
 
-  .iihub-doc__lead,
-  .iihub-doc ul {
+  html:not([data-theme="light"]) .iihub-doc__lead,
+  html:not([data-theme="light"]) .iihub-doc ul {
     color: #cbd5e1;
   }
 
-  .iihub-doc th,
-  .iihub-doc td {
+  html:not([data-theme="light"]) .iihub-doc th,
+  html:not([data-theme="light"]) .iihub-doc td {
     border-color: #334155;
   }
 
-  .iihub-doc table thead {
+  html:not([data-theme="light"]) .iihub-doc table thead {
     background: #1e293b;
   }
 
-  .iihub-doc code {
+  html:not([data-theme="light"]) .iihub-doc code {
     background: #334155;
     color: #e2e8f0;
   }
+}
+
+html[data-theme="dark"] .iihub-doc h2 {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .iihub-doc__lead,
+html[data-theme="dark"] .iihub-doc ul {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .iihub-doc th,
+html[data-theme="dark"] .iihub-doc td {
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .iihub-doc table thead {
+  background: #1e293b;
+}
+
+html[data-theme="dark"] .iihub-doc code {
+  background: #334155;
+  color: #e2e8f0;
 }
