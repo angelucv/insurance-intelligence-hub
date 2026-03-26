@@ -77,6 +77,7 @@ def sidebar() -> rx.Component:
             rx.el.div(
                 _nav_main(copy.TAB_CARTERA, "layout-dashboard", "cartera", State.pick_tab_cartera),
                 _nav_main(copy.TAB_MERCADO, "line-chart", "mercado", State.pick_tab_mercado),
+                _nav_main(copy.TAB_SUITE, "layers", "suite", State.pick_tab_suite),
                 class_name="space-y-1",
             ),
             rx.el.p(
@@ -127,7 +128,7 @@ def mobile_tab_bar() -> rx.Component:
                 size="2",
                 variant=rx.cond(State.ui_main_tab == "cartera", "solid", "outline"),
                 color_scheme="purple",
-                class_name="flex-1 rounded-xl",
+                class_name="flex-1 rounded-xl min-w-0 text-xs sm:text-sm",
             ),
             rx.button(
                 copy.TAB_MERCADO,
@@ -135,12 +136,21 @@ def mobile_tab_bar() -> rx.Component:
                 size="2",
                 variant=rx.cond(State.ui_main_tab == "mercado", "solid", "outline"),
                 color_scheme="purple",
-                class_name="flex-1 rounded-xl",
+                class_name="flex-1 rounded-xl min-w-0 text-xs sm:text-sm",
+            ),
+            rx.button(
+                copy.TAB_SUITE,
+                on_click=State.pick_tab_suite,
+                size="2",
+                variant=rx.cond(State.ui_main_tab == "suite", "solid", "outline"),
+                color_scheme="purple",
+                class_name="flex-1 rounded-xl min-w-0 text-xs sm:text-sm",
             ),
             spacing="2",
             width="100%",
             padding_x="4",
             padding_y="3",
+            flex_wrap="wrap",
         ),
         class_name="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm",
     )

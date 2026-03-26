@@ -16,6 +16,25 @@
   </p>
 </div>
 
+<section class="iihub-suite-map" aria-labelledby="iihub-suite-map-title">
+  <h2 id="iihub-suite-map-title" class="iihub-guide__main-title">{% translate "Tu lugar en la suite" %}</h2>
+  <figure class="iihub-suite-map__figure">
+    <img
+      src="{% static 'admin/img/suite-arquitectura-django.png' %}"
+      alt="{% translate 'Diagrama de la arquitectura; resaltado: panel de operaciones y carga de datos.' %}"
+      width="1200"
+      loading="lazy"
+      class="iihub-suite-map__img"
+    />
+    <figcaption class="iihub-suite-map__caption">
+      {% blocktranslate %}
+        Está en el <strong>panel de operaciones</strong>: autenticación y carga manual de pólizas y siniestros (CSV/Excel).
+        Los KPI y visualizaciones de lectura están en el portal ejecutivo (Reflex) y en el laboratorio analítico (Streamlit), ambos vía API.
+      {% endblocktranslate %}
+    </figcaption>
+  </figure>
+</section>
+
 <section class="iihub-guide" aria-labelledby="iihub-guide-title">
   <h2 id="iihub-guide-title" class="iihub-guide__main-title">{% translate "Funcionalidades de este panel" %}</h2>
 

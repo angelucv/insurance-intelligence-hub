@@ -1,5 +1,32 @@
 /* Home del admin: acciones rápidas y sidebar de ayuda */
 
+.iihub-suite-map {
+  margin-bottom: 2rem;
+  padding: 0 0.15rem;
+}
+
+.iihub-suite-map__figure {
+  margin: 0;
+  max-width: 56rem;
+}
+
+.iihub-suite-map__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.iihub-suite-map__caption {
+  margin-top: 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #475569;
+  max-width: 48rem;
+}
+
 .iihub-dashboard-hero {
   margin-bottom: 1.5rem;
   padding: 0 0.15rem;

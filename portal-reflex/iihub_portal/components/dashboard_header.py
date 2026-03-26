@@ -20,10 +20,18 @@ def dashboard_header() -> rx.Component:
                     size="8",
                     class_name="font-bold text-gray-900 tracking-tight mt-1",
                 ),
-                rx.heading(
-                    copy.CARTERA_PAGE_HEADING,
-                    size="8",
-                    class_name="font-bold text-gray-900 tracking-tight mt-1",
+                rx.cond(
+                    State.ui_main_tab == "suite",
+                    rx.heading(
+                        copy.SUITE_PAGE_HEADING,
+                        size="8",
+                        class_name="font-bold text-gray-900 tracking-tight mt-1",
+                    ),
+                    rx.heading(
+                        copy.CARTERA_PAGE_HEADING,
+                        size="8",
+                        class_name="font-bold text-gray-900 tracking-tight mt-1",
+                    ),
                 ),
             ),
             rx.cond(
@@ -32,9 +40,16 @@ def dashboard_header() -> rx.Component:
                     copy.HEADER_SUB_MERCADO,
                     class_name="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed",
                 ),
-                rx.el.p(
-                    copy.HEADER_SUB_CARTERA,
-                    class_name="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed",
+                rx.cond(
+                    State.ui_main_tab == "suite",
+                    rx.el.p(
+                        copy.HEADER_SUB_SUITE,
+                        class_name="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed",
+                    ),
+                    rx.el.p(
+                        copy.HEADER_SUB_CARTERA,
+                        class_name="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed",
+                    ),
                 ),
             ),
         ),

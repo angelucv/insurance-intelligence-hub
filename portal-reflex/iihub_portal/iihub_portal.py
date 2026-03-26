@@ -9,17 +9,26 @@ from iihub_portal.components.dashboard_header import dashboard_header
 from iihub_portal.components.layout import dashboard_layout
 from iihub_portal.components.portal_intro import portal_intro_banner
 from iihub_portal.components.panels import cartera_panel, mercado_panel
+from iihub_portal.components.suite_panel import suite_panel
 from iihub_portal.state import State
 
 
 def index() -> rx.Component:
     return dashboard_layout(
         dashboard_header(),
-        portal_intro_banner(),
+        rx.cond(
+            State.ui_main_tab == "suite",
+            rx.fragment(),
+            portal_intro_banner(),
+        ),
         rx.cond(
             State.ui_main_tab == "cartera",
             cartera_panel(),
-            mercado_panel(),
+            rx.cond(
+                State.ui_main_tab == "mercado",
+                mercado_panel(),
+                suite_panel(),
+            ),
         ),
         rx.el.footer(
             rx.el.p(

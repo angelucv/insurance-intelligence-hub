@@ -126,6 +126,105 @@ CARTERA_MONTH_OPTIONS = [f"{m:02d}" for m in range(1, 13)]
 # Pestañas / títulos cortos (sidebar + mobile) — cartera primero en el menú
 TAB_CARTERA = "Mi cartera"
 TAB_MERCADO = "Mercado SUDEASEG"
+TAB_SUITE = "La suite"
+
+# Vista documentación / demo (mapa del ecosistema)
+SUITE_PAGE_HEADING = "Mapa de la suite"
+# Infografía contextual (variante Reflex: resaltado portal ejecutivo)
+SUITE_MAP_HEADING = "Tu lugar en la suite"
+SUITE_MAP_ALT_REFLEX = (
+    "Diagrama de la arquitectura IIHub; resaltado: portal ejecutivo de BI (Reflex)."
+)
+SUITE_MAP_CAPTION_REFLEX = (
+    "Estás en el portal ejecutivo de BI: KPI, cartera y mercado en lectura vía API. "
+    "La carga manual de pólizas y siniestros (CSV/Excel) se hace en el panel de operaciones."
+)
+HEADER_SUB_SUITE = (
+    "Núcleo: Postgres + carga manual (CSV/Excel) y API de cómputo; Reflex y Streamlit leen vía HTTPS, no SQL desde el navegador."
+)
+SUITE_ARCHITECTURE_MD = """
+### Idea central
+
+**PostgreSQL** es el **núcleo persistente**: tablas de pólizas, lotes de carga y (según migraciones) mercado SUDEASEG. El **API de cómputo** (FastAPI en `backend-compute`) **lee** esa base para KPI, cohortes y series; **escribe** en ella cuando entra una ingesta por API. Las pantallas **no** abren conexión SQL directa: **Reflex** y **Streamlit** llaman al mismo **API HTTP** (`COMPUTE_API_URL`).
+
+### Núcleo ampliado: carga → base → API → UIs
+
+**1. Carga manual de información (operativa típica)**  
+En **Django Admin** (`backend-ingest`) los formularios *Carga de pólizas* y *Carga de siniestros* aceptan **CSV** y **Excel** (`.xlsx` / `.xls`). Los datos se validan con **Pydantic** (contratos compartidos) y se insertan en Postgres (p. ej. `policies`, `claims`, lotes en `upload_batches`). Es el camino habitual en demo: subir fichero → ver KPI en Reflex/Streamlit tras refrescar.
+
+**2. Ingesta alternativa por API (automatización / integraciones)**  
+El mismo servicio FastAPI expone **`POST /api/v1/ingest/policies`** (multipart con fichero `.csv` / `.xlsx`), protegido con cabecera **`X-API-Key`**. Escribe en las **mismas tablas** que la carga manual; el núcleo sigue siendo la misma base.
+
+**3. API que alimenta la lectura (desde la base hacia las apps)**  
+`backend-compute` consulta Postgres (SELECT y agregados; DuckDB donde aplica) y publica endpoints REST: **`/api/v1/kpi/...`**, mercado SUDEASEG, etc. Esa es la **puerta de lectura** que usan el portal y el laboratorio en la arquitectura recomendada.
+
+**4. De la base de datos a Reflex y a Streamlit**  
+- **Reflex** (este portal) y **Streamlit** (`lab-streamlit`) son clientes **HTTPS** contra **`COMPUTE_API_URL`**.  
+- Enlaces opcionales: `STREAMLIT_LAB_URL` en Reflex, `PORTAL_REFLEX_URL` en Streamlit, `DJANGO_ADMIN_BASE_URL` para ir a la carga.  
+- No hace falta “conectar la BD” en el front: basta con la URL pública del API y, para carga, la del Admin.
+
+### Cómo nombrar herramientas (recomendación para demos)
+
+- **En diagramas ejecutivos:** nombra **capas y productos** que despliegas (**PostgreSQL**, **FastAPI**, **Django Admin**, **Reflex**, **Streamlit**). Responde “qué piezas existen” sin saturar.
+- **Evita** en la infografía principal una lista larga de librerías (Plotly, pandas, httpx…): mejor en README o documentación técnica.
+- **Versiones** de runtime: en guías de despliegue, no en el dibujo de negocio.
+- Si la audiencia es **no técnica**, prioriza **roles** (“carga de datos”, “portal ejecutivo”, “laboratorio BI”) y deja marcas en segundo plano o en un pie.
+
+### Flujo de datos (resumen)
+
+1. **Ingesta** — Admin (CSV/XLSX) **o** `POST /api/v1/ingest/policies` → Postgres.
+2. **Cómputo** — FastAPI expone KPI, cohortes y mercado SUDEASEG (cuando hay datos y migraciones).
+3. **Consumo** — Reflex y Streamlit consumen **el API** por HTTPS; misma línea de datos, distinta UX.
+
+### Dónde “arranca” cada rol
+
+| Rol | Punto de entrada natural |
+|-----|---------------------------|
+| **Carga de datos** | Django Admin → *Carga de pólizas / siniestros* (CSV/Excel) |
+| **Ingesta por integración** | `POST /api/v1/ingest/policies` + API key (misma BD) |
+| **Lectura ejecutiva (esta demo)** | **Reflex** → *Mi cartera* / *Mercado* |
+| **Análisis exploratorio** | Streamlit (*Análisis BI detallado* en el menú) |
+
+No hay una única URL obligatoria: la suite es **un core de datos** con **varias aplicaciones** alrededor.
+
+### Diagrama lógico (Mermaid)
+
+Si tu visor Markdown renderiza Mermaid (p. ej. GitHub, VS Code), verás el diagrama; si no, copia el bloque a [mermaid.live](https://mermaid.live).
+
+```mermaid
+flowchart TB
+  subgraph entrada["Hacia PostgreSQL"]
+    DJ["Django Admin · CSV / XLSX"]
+    ING["POST /api/v1/ingest/policies · X-API-Key"]
+  end
+  PG[("PostgreSQL · núcleo")]
+  DJ -->|INSERT validado| PG
+  ING -->|INSERT validado| PG
+  API["FastAPI · KPI / mercado / cohortes"]
+  PG -->|SELECT| API
+  RF["Portal Reflex · HTTPS"]
+  ST["Streamlit · HTTPS"]
+  API -->|COMPUTE_API_URL| RF
+  API -->|COMPUTE_API_URL| ST
+```
+
+### Componentes del repositorio (monorepo)
+
+- **`backend-ingest`** — Django: formularios de carga manual, listados de solo lectura.
+- **`backend-compute`** — FastAPI: `/api/v1/kpi/...`, mercado SUDEASEG, ingest `/api/v1/ingest/policies`.
+- **`portal-reflex`** — Este portal (KPI, Plotly, series).
+- **`lab-streamlit`** — Laboratorio exploratorio vía mismo API.
+- **`shared`** — Contratos Pydantic compartidos entre ingesta y API.
+
+### Variables de entorno típicas
+
+- **`DATABASE_URL`** — Postgres (compartida por Django y API de cómputo).
+- **`COMPUTE_API_URL`** — Base del API; Reflex y Streamlit la usan para leer datos.
+- **`INGEST_API_KEY`** (servidor) — Protege el endpoint de ingestión por API.
+- Enlaces a **Admin** y **Streamlit** se resuelven en runtime (`DJANGO_ADMIN_BASE_URL`, `STREAMLIT_LAB_URL`, etc.).
+
+*Texto orientado a demo académica; validar siempre cifras operativas en sistemas oficiales.*
+"""
 
 # Pie
 FOOTER_LEGAL = "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62"

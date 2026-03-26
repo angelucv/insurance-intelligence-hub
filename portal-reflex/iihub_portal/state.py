@@ -504,6 +504,9 @@ class State(rx.State):
     def pick_tab_cartera(self):
         self.ui_main_tab = "cartera"
 
+    def pick_tab_suite(self):
+        self.ui_main_tab = "suite"
+
     def toggle_snap_more(self):
         self.show_snap_more = not self.show_snap_more
 

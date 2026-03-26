@@ -40,6 +40,7 @@ st.set_page_config(
 )
 
 _LOGO_FE1 = Path(__file__).resolve().parent / "assets" / "logo-fe-1.jpg"
+_SUITE_MAP_IMG = _LAB_DIR / "assets" / "infografia" / "suite-arquitectura-streamlit.png"
 
 _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
@@ -524,6 +525,13 @@ with st.sidebar:
         if _LOGO_FE1.is_file():
             st.image(str(_LOGO_FE1), width=132, use_container_width=False)
         st.caption("Seguros La Fe · demo IIH")
+    if _SUITE_MAP_IMG.is_file():
+        with st.expander("Mapa de la suite · estás aquí", expanded=False):
+            st.caption(
+                "Estás en el laboratorio analítico BI (Streamlit): exploración y detalle vía la misma API. "
+                "La carga de archivos se hace en el panel de operaciones (Django Admin), no en esta app."
+            )
+            st.image(str(_SUITE_MAP_IMG), use_container_width=True)
     st.divider()
     with st.container(border=True):
         st.caption("PASO 1 · ÁMBITO")
