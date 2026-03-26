@@ -83,6 +83,26 @@ CARTERA_METRICS_TITLE = "Cifras"
 CARTERA_DONUT_TITLE = "Composición de la cartera"
 CARTERA_DONUT_SUB = "Distribución entre pólizas activas y lapsos"
 
+PORTFOLIO_SECTION_TITLE = "Análisis de cartera (base de datos)"
+PORTFOLIO_SECTION_LEAD = (
+    "Gráficos avanzados a partir del paquete agregado de pólizas y siniestros. "
+    "Requiere datos reales en PostgreSQL para el año de cartera seleccionado."
+)
+PORTFOLIO_SUNBURST_T = "Sunburst"
+PORTFOLIO_SUNBURST_S = "Jerarquía cartera → estado → tramo de edad al emitir"
+PORTFOLIO_TREEMAP_T = "Treemap"
+PORTFOLIO_TREEMAP_S = "Misma jerarquía en formato treemap (áreas proporcionales)"
+PORTFOLIO_WATERFALL_T = "Waterfall · emisión mensual"
+PORTFOLIO_WATERFALL_S = "Contribución acumulada de prima anual por mes de emisión"
+PORTFOLIO_SANKEY_T = "Sankey · prima vs siniestros"
+PORTFOLIO_SANKEY_S = "Flujo desde prima emitida hacia pagado y saldo no reclamado como siniestro"
+PORTFOLIO_STACKED_T = "Barras apiladas al 100 %"
+PORTFOLIO_STACKED_S = "Mix de estados por tramo de edad (normalizado al 100 % por columna)"
+PORTFOLIO_VIOLIN_T = "Violín · prima por edad"
+PORTFOLIO_VIOLIN_S = "Distribución de prima anual por tramo (muestra hasta 500 pólizas por tramo)"
+PORTFOLIO_BOX_T = "Cajas · prima por estado"
+PORTFOLIO_BOX_S = "Box plot de prima según estado de la póliza"
+
 # Años para selector (emisión de cartera)
 CARTERA_YEAR_OPTIONS = [str(y) for y in range(2015, 2032)]
 CARTERA_MONTH_OPTIONS = [f"{m:02d}" for m in range(1, 13)]

@@ -15,6 +15,15 @@ def snap_hero_cell(label: str, value: rx.Var) -> rx.Component:
     )
 
 
+def portfolio_chart_card(title: str, subtitle: str, figure: rx.Var) -> rx.Component:
+    return rx.el.div(
+        rx.el.h4(title, class_name="text-sm font-semibold text-gray-900"),
+        rx.el.p(subtitle, class_name="text-xs text-gray-500 mt-0.5 mb-3 leading-relaxed"),
+        rx.plotly(data=figure),
+        class_name="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm overflow-hidden",
+    )
+
+
 def metric_strip_cell(label: str, value: rx.Var) -> rx.Component:
     return rx.el.div(
         rx.el.p(label, class_name="text-[11px] font-semibold text-gray-500 uppercase tracking-wide"),
@@ -418,6 +427,73 @@ def cartera_panel() -> rx.Component:
                 class_name="p-5 sm:p-6",
             ),
             class_name="mt-6 rounded-2xl bg-white border border-gray-100 shadow-sm",
+        ),
+        rx.el.section(
+            rx.el.div(
+                rx.el.h3(
+                    copy.PORTFOLIO_SECTION_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.PORTFOLIO_SECTION_LEAD,
+                    class_name="text-sm text-gray-500 mt-1 mb-4 leading-relaxed",
+                ),
+                rx.cond(
+                    State.portfolio_viz_ok,
+                    rx.el.div(
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_SUNBURST_T,
+                            copy.PORTFOLIO_SUNBURST_S,
+                            State.portfolio_sunburst_figure,
+                        ),
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_TREEMAP_T,
+                            copy.PORTFOLIO_TREEMAP_S,
+                            State.portfolio_treemap_figure,
+                        ),
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_WATERFALL_T,
+                            copy.PORTFOLIO_WATERFALL_S,
+                            State.portfolio_waterfall_figure,
+                        ),
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_SANKEY_T,
+                            copy.PORTFOLIO_SANKEY_S,
+                            State.portfolio_sankey_figure,
+                        ),
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_STACKED_T,
+                            copy.PORTFOLIO_STACKED_S,
+                            State.portfolio_stacked_figure,
+                        ),
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_VIOLIN_T,
+                            copy.PORTFOLIO_VIOLIN_S,
+                            State.portfolio_violin_age_figure,
+                        ),
+                        portfolio_chart_card(
+                            copy.PORTFOLIO_BOX_T,
+                            copy.PORTFOLIO_BOX_S,
+                            State.portfolio_box_status_figure,
+                        ),
+                        class_name="grid grid-cols-1 xl:grid-cols-2 gap-6",
+                    ),
+                ),
+                rx.cond(
+                    State.portfolio_note != "",
+                    rx.el.div(
+                        rx.callout(
+                            State.portfolio_note,
+                            icon="info",
+                            color_scheme="blue",
+                            width="100%",
+                        ),
+                        class_name="mt-4",
+                    ),
+                ),
+                class_name="p-5 sm:p-6",
+            ),
+            class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm",
         ),
         rx.cond(
             State.note != "",

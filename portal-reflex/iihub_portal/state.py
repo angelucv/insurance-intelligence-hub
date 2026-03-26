@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import reflex as rx
 from plotly.graph_objects import Figure as PlotlyFigure
 
+from iihub_portal.portfolio_plotly import build_all_portfolio_figures
 from iihub_portal.plotly_charts import (
     build_cartera_donut_figure,
     build_kpi_gauge_figure,
@@ -64,6 +65,10 @@ class State(rx.State):
     cartera_donut_data: list[Any] = []
     cartera_donut_layout: dict[str, Any] = {}
     cartera_donut_ok: bool = False
+
+    portfolio_viz_ok: bool = False
+    portfolio_note: str = ""
+    portfolio_bundle: dict[str, Any] = {}
 
     market_heatmap_data: list[Any] = []
     market_heatmap_layout: dict[str, Any] = {}
@@ -123,6 +128,40 @@ class State(rx.State):
         if m.isdigit() and len(m) == 1:
             m = f"0{m}"
         return f"{y}-{m}"
+
+    def _portfolio_figure(self, key: str) -> PlotlyFigure:
+        b = (self.portfolio_bundle or {}).get(key)
+        if not b or not b.get("data"):
+            return PlotlyFigure()
+        return PlotlyFigure(data=b["data"], layout=b.get("layout") or {})
+
+    @rx.var(cache=True, auto_deps=True)
+    def portfolio_sunburst_figure(self) -> PlotlyFigure:
+        return self._portfolio_figure("sunburst")
+
+    @rx.var(cache=True, auto_deps=True)
+    def portfolio_treemap_figure(self) -> PlotlyFigure:
+        return self._portfolio_figure("treemap")
+
+    @rx.var(cache=True, auto_deps=True)
+    def portfolio_waterfall_figure(self) -> PlotlyFigure:
+        return self._portfolio_figure("waterfall")
+
+    @rx.var(cache=True, auto_deps=True)
+    def portfolio_sankey_figure(self) -> PlotlyFigure:
+        return self._portfolio_figure("sankey")
+
+    @rx.var(cache=True, auto_deps=True)
+    def portfolio_stacked_figure(self) -> PlotlyFigure:
+        return self._portfolio_figure("stacked")
+
+    @rx.var(cache=True, auto_deps=True)
+    def portfolio_violin_age_figure(self) -> PlotlyFigure:
+        return self._portfolio_figure("violin_age")
+
+    @rx.var(cache=True, auto_deps=True)
+    def portfolio_box_status_figure(self) -> PlotlyFigure:
+        return self._portfolio_figure("box_status")
 
     async def hydrate_urls(self):
         """Lee variables de entorno en runtime (Reflex Cloud / servidor)."""
@@ -354,6 +393,9 @@ class State(rx.State):
         self.cartera_donut_ok = False
         self.cartera_donut_data = []
         self.cartera_donut_layout = {}
+        self.portfolio_viz_ok = False
+        self.portfolio_note = ""
+        self.portfolio_bundle = {}
         try:
             year = int(self.input_year.strip())
         except ValueError:
@@ -362,44 +404,77 @@ class State(rx.State):
             return
         base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
         try:
-            async with httpx.AsyncClient(timeout=90.0) as client:
+            async with httpx.AsyncClient(timeout=120.0) as client:
                 r = await client.get(
                     f"{base}/api/v1/kpi/summary",
                     params={"cohort_year": year, "use_db": "true"},
                 )
                 r.raise_for_status()
                 d = r.json()
-            per = float(d["persistency_rate_pct"])
-            act = int(d["policies_active"])
-            lap = int(d["policies_lapsed"])
-            total_pl = act + lap
-            active_share = (act / total_pl * 100.0) if total_pl > 0 else 0.0
-            t_raw = d.get("technical_loss_ratio_pct")
-            tlr_f = float(t_raw) if t_raw is not None else None
+                per = float(d["persistency_rate_pct"])
+                act = int(d["policies_active"])
+                lap = int(d["policies_lapsed"])
+                total_pl = act + lap
+                active_share = (act / total_pl * 100.0) if total_pl > 0 else 0.0
+                t_raw = d.get("technical_loss_ratio_pct")
+                tlr_f = float(t_raw) if t_raw is not None else None
 
-            self.persistency = f"{per:.2f} %"
-            self.active_n = f"{act:,}"
-            self.lapsed_n = f"{lap:,}"
-            self.avg_premium = f"{float(d['avg_annual_premium']):,.2f}"
-            self.tlr = f"{float(t_raw):.2f} %" if t_raw is not None else "—"
-            self.note = str(d.get("data_note", ""))
+                self.persistency = f"{per:.2f} %"
+                self.active_n = f"{act:,}"
+                self.lapsed_n = f"{lap:,}"
+                self.avg_premium = f"{float(d['avg_annual_premium']):,.2f}"
+                self.tlr = f"{float(t_raw):.2f} %" if t_raw is not None else "—"
+                self.note = str(d.get("data_note", ""))
 
-            gfig = build_kpi_gauge_figure(
-                persistency_pct=per,
-                technical_loss_pct=tlr_f,
-                active_share_pct=active_share,
-                height=320,
-            )
-            gpj = gfig.to_plotly_json()
-            self.kpi_gauge_data = gpj["data"]
-            self.kpi_gauge_layout = gpj.get("layout") or {}
-            self.kpi_gauge_ok = True
+                gfig = build_kpi_gauge_figure(
+                    persistency_pct=per,
+                    technical_loss_pct=tlr_f,
+                    active_share_pct=active_share,
+                    height=320,
+                )
+                gpj = gfig.to_plotly_json()
+                self.kpi_gauge_data = gpj["data"]
+                self.kpi_gauge_layout = gpj.get("layout") or {}
+                self.kpi_gauge_ok = True
 
-            dfig = build_cartera_donut_figure(active=act, lapsed=lap, height=300)
-            dj = dfig.to_plotly_json()
-            self.cartera_donut_data = dj["data"]
-            self.cartera_donut_layout = dj.get("layout") or {}
-            self.cartera_donut_ok = True
+                dfig = build_cartera_donut_figure(active=act, lapsed=lap, height=300)
+                dj = dfig.to_plotly_json()
+                self.cartera_donut_data = dj["data"]
+                self.cartera_donut_layout = dj.get("layout") or {}
+                self.cartera_donut_ok = True
+
+                try:
+                    rp = await client.get(
+                        f"{base}/api/v1/kpi/cohort-portfolio",
+                        params={"cohort_year": year},
+                    )
+                    if rp.status_code == 200:
+                        raw_pf = rp.json()
+                        figs = build_all_portfolio_figures(raw_pf)
+                        self.portfolio_bundle = {
+                            k: {"data": d, "layout": l} for k, (d, l) in figs.items()
+                        }
+                        self.portfolio_viz_ok = True
+                        self.portfolio_note = ""
+                    elif rp.status_code == 404:
+                        self.portfolio_viz_ok = False
+                        self.portfolio_note = (
+                            "No hay pólizas en base para este año: cargue datos en Admin "
+                            "para activar sunburst, treemap, waterfall, Sankey y el resto."
+                        )
+                    elif rp.status_code == 503:
+                        self.portfolio_viz_ok = False
+                        self.portfolio_note = (
+                            "El servidor de cómputo no tiene base de datos configurada (DATABASE_URL)."
+                        )
+                    else:
+                        self.portfolio_viz_ok = False
+                        self.portfolio_note = f"Paquete de cartera no disponible (HTTP {rp.status_code})."
+                except Exception as pe:  # noqa: BLE001
+                    self.portfolio_viz_ok = False
+                    self.portfolio_note = f"No se pudo cargar el análisis de cartera. ({pe})"
         except Exception as e:  # noqa: BLE001
             self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
+            self.portfolio_viz_ok = False
+            self.portfolio_bundle = {}
         self.busy = False
