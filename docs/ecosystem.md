@@ -38,7 +38,7 @@ flowchart LR
 | `INGEST_API_KEY` | API (opcional) | Si está definida, `POST /api/v1/ingest/policies` exige cabecera `X-API-Key` (uso no operativo típico). |
 | `COMPUTE_API_URL` | Reflex, Streamlit | URL pública de la API (p. ej. Render). |
 | `DJANGO_ADMIN_BASE_URL` | Reflex, Streamlit (opcional) | Base URL del Admin → carga CSV. |
-| `STREAMLIT_LAB_URL` | Reflex (opcional) | URL pública del laboratorio Streamlit (botón en el portal). |
+| `STREAMLIT_LAB_URL` | Reflex (opcional) | URL pública del app Streamlit (enlace «Análisis BI detallado» en el portal). |
 | `PORTAL_REFLEX_URL` | Streamlit (opcional) | URL pública del portal Reflex (enlace “Portal ejecutivo”). |
 | `DJANGO_SECRET_KEY` | Django | Secreto de sesión. |
 | `ALLOWED_HOSTS` | Django | Incluir el host de despliegue (p. ej. `*.onrender.com` o nombre explícito). |

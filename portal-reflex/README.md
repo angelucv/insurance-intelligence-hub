@@ -6,7 +6,7 @@ SPA en Python que consume la API de cómputo (`GET /api/v1/kpi/summary`).
 
 - **`COMPUTE_API_URL`**: URL pública de `backend-compute` (sin barra final).
 - **`DJANGO_ADMIN_BASE_URL`**: URL pública del Django Admin (sin barra final), botón “Carga de pólizas”. Por defecto local: `http://127.0.0.1:8080`.
-- **`STREAMLIT_LAB_URL`**: URL pública del app Streamlit (sin barra final), botón “Abrir laboratorio”. Por defecto local: `http://127.0.0.1:8501`.
+- **`STREAMLIT_LAB_URL`**: URL pública del app Streamlit (sin barra final), botón **«Análisis BI detallado»** en la barra superior. Por defecto local: `http://127.0.0.1:8501`.
 
 ## Local
 

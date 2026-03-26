@@ -71,7 +71,7 @@ Plantilla local: `lab-streamlit/.streamlit/secrets.toml.example`.
 PORTAL_REFLEX_URL = "https://LA-URL-QUE-TE-DIO-REFLEX"
 ```
 
-**Resumen de enlaces cruzados:** Reflex usa `STREAMLIT_LAB_URL` → laboratorio. Streamlit usa `PORTAL_REFLEX_URL` → portal.
+**Resumen de enlaces cruzados:** Reflex usa `STREAMLIT_LAB_URL` → app Streamlit («Análisis BI detallado»). Streamlit usa `PORTAL_REFLEX_URL` → portal ejecutivo.
 
 ## 4. Alternativas gratuitas (opcional)
 
