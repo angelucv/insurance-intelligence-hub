@@ -11,6 +11,17 @@ body.dashboard .main > #nav-sidebar + .content {
   min-width: 0 !important;
 }
 
+/* Anula floats de base.css en la portada (evita columna derecha estrecha). */
+body.dashboard .iihub-dashboard-top {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.dashboard .iihub-dashboard-top #content-main {
+  float: none !important;
+  width: 100% !important;
+}
+
 body.dashboard .iihub-dashboard-top #content-related {
   float: none !important;
   margin-left: 0 !important;
