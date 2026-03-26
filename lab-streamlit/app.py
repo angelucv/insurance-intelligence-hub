@@ -39,44 +39,62 @@ _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
 _MARKET_TOTAL_LINE = "#0284c7"
 
-# Estilo barra lateral: navegación tipo pestañas / bloques ejecutivos
+# Estilos: barra lateral en paneles, pestañas principales y separación en contenido
 st.markdown(
     f"""
     <style>
       [data-testid="stSidebar"] section[data-testid="stSidebarContent"] {{
-        background: linear-gradient(180deg, #faf8fc 0%, #ffffff 48%);
+        background: linear-gradient(165deg, #f8f5fc 0%, #ffffff 55%);
       }}
       [data-testid="stSidebar"] .block-container {{
-        padding-top: 1.25rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
       }}
-      [data-testid="stSidebar"] div[data-baseweb="radio"] > div {{
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.4rem;
+      /* Pills (ámbito / vista): más legibles en sidebar */
+      [data-testid="stSidebar"] [data-testid="stPills"] {{
+        gap: 0.35rem;
+        flex-wrap: wrap;
       }}
-      [data-testid="stSidebar"] div[data-baseweb="radio"] label {{
+      [data-testid="stSidebar"] button[kind="pill"] {{
+        border-radius: 999px !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        padding: 0.35rem 0.85rem !important;
+      }}
+      [data-testid="stSidebar"] button[kind="pill"][aria-pressed="true"] {{
+        background: linear-gradient(135deg, #ede4f7 0%, #f5f0fb 100%) !important;
+        border-color: {_BRAND_PURPLE} !important;
+        color: {_BRAND_DEEP} !important;
+      }}
+      /* Pestañas del área principal */
+      .stTabs [data-baseweb="tab-list"] {{
+        gap: 0.25rem;
+        background: #f1f5f9;
+        padding: 0.35rem 0.5rem 0 0.5rem;
+        border-radius: 12px;
         border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.65rem 0.85rem;
-        margin: 0 !important;
-        background: #ffffff;
+      }}
+      .stTabs [data-baseweb="tab"] {{
+        border-radius: 10px 10px 0 0;
         font-weight: 600;
-        font-size: 0.92rem;
-        line-height: 1.35;
       }}
-      [data-testid="stSidebar"] div[data-baseweb="radio"] label[aria-checked="true"] {{
-        border-color: {_BRAND_PURPLE};
-        background: linear-gradient(135deg, #f5edfc 0%, #ffffff 55%);
-        color: {_BRAND_DEEP};
-        box-shadow: 0 1px 3px rgba(112, 41, 179, 0.12);
+      .stTabs [aria-selected="true"] {{
+        color: {_BRAND_DEEP} !important;
+        border-bottom: 2px solid {_BRAND_PURPLE} !important;
       }}
-      [data-testid="stSidebar"] .nav-section-title {{
-        font-size: 0.72rem;
+      /* Bloques de página: aire entre secciones */
+      .main-section-title {{
+        font-size: 0.75rem;
         font-weight: 700;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
         color: #64748b;
-        margin: 0.75rem 0 0.35rem 0;
+        margin: 0 0 0.5rem 0;
+      }}
+      hr.main-sep {{
+        margin: 1.25rem 0 1rem 0;
+        border: none;
+        border-top: 1px solid #e2e8f0;
       }}
     </style>
     """,
@@ -342,75 +360,90 @@ _COHORT_YEAR_OPTIONS = list(range(2025, 2022, -1))  # 2025 → 2023 (reciente pr
 _MARKET_YEAR_MIN = 2023
 _MARKET_YEAR_MAX = 2025
 
+_PILL_AMBITO = ("Cartera", "Mercado SUDEASEG")
+_VISTA_PILL_LABELS = (
+    "Resumen + tacómetros",
+    "Analítica avanzada",
+    "Mapa Venezuela (demo)",
+)
+_VISTA_PILL_TO_KEY: dict[str, str] = {
+    "Resumen + tacómetros": "resumen",
+    "Analítica avanzada": "analitica",
+    "Mapa Venezuela (demo)": "territorio",
+}
+
 with st.sidebar:
-    st.markdown(
-        '<p class="nav-section-title">Ámbito</p>',
-        unsafe_allow_html=True,
-    )
-    lab_module = st.radio(
-        "Ámbito",
-        options=["cohorte", "mercado"],
-        format_func=lambda x: "Cartera (KPIs y cartera)" if x == "cohorte" else "Mercado SUDEASEG",
-        horizontal=False,
-        label_visibility="collapsed",
-    )
-    st.caption("Cartera: cohortes por año. Mercado: series oficiales (ventana 2023–2025).")
-    st.divider()
-    if lab_module == "cohorte":
-        cohort_year = st.selectbox(
-            "Año de la cohorte",
-            options=_COHORT_YEAR_OPTIONS,
-            index=0,
-            help="Listado del año más reciente al más antiguo. Mínimo 2023.",
-        )
-        st.markdown(
-            '<p class="nav-section-title">Vista de cartera</p>',
-            unsafe_allow_html=True,
-        )
-        st.caption("Cada opción es una vista completa del módulo.")
-        cohorte_seccion = st.radio(
-            "Vista_cartera",
-            options=["resumen", "analitica", "territorio"],
-            format_func=lambda x: {
-                "resumen": "Resumen + tacómetros",
-                "analitica": "Analítica avanzada",
-                "territorio": "Mapa Venezuela (demo)",
-            }[x],
+    with st.container(border=True):
+        st.caption("PASO 1 · ÁMBITO")
+        _amb = st.pills(
+            "Ámbito de trabajo",
+            options=list(_PILL_AMBITO),
+            selection_mode="single",
+            default=_PILL_AMBITO[0],
             label_visibility="collapsed",
-        )
+            key="pill_ambito",
+        ) or _PILL_AMBITO[0]
+        lab_module = "cohorte" if _amb == "Cartera" else "mercado"
+        st.caption("Cartera: KPIs y cartera por año. Mercado: series SUDEASEG (2023–2025).")
+
+    st.divider()
+
+    if lab_module == "cohorte":
+        with st.container(border=True):
+            st.caption("PASO 2 · COHORTE")
+            cohort_year = st.selectbox(
+                "Año de la cohorte",
+                options=_COHORT_YEAR_OPTIONS,
+                index=0,
+                help="Del más reciente al más antiguo. Mínimo 2023.",
+            )
+        with st.container(border=True):
+            st.caption("PASO 3 · VISTA (pantalla completa)")
+            _vista = (
+                st.pills(
+                    "Sección de cartera",
+                    options=list(_VISTA_PILL_LABELS),
+                    selection_mode="single",
+                    default=_VISTA_PILL_LABELS[0],
+                    label_visibility="collapsed",
+                    key="pill_vista_cartera",
+                )
+                or _VISTA_PILL_LABELS[0]
+            )
+            cohorte_seccion = _VISTA_PILL_TO_KEY.get(_vista, "resumen")
+            st.caption("Cada opción abre una vista distinta del mismo año.")
         m_from = _MARKET_YEAR_MIN
         m_to = _MARKET_YEAR_MAX
         m_mode = "monthly_flow"
     else:
         cohort_year = _COHORT_YEAR_OPTIONS[0]
         cohorte_seccion = "resumen"
-        st.markdown(
-            '<p class="nav-section-title">Series de mercado</p>',
-            unsafe_allow_html=True,
-        )
-        st.caption("Rango disponible: desde 2023 hasta 2025 (sin años futuros).")
-        _m_years = list(range(_MARKET_YEAR_MIN, _MARKET_YEAR_MAX + 1))
-        m_from = st.selectbox("Desde año", options=_m_years, index=0, key="sb_m_from")
-        _m_to_allowed = [y for y in _m_years if y >= m_from]
-        m_to = st.selectbox(
-            "Hasta año",
-            options=_m_to_allowed,
-            index=len(_m_to_allowed) - 1,
-            key="sb_m_to",
-        )
-        m_mode = st.selectbox(
-            "Modo temporal",
-            options=["monthly_flow", "ytd"],
-            format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)",
-            key="sb_m_mode",
-        )
-        precarga_paralela = st.checkbox(
-            "Precarga paralela (todas las series de mercado)",
-            value=True,
-            help="Activa: una sola ronda de peticiones en paralelo y datos en caché. "
-            "Desactiva: cada pestaña consulta por separado (útil si la API limita concurrencia).",
-            key="sb_mercado_prefetch",
-        )
+        with st.container(border=True):
+            st.caption("PASO 2 · PERÍODO DE SERIES")
+            st.caption("Ventana 2023–2025 · sin años futuros.")
+            _m_years = list(range(_MARKET_YEAR_MIN, _MARKET_YEAR_MAX + 1))
+            m_from = st.selectbox("Desde año", options=_m_years, index=0, key="sb_m_from")
+            _m_to_allowed = [y for y in _m_years if y >= m_from]
+            m_to = st.selectbox(
+                "Hasta año",
+                options=_m_to_allowed,
+                index=len(_m_to_allowed) - 1,
+                key="sb_m_to",
+            )
+            m_mode = st.selectbox(
+                "Modo temporal",
+                options=["monthly_flow", "ytd"],
+                format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)",
+                key="sb_m_mode",
+            )
+        with st.container(border=True):
+            st.caption("PASO 3 · CARGA DE DATOS")
+            precarga_paralela = st.checkbox(
+                "Precarga paralela (todas las series)",
+                value=True,
+                help="Una sola ronda en paralelo + caché. Desactive si la API limita concurrencia.",
+                key="sb_mercado_prefetch",
+            )
 
 if lab_module == "cohorte":
     data: dict[str, Any] | None = None
@@ -432,127 +465,147 @@ if lab_module == "cohorte":
 
     with st.sidebar:
         st.divider()
-        st.markdown("**Notas y contexto**")
-        with st.expander("Ver notas técnicas y operativas", expanded=False):
-            st.caption(
-                "KPI desde API compute (DuckDB + Postgres). Si no hay filas en BD para el año, "
-                "la API usa cartera sintética de respaldo."
-            )
-            if data.get("data_note"):
-                st.markdown(data["data_note"])
+        with st.container(border=True):
+            st.caption("CONTEXTO Y NOTAS")
+            with st.expander("Notas técnicas y operativas", expanded=False):
+                st.caption(
+                    "KPI desde API compute (DuckDB + Postgres). Si no hay filas en BD para el año, "
+                    "la API usa cartera sintética de respaldo."
+                )
+                if data.get("data_note"):
+                    st.markdown(data["data_note"])
 
     if cohorte_seccion == "resumen":
-        st.markdown(
-            f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
-            "Resumen de cartera</p>",
-            unsafe_allow_html=True,
-        )
-        st.caption("Métricas clave y tacómetros compactos. Use la barra lateral para analítica avanzada o el mapa.")
-
-        st.subheader("Indicadores clave")
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Persistencia", f"{data['persistency_rate_pct']:.2f} %")
-        c2.metric("Pólizas activas", f"{data['policies_active']:,}")
-        c3.metric("Lapsos", f"{data['policies_lapsed']:,}")
-        c4.metric("Prima media anual", f"{data['avg_annual_premium']:,.2f}")
-
-        st.subheader("Tacómetros (vista compacta)")
-        fig_g = render_resumen_gauges(
-            data,
-            port_pack,
-            brand_purple=_BRAND_PURPLE,
-        )
-        st.plotly_chart(fig_g, use_container_width=True)
-
-        st.subheader("Exportación")
-        ex1, ex2 = st.columns(2)
-        with ex1:
-            df = pd.DataFrame([data])
-            st.download_button(
-                "Descargar KPIs (CSV)",
-                data=df.to_csv(index=False).encode("utf-8"),
-                file_name="kpi_summary_demo.csv",
-                mime="text/csv",
+        with st.container(border=True):
+            st.markdown(
+                f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+                "Resumen de cartera</p>",
+                unsafe_allow_html=True,
             )
-        with ex2:
-            if port_pack:
+            st.caption(
+                "Métricas clave y tacómetros compactos. Cambie la vista en la barra lateral (paso 3) para otras pantallas."
+            )
+        st.divider()
+        with st.container(border=True):
+            st.subheader("Indicadores clave")
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Persistencia", f"{data['persistency_rate_pct']:.2f} %")
+            c2.metric("Pólizas activas", f"{data['policies_active']:,}")
+            c3.metric("Lapsos", f"{data['policies_lapsed']:,}")
+            c4.metric("Prima media anual", f"{data['avg_annual_premium']:,.2f}")
+        st.divider()
+        with st.container(border=True):
+            st.subheader("Tacómetros (vista compacta)")
+            fig_g = render_resumen_gauges(
+                data,
+                port_pack,
+                brand_purple=_BRAND_PURPLE,
+            )
+            st.plotly_chart(fig_g, use_container_width=True)
+        st.divider()
+        with st.container(border=True):
+            st.subheader("Exportación")
+            ex1, ex2 = st.columns(2)
+            with ex1:
+                df = pd.DataFrame([data])
                 st.download_button(
-                    "Descargar paquete analítico (JSON)",
-                    data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
-                    file_name=f"cohort_portfolio_{cohort_year}.json",
-                    mime="application/json",
+                    "Descargar KPIs (CSV)",
+                    data=df.to_csv(index=False).encode("utf-8"),
+                    file_name="kpi_summary_demo.csv",
+                    mime="text/csv",
                 )
+            with ex2:
+                if port_pack:
+                    st.download_button(
+                        "Descargar paquete analítico (JSON)",
+                        data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
+                        file_name=f"cohort_portfolio_{cohort_year}.json",
+                        mime="application/json",
+                    )
 
     elif cohorte_seccion == "analitica":
-        st.markdown(
-            f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
-            "Analítica avanzada</p>",
-            unsafe_allow_html=True,
-        )
+        with st.container(border=True):
+            st.markdown(
+                f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+                "Analítica avanzada</p>",
+                unsafe_allow_html=True,
+            )
+            st.caption("Gráficos y tablas detalladas del paquete de cartera para el año elegido.")
+        st.divider()
         if port_pack is None:
             st.warning(
                 "No hay datos de cartera en base para este año (404 en `/api/v1/kpi/cohort-portfolio`). "
                 "Cargue pólizas/siniestros o ejecute `seed_operational_aligned.py`."
             )
         else:
-            render_portfolio_pack(
-                port_pack,
-                brand_purple=_BRAND_PURPLE,
-                brand_deep=_BRAND_DEEP,
-                accent_blue=_MARKET_TOTAL_LINE,
+            with st.container(border=True):
+                render_portfolio_pack(
+                    port_pack,
+                    brand_purple=_BRAND_PURPLE,
+                    brand_deep=_BRAND_DEEP,
+                    accent_blue=_MARKET_TOTAL_LINE,
+                )
+        st.divider()
+        with st.container(border=True):
+            st.subheader("Exportación")
+            ex1, ex2 = st.columns(2)
+            with ex1:
+                st.download_button(
+                    "Descargar KPIs (CSV)",
+                    data=pd.DataFrame([data]).to_csv(index=False).encode("utf-8"),
+                    file_name="kpi_summary_demo.csv",
+                    mime="text/csv",
+                    key="dl_kpi_analitica",
+                )
+            with ex2:
+                if port_pack:
+                    st.download_button(
+                        "Descargar paquete analítico (JSON)",
+                        data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
+                        file_name=f"cohort_portfolio_{cohort_year}.json",
+                        mime="application/json",
+                        key="dl_port_analitica",
+                    )
+
+    else:
+        with st.container(border=True):
+            st.markdown(
+                f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+                "Territorio Venezuela (demo)</p>",
+                unsafe_allow_html=True,
             )
-        st.subheader("Exportación")
-        ex1, ex2 = st.columns(2)
-        with ex1:
-            st.download_button(
-                "Descargar KPIs (CSV)",
-                data=pd.DataFrame([data]).to_csv(index=False).encode("utf-8"),
-                file_name="kpi_summary_demo.csv",
-                mime="text/csv",
-                key="dl_kpi_analitica",
+            st.caption(
+                "Cada póliza se asigna a un estado con función hash determinista (solo para visualización; no es ubicación real)."
             )
-        with ex2:
-            if port_pack:
+        st.divider()
+        if port_pack is None:
+            st.warning("Sin datos de cartera en base para este año.")
+        else:
+            with st.container(border=True):
+                render_territorio_ve(port_pack, brand_purple=_BRAND_PURPLE)
+            st.divider()
+            with st.container(border=True):
+                st.subheader("Exportación")
                 st.download_button(
                     "Descargar paquete analítico (JSON)",
                     data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
                     file_name=f"cohort_portfolio_{cohort_year}.json",
                     mime="application/json",
-                    key="dl_port_analitica",
+                    key="dl_port_mapa",
                 )
 
-    else:
+else:
+    with st.container(border=True):
         st.markdown(
             f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
-            "Territorio Venezuela (demo)</p>",
+            "Mercado SUDEASEG</p>",
             unsafe_allow_html=True,
         )
         st.caption(
-            "Cada póliza se asigna a un estado con función hash determinista (solo para visualización; no es ubicación real)."
+            "SUDEASEG vía API compute (Postgres). Miles de bolívares salvo ratios. "
+            "Ajuste período en la barra lateral (pasos 2–3); cada pestaña es un bloque de análisis independiente."
         )
-        if port_pack is None:
-            st.warning("Sin datos de cartera en base para este año.")
-        else:
-            render_territorio_ve(port_pack, brand_purple=_BRAND_PURPLE)
-            st.download_button(
-                "Descargar paquete analítico (JSON)",
-                data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
-                file_name=f"cohort_portfolio_{cohort_year}.json",
-                mime="application/json",
-                key="dl_port_mapa",
-            )
-
-else:
-    st.markdown(
-        f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
-        "Mercado SUDEASEG</p>",
-        unsafe_allow_html=True,
-    )
-    st.caption(
-        "SUDEASEG en Postgres (API compute). Miles de bolívares salvo ratios. "
-        "Modo mensual = flujo del mes; YTD = acumulado a cierre de mes. "
-        "Use la barra lateral para el período (2023–2025); cada pestaña abajo es una sección de análisis."
-    )
+    st.divider()
 
     if m_from > m_to:
         st.warning("Ajusta el rango de años (desde ≤ hasta).")
@@ -571,6 +624,7 @@ else:
         with tab_primas:
             st.markdown("##### Primas vs mercado")
             st.caption("Comparación La Fe frente al total mercado en el rango y modo elegidos en la barra lateral.")
+            st.divider()
             la_payload: dict[str, Any] | None = None
             tot_payload: dict[str, Any] | None = None
             err_prim: Exception | None = None
@@ -658,6 +712,7 @@ else:
         with tab_snapshot:
             st.markdown("##### Último cierre")
             st.caption("Instantánea YTD al último mes con dato La Fe (independiente del rango lateral).")
+            st.divider()
             snap: dict[str, Any] | None = None
             snap_err: Exception | None = None
             if mb is not None:
@@ -714,6 +769,7 @@ else:
         with tab_extend:
             st.markdown("##### Métricas resumen")
             st.caption("Serie extendida — resumen por empresa (La Fe) y comparación con totales de mercado.")
+            st.divider()
             la_ext: dict[str, Any] | None = None
             tot_ext: dict[str, Any] | None = None
             err_ext: Exception | None = None
@@ -831,6 +887,7 @@ else:
         with tab_cuadro:
             st.markdown("##### Cuadro de resultados")
             st.caption("La Fe frente al total mercado — líneas de resultado técnico y operativo.")
+            st.divider()
             la_c: dict[str, Any] | None = None
             tot_c: dict[str, Any] | None = None
             err_c: Exception | None = None
@@ -908,29 +965,31 @@ else:
                         )
 
 with st.sidebar:
-    st.markdown("---")
-    st.caption("Enlaces rápidos")
-    st.link_button(
-        "Carga de pólizas (Admin)",
-        upload_path,
-        use_container_width=True,
-        type="primary",
-    )
-    st.link_button(
-        "Carga de siniestros (Admin)",
-        upload_claims_path,
-        use_container_width=True,
-    )
-    if portal:
+    st.divider()
+    with st.container(border=True):
+        st.caption("ENLACES RÁPIDOS")
         st.link_button(
-            "Portal ejecutivo (Reflex)",
-            portal,
+            "Carga de pólizas (Admin)",
+            upload_path,
+            use_container_width=True,
+            type="primary",
+        )
+        st.link_button(
+            "Carga de siniestros (Admin)",
+            upload_claims_path,
             use_container_width=True,
         )
-    st.markdown("")
-    if _LOGO_FE1.is_file():
-        st.image(str(_LOGO_FE1), width=132, use_container_width=False)
-    st.caption("Seguros La Fe · demo IIH")
+        if portal:
+            st.link_button(
+                "Portal ejecutivo (Reflex)",
+                portal,
+                use_container_width=True,
+            )
+    with st.container(border=True):
+        st.caption("MARCA")
+        if _LOGO_FE1.is_file():
+            st.image(str(_LOGO_FE1), width=132, use_container_width=False)
+        st.caption("Seguros La Fe · demo IIH")
 
 st.caption(
     "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · Insurance Intelligence Hub (demo técnico)."
