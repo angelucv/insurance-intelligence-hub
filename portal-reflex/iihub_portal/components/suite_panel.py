@@ -77,30 +77,71 @@ def _md_block(anchor: str, md: str, zebra: int) -> rx.Component:
 
 
 def _suite_block3_with_figure() -> rx.Component:
-    """Bloque Acsel/x–Rector con figura de coexistencia / paralelo / suite."""
+    """Bloque Acsel/x–Rector con dos figuras: coexistencia con core y evolución sin core."""
     zebra = 2
     bg = (
         "rounded-xl p-4 sm:p-5 mb-4 border bg-slate-50/90 border-slate-100/90"
         if zebra % 2 == 0
         else "rounded-xl p-4 sm:p-5 mb-4 border bg-white border-gray-100/90"
     )
+    img_cls = (
+        "w-full min-w-0 max-h-[min(52vh,400px)] lg:max-h-[min(62vh,480px)] object-contain "
+        "rounded-lg border border-gray-200 bg-white shadow-sm"
+    )
+    col = (
+        "flex flex-col min-w-0 gap-2 p-2 sm:p-3 rounded-xl bg-white/60 border border-gray-100/90 "
+    )
     return rx.el.div(
         rx.markdown(copy.SUITE_MD_BLOCK3.strip(), class_name=_MD_PROSE),
-        rx.el.div(
-            rx.image(
-                src="/infografia/suite-core-coexistencia.png",
-                alt=copy.SUITE_CORE_FIG_ALT,
-                loading="lazy",
-                class_name=(
-                    "w-full min-w-0 max-h-[min(65vh,480px)] sm:max-h-none object-contain "
-                    "rounded-lg border border-gray-200 bg-white shadow-sm"
-                ),
-            ),
-            class_name="mt-5 w-full max-w-full overflow-x-auto [scrollbar-width:thin]",
-        ),
         rx.markdown(
-            copy.SUITE_CORE_FIG_CAPTION,
-            class_name=_MD_PROSE + " mt-3",
+            copy.SUITE_CORE_FIG_PAIR_INTRO.strip(),
+            class_name=_MD_PROSE + " mt-5",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.p(
+                    copy.SUITE_CORE_FIG_COL_TITLE,
+                    class_name="text-xs font-semibold text-gray-600 text-center mb-1",
+                ),
+                rx.el.div(
+                    rx.image(
+                        src="/infografia/suite-core-coexistencia.png",
+                        alt=copy.SUITE_CORE_FIG_ALT,
+                        loading="lazy",
+                        class_name=img_cls,
+                    ),
+                    class_name="w-full overflow-x-auto [scrollbar-width:thin]",
+                ),
+                rx.markdown(
+                    copy.SUITE_CORE_FIG_COL_CAPTION,
+                    class_name=_MD_PROSE + " text-sm",
+                ),
+                class_name=col,
+            ),
+            rx.el.div(
+                rx.el.p(
+                    copy.SUITE_NO_CORE_FIG_COL_TITLE,
+                    class_name="text-xs font-semibold text-gray-600 text-center mb-1",
+                ),
+                rx.el.div(
+                    rx.image(
+                        src="/infografia/suite-sin-core-evolucion.png",
+                        alt=copy.SUITE_NO_CORE_FIG_ALT,
+                        loading="lazy",
+                        class_name=img_cls,
+                    ),
+                    class_name="w-full overflow-x-auto [scrollbar-width:thin]",
+                ),
+                rx.markdown(
+                    copy.SUITE_NO_CORE_FIG_COL_CAPTION,
+                    class_name=_MD_PROSE + " text-sm",
+                ),
+                class_name=col,
+            ),
+            class_name=(
+                "mt-4 grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 "
+                "items-stretch w-full"
+            ),
         ),
         id="suite-3",
         class_name=bg,

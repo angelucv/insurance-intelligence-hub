@@ -151,14 +151,27 @@ SUITE_HEART_CAPTION = (
     "Sin **ingesta ordenada**, **repositorio único** y **reglas de cálculo centralizadas**, el cuadro de mando carece de sustento consistente. "
     "La **visualización** constituye la capa final; el **proceso de datos** es el que garantiza **coherencia numérica** entre usuarios."
 )
-# Figura del bloque «Cores tradicionales…» (suite-3): coexistencia core / paralelo / suite
+# Figuras del bloque «Cores tradicionales…» (suite-3): coexistencia con core / evolución sin core
+SUITE_CORE_FIG_PAIR_INTRO = (
+    "**Dos lecturas del encaje.** A la **izquierda**, **coexistencia** con un core de referencia (Acsel/x, Rector u otro); "
+    "a la **derecha**, **evolución por etapas** cuando aún **no** hay un sistema central único consolidado."
+)
+SUITE_CORE_FIG_COL_TITLE = "Con core de referencia"
+SUITE_NO_CORE_FIG_COL_TITLE = "Sin core consolidado"
 SUITE_CORE_FIG_ALT = (
     "Diagrama: core tradicional frente a paralelo informal y suite demostrativa; "
     "flecha de coexistencia hacia la suite y sustitución del paralelo."
 )
-SUITE_CORE_FIG_CAPTION = (
-    "**Lectura del esquema.** El **core** sigue siendo el lugar donde la compañía registra la operación; la **suite** puede **convivir** con él. "
-    "El **paralelo informal** (Excel, extractos) es lo que esta propuesta busca **ir sustituyendo** al unificar datos e indicadores."
+SUITE_NO_CORE_FIG_ALT = (
+    "Diagrama sin core tradicional: huecos y Excel disperso frente a suite como núcleo en evolución por etapas."
+)
+SUITE_CORE_FIG_COL_CAPTION = (
+    "**Con core:** la **suite** **convive** con el sistema donde la compañía registra la operación; **sustituye** el **paralelo informal** "
+    "(Excel, extractos) al concentrar datos e indicadores."
+)
+SUITE_NO_CORE_FIG_COL_CAPTION = (
+    "**Sin core:** la misma línea puede **crecer por etapas** —operaciones, base única, indicadores, portal y laboratorio— como **núcleo propio** "
+    "alineado al negocio, sin depender de una caja cerrada de un solo fabricante."
 )
 HEADER_SUB_SUITE = (
     "Núcleo actuarial integrado: operaciones con control de acceso, almacén PostgreSQL, servicio de indicadores y analítica "
