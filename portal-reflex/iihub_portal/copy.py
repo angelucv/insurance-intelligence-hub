@@ -50,11 +50,13 @@ HEADER_SUB_CARTERA = "Indicadores de cartera · lectura rápida y cargas en Admi
 
 # Mercado
 MERCADO_PARAMS_TITLE = "Series SUDEASEG"
-MERCADO_PARAMS_BODY = "Rango y modo · exportaciones en «Análisis BI detallado»."
-MERCADO_YOY_TITLE = "Comparativa año vs año (meses alineados)"
-MERCADO_YOY_SUB = "Cada año en un eje Y · prima y LR La Fe / mercado total"
-MERCADO_YOY_A = "Año A"
-MERCADO_YOY_B = "Año B"
+MERCADO_PARAMS_BODY = (
+    "Rango temporal, modo y años A/B para la comparativa YoY. "
+    "Un solo «Actualizar» aplica series del rango y la comparativa. "
+    "Exportaciones detalladas: «Análisis BI detallado»."
+)
+MERCADO_YOY_A = "YoY A"
+MERCADO_YOY_B = "YoY B"
 MERCADO_SNAPSHOT_TITLE = "Último cierre La Fe (YTD)"
 MERCADO_SNAPSHOT_HINT = "Miles de Bs. · ratios en fracción"
 MERCADO_CHART_PRIM_TITLE = "Primas netas · La Fe vs mercado total"

@@ -146,26 +146,6 @@ def mercado_panel() -> rx.Component:
                         spacing="1",
                         align_items="start",
                     ),
-                    rx.button(
-                        "Actualizar",
-                        on_click=State.load_sudeaseg_preview,
-                        loading=State.market_charts_busy,
-                        color_scheme="purple",
-                        size="2",
-                        class_name="rounded-lg",
-                        style={"align_self": "flex-end"},
-                    ),
-                    spacing="3",
-                    align_items="end",
-                    flex_wrap="wrap",
-                    width="100%",
-                ),
-                rx.el.p(
-                    copy.MERCADO_YOY_TITLE,
-                    class_name="text-xs font-semibold text-gray-800 mt-4 mb-1",
-                ),
-                rx.el.p(copy.MERCADO_YOY_SUB, class_name="text-[10px] text-gray-500 mb-2"),
-                rx.hstack(
                     rx.vstack(
                         rx.text(copy.MERCADO_YOY_A, size="1", color="gray"),
                         rx.select(
@@ -191,11 +171,10 @@ def mercado_panel() -> rx.Component:
                         align_items="start",
                     ),
                     rx.button(
-                        "Aplicar comparativa",
+                        "Actualizar",
                         on_click=State.load_sudeaseg_preview,
                         loading=State.market_charts_busy,
                         color_scheme="purple",
-                        variant="outline",
                         size="2",
                         class_name="rounded-lg",
                         style={"align_self": "flex-end"},

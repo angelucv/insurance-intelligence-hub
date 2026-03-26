@@ -224,6 +224,7 @@ class State(rx.State):
             self.market_fy = fy
         if ty.isdigit():
             self.market_ty = ty
+        self._ensure_market_desde_le_hasta()
 
     async def portal_on_load(self):
         await self.hydrate_urls()
@@ -264,6 +265,9 @@ class State(rx.State):
             except ValueError:
                 self.market_plot_error = "Indique años válidos (desde / hasta y comparativa)."
                 return
+            if fy > ty:
+                self.market_ty = str(fy)
+                ty = fy
             mode = (self.market_mode or "monthly_flow").strip()
             if mode not in ("monthly_flow", "ytd"):
                 mode = "monthly_flow"
@@ -454,11 +458,29 @@ class State(rx.State):
     def set_input_month(self, v: str):
         self.input_month = v
 
+    def _ensure_market_desde_le_hasta(self) -> None:
+        """Garantiza Desde (market_fy) ≤ Hasta (market_ty) en el estado del cliente."""
+        try:
+            fy = int((self.market_fy or "0").strip())
+            ty = int((self.market_ty or "0").strip())
+        except ValueError:
+            return
+        if fy > ty:
+            self.market_ty = str(fy)
+
     def set_market_fy(self, v: str):
         self.market_fy = v
+        self._ensure_market_desde_le_hasta()
 
     def set_market_ty(self, v: str):
         self.market_ty = v
+        try:
+            fy = int((self.market_fy or "0").strip())
+            ty = int((self.market_ty or "0").strip())
+        except ValueError:
+            return
+        if fy > ty:
+            self.market_fy = str(ty)
 
     def set_market_mode(self, v: str):
         self.market_mode = v
