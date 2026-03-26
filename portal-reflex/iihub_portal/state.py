@@ -12,7 +12,9 @@ import reflex as rx
 from plotly.graph_objects import Figure as PlotlyFigure
 
 from iihub_portal.plotly_charts import (
+    build_cartera_donut_figure,
     build_kpi_gauge_figure,
+    build_market_metrics_heatmap,
     polish_market_subplots,
     polish_ratio_figure,
     trace_lr_la_fe,
@@ -59,6 +61,14 @@ class State(rx.State):
     kpi_gauge_layout: dict[str, Any] = {}
     kpi_gauge_ok: bool = False
 
+    cartera_donut_data: list[Any] = []
+    cartera_donut_layout: dict[str, Any] = {}
+    cartera_donut_ok: bool = False
+
+    market_heatmap_data: list[Any] = []
+    market_heatmap_layout: dict[str, Any] = {}
+    market_heatmap_ok: bool = False
+
     snap_ok: bool = False
     snap_period: str = "—"
     snap_primas: str = "—"
@@ -90,6 +100,21 @@ class State(rx.State):
         if not self.kpi_gauge_ok or not self.kpi_gauge_data:
             return PlotlyFigure()
         return PlotlyFigure(data=self.kpi_gauge_data, layout=self.kpi_gauge_layout or {})
+
+    @rx.var(cache=True, auto_deps=True)
+    def cartera_donut_figure(self) -> PlotlyFigure:
+        if not self.cartera_donut_ok or not self.cartera_donut_data:
+            return PlotlyFigure()
+        return PlotlyFigure(data=self.cartera_donut_data, layout=self.cartera_donut_layout or {})
+
+    @rx.var(cache=True, auto_deps=True)
+    def market_heatmap_figure(self) -> PlotlyFigure:
+        if not self.market_heatmap_ok or not self.market_heatmap_data:
+            return PlotlyFigure()
+        return PlotlyFigure(
+            data=self.market_heatmap_data,
+            layout=self.market_heatmap_layout or {},
+        )
 
     @rx.var(cache=True, auto_deps=True)
     def cartera_period_label(self) -> str:
@@ -144,6 +169,9 @@ class State(rx.State):
         self.market_plot_layout = {}
         self.market_ratio_plot_data = []
         self.market_ratio_plot_layout = {}
+        self.market_heatmap_ok = False
+        self.market_heatmap_data = []
+        self.market_heatmap_layout = {}
         self.market_charts_busy = True
         try:
             base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
@@ -226,6 +254,20 @@ class State(rx.State):
             self.market_ratio_plot_data = pjr["data"]
             self.market_ratio_plot_layout = pjr.get("layout") or {}
             self.market_ratio_ok = True
+
+            hm = build_market_metrics_heatmap(
+                xs,
+                y_la,
+                y_tot,
+                y_lr_la,
+                y_lr_mk,
+                height=420,
+                max_points=48,
+            )
+            hmj = hm.to_plotly_json()
+            self.market_heatmap_data = hmj["data"]
+            self.market_heatmap_layout = hmj.get("layout") or {}
+            self.market_heatmap_ok = True
         finally:
             self.market_charts_busy = False
 
@@ -309,6 +351,9 @@ class State(rx.State):
         self.kpi_gauge_ok = False
         self.kpi_gauge_data = []
         self.kpi_gauge_layout = {}
+        self.cartera_donut_ok = False
+        self.cartera_donut_data = []
+        self.cartera_donut_layout = {}
         try:
             year = int(self.input_year.strip())
         except ValueError:
@@ -349,6 +394,12 @@ class State(rx.State):
             self.kpi_gauge_data = gpj["data"]
             self.kpi_gauge_layout = gpj.get("layout") or {}
             self.kpi_gauge_ok = True
+
+            dfig = build_cartera_donut_figure(active=act, lapsed=lap, height=300)
+            dj = dfig.to_plotly_json()
+            self.cartera_donut_data = dj["data"]
+            self.cartera_donut_layout = dj.get("layout") or {}
+            self.cartera_donut_ok = True
         except Exception as e:  # noqa: BLE001
             self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
         self.busy = False

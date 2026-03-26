@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import plotly.graph_objects as go
@@ -238,5 +239,216 @@ def build_kpi_gauge_figure(
         font=_FONT,
         height=height,
         margin=dict(l=24, r=24, t=40, b=24),
+    )
+    return fig
+
+
+def build_cartera_donut_figure(
+    *,
+    active: int,
+    lapsed: int,
+    height: int = 300,
+) -> Figure:
+    """Composición activas vs lapsos (donut)."""
+    total = int(active) + int(lapsed)
+    if total <= 0:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Sin pólizas en esta cartera",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14, color="#64748b"),
+        )
+        fig.update_layout(
+            template="plotly_white",
+            paper_bgcolor="rgba(255,255,255,0)",
+            font=_FONT,
+            height=height,
+            margin=dict(l=24, r=24, t=24, b=24),
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+        )
+        return fig
+
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=["Pólizas activas", "Lapsos"],
+                values=[active, lapsed],
+                hole=0.58,
+                sort=False,
+                direction="clockwise",
+                marker=dict(
+                    colors=[BRAND_PURPLE, "#94a3b8"],
+                    line=dict(color="white", width=3),
+                ),
+                textinfo="label+percent",
+                textposition="outside",
+                textfont=dict(size=12, color="#334155"),
+                hovertemplate="<b>%{label}</b><br>cantidad: %{value:,}<br>%{percent}<extra></extra>",
+            )
+        ]
+    )
+    fig.update_layout(
+        template="plotly_white",
+        paper_bgcolor="rgba(255,255,255,0)",
+        font=_FONT,
+        height=height,
+        margin=dict(l=24, r=24, t=32, b=24),
+        showlegend=False,
+        annotations=[
+            dict(
+                text=f"<b>{total:,}</b><br>pólizas",
+                x=0.5,
+                y=0.5,
+                font_size=15,
+                font_family="Inter, system-ui, sans-serif",
+                font_color="#0f172a",
+                showarrow=False,
+            )
+        ],
+    )
+    return fig
+
+
+def _to_float(x: Any) -> float:
+    if x is None:
+        return float("nan")
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return float("nan")
+
+
+def _row_normalize_01(row: list[float]) -> list[float]:
+    """Escala cada fila a [0,1] para comparar formas entre métricas de distinta magnitud."""
+    vals = [v for v in row if not math.isnan(v)]
+    if not vals:
+        return [float("nan")] * len(row)
+    lo, hi = min(vals), max(vals)
+    out: list[float] = []
+    for v in row:
+        if math.isnan(v):
+            out.append(float("nan"))
+        elif hi <= lo:
+            out.append(0.5)
+        else:
+            out.append((v - lo) / (hi - lo))
+    return out
+
+
+def _subsample_series(
+    xs: list[str],
+    *series: list[Any],
+    max_points: int = 48,
+) -> tuple[list[str], tuple[list[Any], ...]]:
+    n = len(xs)
+    if n <= max_points:
+        return xs, series
+    step = max(1, n // max_points)
+    idx = list(range(0, n, step))
+    if len(idx) > max_points:
+        idx = idx[:max_points]
+    xs_n = [xs[i] for i in idx]
+    ser_n = tuple([s[i] for i in idx] for s in series)
+    return xs_n, ser_n
+
+
+def build_market_metrics_heatmap(
+    xs: list[str],
+    y_primas_la: list[Any],
+    y_primas_mk: list[Any],
+    y_lr_la: list[Any],
+    y_lr_mk: list[Any],
+    *,
+    height: int = 400,
+    max_points: int = 48,
+) -> Figure:
+    """
+    Mapa de calor: filas = métricas, columnas = período.
+    Valores normalizados por fila (0–1) para que primas y LR sean comparables visualmente;
+    el valor original va en el hover.
+    """
+    xs_s, (pla, pmk, lra, lrm) = _subsample_series(
+        xs,
+        y_primas_la,
+        y_primas_mk,
+        y_lr_la,
+        y_lr_mk,
+        max_points=max_points,
+    )
+    z_raw = [
+        [_to_float(a) for a in pla],
+        [_to_float(a) for a in pmk],
+        [_to_float(a) for a in lra],
+        [_to_float(a) for a in lrm],
+    ]
+    z_norm = [_row_normalize_01(row) for row in z_raw]
+    y_labels = [
+        "Primas La Fe (mil Bs.)",
+        "Primas mercado (mil Bs.)",
+        "LR La Fe",
+        "LR mercado",
+    ]
+
+    text_fmt: list[list[str]] = []
+    for row_raw in z_raw:
+        row_txt = []
+        for v in row_raw:
+            if math.isnan(v):
+                row_txt.append("—")
+            elif abs(v) >= 1000:
+                row_txt.append(f"{v:,.0f}")
+            elif abs(v) >= 1:
+                row_txt.append(f"{v:.2f}")
+            else:
+                row_txt.append(f"{v:.4f}")
+        text_fmt.append(row_txt)
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=z_norm,
+            x=xs_s,
+            y=y_labels,
+            customdata=text_fmt,
+            colorscale=[
+                [0.0, "#f8fafc"],
+                [0.35, "#e9d5ff"],
+                [0.7, BRAND_PURPLE],
+                [1.0, "#4c1d95"],
+            ],
+            zmin=0,
+            zmax=1,
+            colorbar=dict(
+                title=dict(text="Norm. por fila", side="right"),
+                tickvals=[0, 0.5, 1],
+                ticktext=["mín", "medio", "máx"],
+            ),
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Período %{x}<br>"
+                "Normalizado (fila): %{z:.2f}<br>"
+                "Valor: %{customdata}<extra></extra>"
+            ),
+        )
+    )
+    fig.update_layout(
+        template="plotly_white",
+        paper_bgcolor="rgba(255,255,255,0)",
+        plot_bgcolor=_PLOT_BG,
+        font=_FONT,
+        height=height,
+        margin=dict(l=180, r=56, t=24, b=88),
+        xaxis=dict(
+            tickangle=-40,
+            tickfont=dict(size=10, color="#64748b"),
+            showgrid=False,
+        ),
+        yaxis=dict(
+            tickfont=dict(size=11, color="#334155"),
+        ),
     )
     return fig

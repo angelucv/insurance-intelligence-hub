@@ -209,6 +209,41 @@ def mercado_panel() -> rx.Component:
             ),
             class_name="mt-6 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
         ),
+        rx.el.section(
+            rx.el.div(
+                rx.el.h3(
+                    copy.MERCADO_HEATMAP_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.MERCADO_HEATMAP_SUB,
+                    class_name="text-xs text-gray-500 mt-1 mb-4",
+                ),
+                rx.cond(
+                    State.market_charts_busy,
+                    rx.center(
+                        rx.vstack(
+                            rx.spinner(size="3"),
+                            rx.text("Construyendo mapa de calor…", size="2", color="gray"),
+                            spacing="2",
+                            align_items="center",
+                        ),
+                        width="100%",
+                        padding_y="10",
+                    ),
+                    rx.cond(
+                        State.market_heatmap_ok,
+                        rx.plotly(data=State.market_heatmap_figure),
+                        rx.el.p(
+                            "Sin datos para el mapa de calor.",
+                            class_name="text-sm text-gray-400",
+                        ),
+                    ),
+                ),
+                class_name="p-5 sm:p-6",
+            ),
+            class_name="mt-6 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
+        ),
         rx.cond(
             State.market_plot_error != "",
             rx.callout(
@@ -335,6 +370,36 @@ def cartera_panel() -> rx.Component:
                 class_name="p-5 sm:p-6",
             ),
             class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
+        ),
+        rx.el.section(
+            rx.el.div(
+                rx.el.h3(
+                    copy.CARTERA_DONUT_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.CARTERA_DONUT_SUB,
+                    class_name="text-xs text-gray-500 mt-1 mb-4",
+                ),
+                rx.cond(
+                    State.busy,
+                    rx.center(
+                        rx.spinner(size="3"),
+                        width="100%",
+                        padding_y="8",
+                    ),
+                    rx.cond(
+                        State.cartera_donut_ok,
+                        rx.plotly(data=State.cartera_donut_figure),
+                        rx.el.p(
+                            "Sin datos para composición.",
+                            class_name="text-sm text-gray-400",
+                        ),
+                    ),
+                ),
+                class_name="p-5 sm:p-6",
+            ),
+            class_name="mt-6 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
         ),
         rx.el.section(
             rx.el.div(

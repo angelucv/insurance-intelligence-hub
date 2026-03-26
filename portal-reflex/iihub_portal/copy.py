@@ -26,6 +26,16 @@ VISUAL_SUGGESTIONS_MD = """
 - **Mapa de calor** (mes × métrica) para estacionalidad y picos.
 - **Sparklines** junto a KPIs en tablas resumen (tendencia en una línea).
 - **Tacómetros (gauge)** con Plotly `go.Indicator`: persistencia, ratios o participación en un vistazo.
+- **Donut** (`go.Pie` con `hole`): composición (p. ej. activas vs lapsos).
+- **Mapa de calor** (`go.Heatmap`): matriz período × métrica para ver picos y estacionalidad.
+
+**Más ideas (cuando haya más dimensiones en datos)**
+
+- **Treemap / sunburst**: jerarquía ramo → producto → canal.
+- **Waterfall**: puente de prima o resultado de un periodo a otro.
+- **Sankey**: flujo primas → siniestros → resultado (requiere agregados por etapa).
+- **Barras apiladas al 100 %**: mix temporal de estados o ramos.
+- **Violin / box** por cohorte o edad actuarial (dispersión de prima).
 
 **Rendimiento**
 
@@ -49,6 +59,11 @@ MERCADO_CHART_PRIM_TITLE = "Primas netas · La Fe vs mercado total"
 MERCADO_CHART_PRIM_SUB = "Miles de bolívares · doble eje"
 MERCADO_CHART_LR_TITLE = "Loss ratio proxy (siniestros / primas)"
 MERCADO_CHART_LR_SUB = "La Fe y mercado total · fracción"
+MERCADO_HEATMAP_TITLE = "Intensidad por período (cuatro métricas)"
+MERCADO_HEATMAP_SUB = (
+    "Cada fila se escala de forma independiente (0 = mínimo del rango, 1 = máximo). "
+    "Así se comparan patrones temporales entre primas y loss ratio. Valor real en el hover."
+)
 
 # Cartera
 CARTERA_PAGE_HEADING = "Resumen de cartera"
@@ -65,6 +80,8 @@ CARTERA_PARAMS_BODY = (
 CARTERA_GAUGE_TITLE = "Indicadores clave"
 CARTERA_GAUGE_SUB = "Tacómetros · persistencia, ratio técnico y peso de pólizas activas"
 CARTERA_METRICS_TITLE = "Cifras"
+CARTERA_DONUT_TITLE = "Composición de la cartera"
+CARTERA_DONUT_SUB = "Distribución entre pólizas activas y lapsos"
 
 # Años para selector (emisión de cartera)
 CARTERA_YEAR_OPTIONS = [str(y) for y in range(2015, 2032)]
