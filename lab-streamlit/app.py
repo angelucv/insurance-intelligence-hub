@@ -13,7 +13,12 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 
-from cohort_visuals import fetch_cohort_portfolio, render_portfolio_pack
+from cohort_visuals import (
+    fetch_cohort_portfolio,
+    render_portfolio_pack,
+    render_resumen_gauges,
+    render_territorio_ve,
+)
 
 st.set_page_config(
     page_title="Insurance Intelligence Hub — Laboratorio",
@@ -26,8 +31,6 @@ _LOGO_FE1 = Path(__file__).resolve().parent / "assets" / "logo-fe-1.jpg"
 _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
 _MARKET_TOTAL_LINE = "#0284c7"
-_GAUGE_PRIMARY = _BRAND_PURPLE
-_GAUGE_ACCENT = "#8B5CF6"
 
 _BTN_STYLE = (
     "display:inline-block;padding:0.55rem 1.25rem;background:{bg};color:white;"
@@ -242,11 +245,23 @@ with st.sidebar:
     st.divider()
     if lab_module == "cohorte":
         cohort_year = st.slider("Año de la cohorte", 2019, 2026, 2022)
+        st.markdown("**Sección cartera**")
+        cohorte_seccion = st.radio(
+            "Navegación",
+            options=["resumen", "analitica", "territorio"],
+            format_func=lambda x: {
+                "resumen": "Resumen + tacómetros",
+                "analitica": "Analítica avanzada",
+                "territorio": "Mapa Venezuela (demo)",
+            }[x],
+            label_visibility="collapsed",
+        )
         m_from = m_to = 2023
         m_mode = "monthly_flow"
         mercado_vista = "primas"
     else:
         cohort_year = 2022
+        cohorte_seccion = "resumen"
         st.markdown("**Series de mercado**")
         m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1, key="sb_m_from")
         m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1, key="sb_m_to")
@@ -270,15 +285,6 @@ with st.sidebar:
         )
 
 if lab_module == "cohorte":
-    st.markdown(
-        f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
-        "Cartera por cohorte</p>",
-        unsafe_allow_html=True,
-    )
-    st.caption(
-        "Indicadores desde la API sobre pólizas del año elegido en la barra lateral. "
-        "Si no hay filas en base para ese año, la API muestra una cartera de respaldo (solo demo)."
-    )
     data: dict[str, Any] | None = None
     try:
         data = _fetch_kpi(
@@ -294,80 +300,118 @@ if lab_module == "cohorte":
     if data is None:
         st.stop()
 
-    if data.get("data_note"):
-        st.info(data["data_note"])
-
-    st.subheader("Indicadores clave")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Persistencia", f"{data['persistency_rate_pct']:.2f} %")
-    c2.metric("Pólizas activas", f"{data['policies_active']:,}")
-    c3.metric("Lapsos", f"{data['policies_lapsed']:,}")
-    c4.metric("Prima media anual", f"{data['avg_annual_premium']:,.2f}")
-
-    tlr = data.get("technical_loss_ratio_pct")
-    if tlr is not None:
-        st.subheader("Ratio técnico (demo)")
-        fig = go.Figure(
-            go.Indicator(
-                mode="gauge+number",
-                value=float(tlr),
-                title={"text": "Indicador sintético / proxy"},
-                gauge={
-                    "axis": {"range": [0, 120]},
-                    "bar": {"color": _GAUGE_PRIMARY},
-                    "steps": [
-                        {"range": [0, 70], "color": "#d1fae5"},
-                        {"range": [70, 100], "color": "#fef3c7"},
-                        {"range": [100, 120], "color": "#fecaca"},
-                    ],
-                    "threshold": {
-                        "line": {"color": "#b91c1c", "width": 4},
-                        "thickness": 0.8,
-                        "value": 100,
-                    },
-                },
-            )
-        )
-        fig.update_layout(
-            height=300,
-            margin=dict(l=24, r=24, t=48, b=24),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
     port_pack = fetch_cohort_portfolio(base, cohort_year)
-    if port_pack is None:
-        st.warning(
-            "No hay paquete analítico de cartera para este año (sin pólizas en base o la API devolvió 404). "
-            "Cargue pólizas para la cohorte o ejecute el script `seed_operational_aligned.py` y asegúrese de que "
-            "`COMPUTE_API_URL` apunte a la API con `DATABASE_URL`."
+
+    with st.sidebar:
+        st.divider()
+        st.markdown("**Notas y contexto**")
+        with st.expander("Ver notas técnicas y operativas", expanded=False):
+            st.caption(
+                "KPI desde API compute (DuckDB + Postgres). Si no hay filas en BD para el año, "
+                "la API usa cartera sintética de respaldo."
+            )
+            if data.get("data_note"):
+                st.markdown(data["data_note"])
+
+    if cohorte_seccion == "resumen":
+        st.markdown(
+            f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+            "Resumen de cartera</p>",
+            unsafe_allow_html=True,
         )
-    else:
-        render_portfolio_pack(
+        st.caption("Métricas clave y tacómetros compactos. Use la barra lateral para analítica avanzada o el mapa.")
+
+        st.subheader("Indicadores clave")
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Persistencia", f"{data['persistency_rate_pct']:.2f} %")
+        c2.metric("Pólizas activas", f"{data['policies_active']:,}")
+        c3.metric("Lapsos", f"{data['policies_lapsed']:,}")
+        c4.metric("Prima media anual", f"{data['avg_annual_premium']:,.2f}")
+
+        st.subheader("Tacómetros (vista compacta)")
+        fig_g = render_resumen_gauges(
+            data,
             port_pack,
             brand_purple=_BRAND_PURPLE,
-            brand_deep=_BRAND_DEEP,
-            accent_blue=_MARKET_TOTAL_LINE,
         )
+        st.plotly_chart(fig_g, use_container_width=True)
 
-    st.subheader("Exportación")
-    ex1, ex2 = st.columns(2)
-    with ex1:
-        df = pd.DataFrame([data])
-        st.download_button(
-            "Descargar KPIs (CSV)",
-            data=df.to_csv(index=False).encode("utf-8"),
-            file_name="kpi_summary_demo.csv",
-            mime="text/csv",
+        st.subheader("Exportación")
+        ex1, ex2 = st.columns(2)
+        with ex1:
+            df = pd.DataFrame([data])
+            st.download_button(
+                "Descargar KPIs (CSV)",
+                data=df.to_csv(index=False).encode("utf-8"),
+                file_name="kpi_summary_demo.csv",
+                mime="text/csv",
+            )
+        with ex2:
+            if port_pack:
+                st.download_button(
+                    "Descargar paquete analítico (JSON)",
+                    data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
+                    file_name=f"cohort_portfolio_{cohort_year}.json",
+                    mime="application/json",
+                )
+
+    elif cohorte_seccion == "analitica":
+        st.markdown(
+            f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+            "Analítica avanzada</p>",
+            unsafe_allow_html=True,
         )
-    with ex2:
-        if port_pack:
+        if port_pack is None:
+            st.warning(
+                "No hay datos de cartera en base para este año (404 en `/api/v1/kpi/cohort-portfolio`). "
+                "Cargue pólizas/siniestros o ejecute `seed_operational_aligned.py`."
+            )
+        else:
+            render_portfolio_pack(
+                port_pack,
+                brand_purple=_BRAND_PURPLE,
+                brand_deep=_BRAND_DEEP,
+                accent_blue=_MARKET_TOTAL_LINE,
+            )
+        st.subheader("Exportación")
+        ex1, ex2 = st.columns(2)
+        with ex1:
+            st.download_button(
+                "Descargar KPIs (CSV)",
+                data=pd.DataFrame([data]).to_csv(index=False).encode("utf-8"),
+                file_name="kpi_summary_demo.csv",
+                mime="text/csv",
+                key="dl_kpi_analitica",
+            )
+        with ex2:
+            if port_pack:
+                st.download_button(
+                    "Descargar paquete analítico (JSON)",
+                    data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
+                    file_name=f"cohort_portfolio_{cohort_year}.json",
+                    mime="application/json",
+                    key="dl_port_analitica",
+                )
+
+    else:
+        st.markdown(
+            f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
+            "Territorio Venezuela (demo)</p>",
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "Cada póliza se asigna a un estado con función hash determinista (solo para visualización; no es ubicación real)."
+        )
+        if port_pack is None:
+            st.warning("Sin datos de cartera en base para este año.")
+        else:
+            render_territorio_ve(port_pack, brand_purple=_BRAND_PURPLE)
             st.download_button(
                 "Descargar paquete analítico (JSON)",
                 data=json.dumps(port_pack, indent=2, ensure_ascii=False).encode("utf-8"),
                 file_name=f"cohort_portfolio_{cohort_year}.json",
                 mime="application/json",
+                key="dl_port_mapa",
             )
 
 else:
