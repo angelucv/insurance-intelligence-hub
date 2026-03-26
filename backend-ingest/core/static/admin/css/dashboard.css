@@ -1,5 +1,39 @@
 /* Home del admin: acciones rápidas y sidebar de ayuda */
 
+/*
+ * Django base.css fija .dashboard #content a 600px; responsive.css usa width:auto bajo 1024px.
+ * Con width:auto el bloque puede crecer hasta el ancho intrínseco de una imagen PNG grande → scroll horizontal.
+ * Forzamos ancho acotado al viewport y min-width:0 en la cadena flex.
+ */
+body.dashboard {
+  overflow-x: hidden;
+}
+
+body.dashboard #container {
+  min-width: 0 !important;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body.dashboard #main,
+body.dashboard main.content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Con barra lateral de navegación (Django 5+), el <main class="content"> no debe heredar ancho mínimo del contenido */
+body.dashboard .main > #nav-sidebar + .content {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+body.dashboard #content {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 /* Columna principal del admin en flex: permite que imágenes y bloques usen 100% sin desbordar. */
 .dashboard #content,
 .dashboard #content-main {
@@ -57,14 +91,7 @@
 
 @media (min-width: 768px) {
   .iihub-suite-map__figure {
-    max-width: 56rem;
-  }
-
-  /* En escritorio, si el PNG es muy ancho, se puede desplazar sin romper el layout global */
-  .iihub-suite-map__scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    max-width: min(56rem, 100%);
   }
 }
 
@@ -110,8 +137,9 @@
 
 .iihub-guide-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: 1rem;
+  min-width: 0;
 }
 
 .iihub-guide-card {
@@ -170,8 +198,9 @@
 
 .iihub-quick-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
   gap: 1rem;
+  min-width: 0;
 }
 
 .iihub-card {
