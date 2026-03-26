@@ -45,26 +45,29 @@ _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
 _MARKET_TOTAL_LINE = "#0284c7"
 
+# Nombre de producto para la vista de exploración interactiva (sin marcas de librería en UI).
+_SECTION_BI_LABEL = "BI personalizado"
+
 _MERCADO_SECTION_LABELS = (
     "Primas vs mercado",
     "Último cierre",
     "Métricas resumen",
     "Cuadro de resultados",
-    "Estudio PyGWalker",
+    _SECTION_BI_LABEL,
 )
 _MERCADO_SECTION_COLORS: dict[str, str] = {
     "Primas vs mercado": "#0284c7",
     "Último cierre": "#0d9488",
     "Métricas resumen": "#d97706",
     "Cuadro de resultados": "#7c3aed",
-    "Estudio PyGWalker": "#db2777",
+    _SECTION_BI_LABEL: "#db2777",
 }
 _MERCADO_SECTION_SUB: dict[str, str] = {
     "Primas vs mercado": "Comparación La Fe vs total mercado (rango y modo en la barra lateral)",
     "Último cierre": "Instantánea YTD al último mes con dato La Fe",
     "Métricas resumen": "Series extendidas La Fe y totales de mercado",
     "Cuadro de resultados": "Resultado técnico y operativo La Fe vs mercado",
-    "Estudio PyGWalker": "Exploración libre (PyGWalker) sobre series y tablas del período",
+    _SECTION_BI_LABEL: "Exploración libre sobre series y tablas del período: pivotes, filtros y gráficos a su criterio",
 }
 
 # Misma familia de estilos que analítica de cartera (pills coloreadas en área principal)
@@ -134,7 +137,7 @@ _MERCADO_PILLS_CSS = """
     color: #5b21b6 !important;
     box-shadow: 0 2px 10px rgba(124, 58, 237, 0.2) !important;
 }
-/* 5 PyGWalker — fucsia */
+/* 5 BI personalizado — fucsia */
 [data-testid="stMain"] [data-testid="stPills"] > div > button:nth-child(5),
 [data-testid="stMain"] [data-testid="stPills"] button[kind="pill"]:nth-of-type(5) {
     border: 1px solid rgba(219, 39, 119, 0.45) !important;
@@ -506,13 +509,13 @@ _VISTA_PILL_LABELS = (
     "Resumen + tacómetros",
     "Analítica avanzada",
     "Mapa Venezuela (demo)",
-    "Estudio PyGWalker",
+    _SECTION_BI_LABEL,
 )
 _VISTA_PILL_TO_KEY: dict[str, str] = {
     "Resumen + tacómetros": "resumen",
     "Analítica avanzada": "analitica",
     "Mapa Venezuela (demo)": "territorio",
-    "Estudio PyGWalker": "estudio_pyg",
+    _SECTION_BI_LABEL: "estudio_pyg",
 }
 
 with st.sidebar:
@@ -760,11 +763,11 @@ if lab_module == "cohorte":
         with st.container(border=True):
             st.markdown(
                 f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
-                "Estudio PyGWalker · cartera</p>",
+                f"{_SECTION_BI_LABEL} · cartera</p>",
                 unsafe_allow_html=True,
             )
             st.caption(
-                "Exploración visual tipo BI sobre tablas derivadas del paquete de cohorte (emisión, siniestralidad, prima vs pagado, etc.)."
+                "Tablas de la cohorte (emisión, siniestralidad, prima vs pagado, etc.) para explorar con pivotes y gráficos en el lienzo."
             )
         st.divider()
         if port_pack is None:
@@ -1158,7 +1161,7 @@ else:
                             key="dl_cuad_mk",
                         )
 
-        elif mercado_sec == "Estudio PyGWalker":
+        elif mercado_sec == _SECTION_BI_LABEL:
             st.divider()
             merged_pyg: pd.DataFrame | None = None
             if mb is not None:
@@ -1194,11 +1197,11 @@ else:
             with st.container(border=True):
                 st.markdown(
                     f'<p style="font-size:1.1rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.35rem 0;">'
-                    "Estudio PyGWalker · mercado</p>",
+                    f"{_SECTION_BI_LABEL} · mercado</p>",
                     unsafe_allow_html=True,
                 )
                 st.caption(
-                    "Explore las series del período lateral: fusionado de primas, resúmenes, extendidos, cuadro y snapshot."
+                    "Series del período configurado en la barra lateral: fusionado de primas, resúmenes, extendidos, cuadro y snapshot."
                 )
             render_table_picker_and_walker(
                 tables_m,

@@ -1,4 +1,4 @@
-"""PyGWalker: exploración visual tipo BI sobre tablas de cartera y mercado."""
+"""Exploración BI personalizada sobre tablas de cartera y mercado (lienzo interactivo opcional)."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def _df_from_list(rows: list | None, *, cohort_year: int | None = None) -> pd.Da
 
 
 def cohort_pack_to_tables(pack: dict[str, Any], cohort_year: int) -> dict[str, pd.DataFrame]:
-    """Tablas derivadas del JSON `/api/v1/kpi/cohort-portfolio` para arrastrar dimensiones en PyGWalker."""
+    """Tablas derivadas del JSON `/api/v1/kpi/cohort-portfolio` para el explorador BI."""
     out: dict[str, pd.DataFrame] = {}
     if pack.get("issue_by_month"):
         out["Emisión por mes"] = _df_from_list(pack["issue_by_month"], cohort_year=cohort_year)
@@ -57,7 +57,7 @@ def mercado_bundle_to_tables(
     m_from: int,
     m_to: int,
 ) -> dict[str, pd.DataFrame]:
-    """Series ya cargadas (bundle o caché) como DataFrames para PyGWalker."""
+    """Series ya cargadas (bundle o caché) como DataFrames para el explorador BI."""
     out: dict[str, pd.DataFrame] = {}
 
     if merged_primas is not None and not merged_primas.empty:
@@ -104,7 +104,7 @@ def _stable_gid(walker_key: str, table_label: str) -> str:
 
 
 def _init_pygwalker_streamlit_comm() -> None:
-    """Alineación con la API streamlit de PyGWalker (init idempotente)."""
+    """Inicialización del canal streamlit del lienzo de exploración (init idempotente)."""
     if st.session_state.get("_pygwalker_comm_ready"):
         return
     try:
@@ -117,28 +117,27 @@ def _init_pygwalker_streamlit_comm() -> None:
 
 
 def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str, table_label: str = "") -> None:
-    """Exploración visual tipo BI: datos siempre visibles + lienzo PyGWalker si está instalado."""
+    """Datos siempre visibles + lienzo interactivo opcional (exploración tipo BI)."""
     if df is None or df.empty:
-        st.info("Sin filas para explorar con PyGWalker.")
+        st.info("Sin filas para explorar en esta tabla.")
         return
 
     st.markdown(
-        "**Qué es esto:** PyGWalker es un explorador visual (estilo Power BI / Tableau): "
-        "arrastra **dimensiones** y **medidas** al lienzo para cruzar y graficar. "
-        "**No** es un editor SQL: no escribe consultas parametrizadas en texto; la “parametrización” "
-        "es elegir campos, filtros y gráficos en el panel del explorador."
+        "**Qué es esto:** un explorador visual (estilo cuadro de mando / BI): "
+        "arrastre **dimensiones** y **medidas** al lienzo para cruzar y graficar. "
+        "**No** es un editor SQL: no escribe consultas en texto; usted elige campos, filtros y gráficos en el panel."
     )
 
-    t_data, t_explorer = st.tabs(["Tabla de datos", "Explorador visual (PyGWalker)"])
+    t_data, t_explorer = st.tabs(["Tabla de datos", "Explorador visual"])
     with t_data:
         st.dataframe(df.head(5000), use_container_width=True, hide_index=True)
-        st.caption(f"Filas mostradas (máx. 5.000 de {len(df):,}). Use la otra pestaña para gráficos y pivotes.")
+        st.caption(f"Filas mostradas (máx. 5.000 de {len(df):,}). En la otra pestaña: gráficos y pivotes interactivos.")
         csv_bytes = df.to_csv(index=False).encode("utf-8")
         _dl_key = hashlib.sha256(f"{key}|{table_label}".encode("utf-8")).hexdigest()[:14]
         st.download_button(
             "Descargar esta tabla (CSV)",
             data=csv_bytes,
-            file_name="pygwalker_tabla.csv",
+            file_name="tabla_bi_personalizado.csv",
             mime="text/csv",
             key=f"{key}_csv_{_dl_key}",
         )
@@ -148,9 +147,9 @@ def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str, table_label: str =
             from pygwalker.api.streamlit import StreamlitRenderer
         except ImportError:
             st.warning(
-                "**PyGWalker no está instalado** en este entorno. "
-                "En Streamlit Cloud puede añadir `pygwalker` a `requirements.txt` o a un archivo extra de dependencias. "
-                "Use la pestaña **Tabla de datos** mientras tanto."
+                "El **explorador visual interactivo** no está disponible en este entorno (falta el paquete opcional del lienzo). "
+                "Puede seguir usando la pestaña **Tabla de datos** y descargar CSV. "
+                "Si administra el despliegue: añada la dependencia opcional del explorador en `requirements` o equivalente."
             )
             return
 
@@ -160,7 +159,7 @@ def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str, table_label: str =
             renderer = StreamlitRenderer(df, gid=gid, default_tab="data")
             renderer.explorer(key=f"{key}_explorer", default_tab="data")
         except Exception as e:
-            st.error(f"No se pudo abrir el explorador PyGWalker: {e}")
+            st.error(f"No se pudo abrir el explorador visual: {e}")
             with st.expander("Detalle técnico"):
                 st.exception(e)
             st.dataframe(df.head(500), use_container_width=True, hide_index=True)
@@ -187,6 +186,6 @@ def render_table_picker_and_walker(
         df = pd.DataFrame()
     st.caption(
         f"**{pick}** · {len(df):,} filas × {len(df.columns)} columnas. "
-        "Pestaña «Explorador visual» para pivotes y gráficos; «Tabla de datos» para revisar o exportar CSV."
+        "«Explorador visual» para pivotes y gráficos; «Tabla de datos» para revisar o exportar CSV."
     )
     render_pygwalker_streamlit(df, key=walker_key, table_label=pick)
