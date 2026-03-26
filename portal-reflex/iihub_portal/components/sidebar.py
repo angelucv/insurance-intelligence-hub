@@ -3,6 +3,7 @@
 import reflex as rx
 
 from iihub_portal import copy
+from iihub_portal.external_links import external_anchor
 from iihub_portal.state import State
 
 
@@ -32,21 +33,20 @@ def _nav_main(
 
 
 def _nav_link(label: str, icon: str, href: rx.Var) -> rx.Component:
-    return rx.link(
+    return external_anchor(
         rx.el.div(
             rx.icon(icon, size=18, class_name="text-gray-400 shrink-0"),
             rx.el.span(label, class_name="ml-3 text-sm text-gray-700"),
             class_name="flex items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors",
         ),
         href=href,
-        is_external=True,
         on_click=State.close_mobile_nav,
-        class_name="w-full no-underline",
+        class_name="w-full no-underline text-inherit",
     )
 
 
 def _nav_link_primary(label: str, icon: str, href: rx.Var) -> rx.Component:
-    return rx.link(
+    return external_anchor(
         rx.el.div(
             rx.icon(icon, size=18, class_name="text-white shrink-0"),
             rx.el.span(label, class_name="ml-3 text-sm font-semibold text-white"),
@@ -54,9 +54,8 @@ def _nav_link_primary(label: str, icon: str, href: rx.Var) -> rx.Component:
             "shadow-md shadow-violet-500/25 hover:from-violet-500 hover:to-purple-500 transition-all",
         ),
         href=href,
-        is_external=True,
         on_click=State.close_mobile_nav,
-        class_name="w-full no-underline",
+        class_name="w-full no-underline text-inherit",
     )
 
 

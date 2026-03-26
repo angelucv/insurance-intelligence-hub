@@ -8,8 +8,10 @@ SPA en Python que consume la API de cómputo (FastAPI). Endpoints usados:
 ## Configuración
 
 - **`COMPUTE_API_URL`**: URL pública de `backend-compute` (sin barra final).
-- **`DJANGO_ADMIN_BASE_URL`**: URL pública del Django Admin (sin barra final), botón “Carga de pólizas”. Por defecto local: `http://127.0.0.1:8080`.
+- **`DJANGO_ADMIN_BASE_URL`** (obligatoria en producción): URL pública del Django Admin (sin barra final). Los enlaces a **Carga de pólizas / siniestros** se construyen como `{base}/admin/upload-policies/` y `{base}/admin/upload-claims/`. Si no está definida, el portal usa `http://127.0.0.1:8080` (solo desarrollo local). También se aceptan **`ADMIN_BASE_URL`** o **`PUBLIC_DJANGO_ADMIN_URL`** como alias.
 - **`STREAMLIT_LAB_URL`**: URL pública del app Streamlit (sin barra final), botón **«Análisis BI detallado»** en la barra superior. Por defecto local: `http://127.0.0.1:8501`.
+
+Vea `.env.example` para un ejemplo con URLs de demo en Render.
 
 ## Local
 

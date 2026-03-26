@@ -245,6 +245,18 @@ class State(rx.State):
     def portfolio_box_status_figure(self) -> PlotlyFigure:
         return self._portfolio_figure("box_status")
 
+    def _django_admin_base_url(self) -> str:
+        """Base pública del Django Admin (sin barra final). Varias claves por compatibilidad con hosting."""
+        for key in (
+            "DJANGO_ADMIN_BASE_URL",
+            "ADMIN_BASE_URL",
+            "PUBLIC_DJANGO_ADMIN_URL",
+        ):
+            v = os.environ.get(key, "").strip().rstrip("/")
+            if v:
+                return v
+        return ""
+
     async def hydrate_urls(self):
         """Lee variables de entorno en runtime (Reflex Cloud / servidor)."""
         from datetime import datetime
@@ -253,7 +265,7 @@ class State(rx.State):
         self.input_year = str(now.year)
         self.input_month = f"{now.month:02d}"
 
-        ab = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
+        ab = self._django_admin_base_url()
         if ab:
             self.admin_upload_url = f"{ab}/admin/upload-policies/"
             self.admin_claims_upload_url = f"{ab}/admin/upload-claims/"

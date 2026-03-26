@@ -3,6 +3,7 @@
 import reflex as rx
 
 from iihub_portal import copy
+from iihub_portal.external_links import external_anchor
 from iihub_portal.state import State
 from iihub_portal.theme import BRAND_DEEP, BRAND_PURPLE
 
@@ -391,10 +392,9 @@ def mercado_panel() -> rx.Component:
                         color_scheme="purple",
                         class_name="rounded-lg",
                     ),
-                    rx.link(
+                    external_anchor(
                         copy.MERCADO_API_ERROR_LINK,
                         href=State.admin_upload_url,
-                        is_external=True,
                         class_name="text-sm text-violet-700 underline underline-offset-2 hover:text-violet-900",
                     ),
                     spacing="4",
@@ -646,10 +646,9 @@ def cartera_panel() -> rx.Component:
                         color_scheme="purple",
                         class_name="rounded-lg",
                     ),
-                    rx.link(
+                    external_anchor(
                         copy.CARTERA_API_ERROR_LINK,
                         href=State.admin_upload_url,
-                        is_external=True,
                         class_name="text-sm text-violet-700 underline underline-offset-2 hover:text-violet-900",
                     ),
                     spacing="4",
