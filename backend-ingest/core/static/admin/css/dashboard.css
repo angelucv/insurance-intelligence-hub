@@ -504,11 +504,15 @@ body.dashboard .iihub-admin-links a:hover {
   }
 
   html:not([data-theme="light"]) .iihub-sidebar-lead {
-    color: #94a3b8;
+    color: var(--body-quiet-color, #cbd5e1) !important;
   }
 
   html:not([data-theme="light"]) .iihub-dashboard-lead {
-    color: #94a3b8;
+    color: var(--body-quiet-color, #cbd5e1) !important;
+  }
+
+  html:not([data-theme="light"]) .iihub-link-list__hint {
+    color: var(--body-quiet-color, #94a3b8) !important;
   }
 
   html:not([data-theme="light"]) body.dashboard .iihub-admin-links {
@@ -516,16 +520,17 @@ body.dashboard .iihub-admin-links a:hover {
   }
 
   html:not([data-theme="light"]) body.dashboard .iihub-admin-links strong {
-    color: var(--body-loud-color) !important;
+    color: var(--body-loud-color, #ffffff) !important;
   }
 
   html:not([data-theme="light"]) body.dashboard .iihub-admin-links a {
-    color: var(--link-fg) !important;
+    color: var(--link-fg, #81d4fa) !important;
   }
 
-  html:not([data-theme="light"]) body.dashboard .iihub-admin-links a:hover {
+  html:not([data-theme="light"]) body.dashboard .iihub-admin-links a:hover,
+  html:not([data-theme="light"]) body.dashboard .iihub-admin-links a:focus {
     background: rgba(129, 212, 250, 0.12) !important;
-    color: var(--link-hover-color) !important;
+    color: var(--link-hover-color, #4ac1f7) !important;
   }
 }
 
@@ -552,11 +557,15 @@ html[data-theme="dark"] .iihub-guide-list code {
 }
 
 html[data-theme="dark"] .iihub-sidebar-lead {
-  color: #94a3b8;
+  color: var(--body-quiet-color, #cbd5e1) !important;
 }
 
 html[data-theme="dark"] .iihub-dashboard-lead {
-  color: #94a3b8;
+  color: var(--body-quiet-color, #cbd5e1) !important;
+}
+
+html[data-theme="dark"] .iihub-link-list__hint {
+  color: var(--body-quiet-color, #94a3b8) !important;
 }
 
 html[data-theme="dark"] body.dashboard .iihub-admin-links {
@@ -564,14 +573,15 @@ html[data-theme="dark"] body.dashboard .iihub-admin-links {
 }
 
 html[data-theme="dark"] body.dashboard .iihub-admin-links strong {
-  color: var(--body-loud-color) !important;
+  color: var(--body-loud-color, #ffffff) !important;
 }
 
 html[data-theme="dark"] body.dashboard .iihub-admin-links a {
-  color: var(--link-fg) !important;
+  color: var(--link-fg, #81d4fa) !important;
 }
 
-html[data-theme="dark"] body.dashboard .iihub-admin-links a:hover {
+html[data-theme="dark"] body.dashboard .iihub-admin-links a:hover,
+html[data-theme="dark"] body.dashboard .iihub-admin-links a:focus {
   background: rgba(129, 212, 250, 0.12) !important;
-  color: var(--link-hover-color) !important;
+  color: var(--link-hover-color, #4ac1f7) !important;
 }

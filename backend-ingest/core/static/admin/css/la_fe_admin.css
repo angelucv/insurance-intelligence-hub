@@ -114,22 +114,32 @@ a:visited {
  * el violeta fijo no contrasta con --body-bg oscuro. Usar variables de Django (dark_mode.css).
  */
 html[data-theme="dark"] div.breadcrumbs a {
-  color: var(--breadcrumbs-link-fg);
+  color: var(--breadcrumbs-link-fg) !important;
 }
 
 html[data-theme="dark"] a:link,
 html[data-theme="dark"] a:visited {
-  color: var(--link-fg);
+  color: var(--link-fg) !important;
+}
+
+html[data-theme="dark"] a:hover,
+html[data-theme="dark"] a:focus {
+  color: var(--link-hover-color) !important;
 }
 
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) div.breadcrumbs a {
-    color: var(--breadcrumbs-link-fg);
+    color: var(--breadcrumbs-link-fg) !important;
   }
 
   html:not([data-theme="light"]) a:link,
   html:not([data-theme="light"]) a:visited {
-    color: var(--link-fg);
+    color: var(--link-fg) !important;
+  }
+
+  html:not([data-theme="light"]) a:hover,
+  html:not([data-theme="light"]) a:focus {
+    color: var(--link-hover-color) !important;
   }
 }
 
@@ -174,15 +184,17 @@ object,
 
 html[data-theme="dark"] object,
 html[data-theme="dark"] .addlink,
-html[data-theme="dark"] .changelink {
-  color: var(--link-fg);
+html[data-theme="dark"] .changelink,
+html[data-theme="dark"] .viewlink {
+  color: var(--link-fg) !important;
 }
 
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) object,
   html:not([data-theme="light"]) .addlink,
-  html:not([data-theme="light"]) .changelink {
-    color: var(--link-fg);
+  html:not([data-theme="light"]) .changelink,
+  html:not([data-theme="light"]) .viewlink {
+    color: var(--link-fg) !important;
   }
 }
 
@@ -346,12 +358,12 @@ input[type="file"] {
 }
 
 html[data-theme="dark"] .iihub-json-details summary {
-  color: var(--link-fg);
+  color: var(--link-fg) !important;
 }
 
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) .iihub-json-details summary {
-    color: var(--link-fg);
+    color: var(--link-fg) !important;
   }
 }
 
@@ -461,5 +473,91 @@ html[data-theme="dark"] .iihub-admin-footer__note {
   html:not([data-theme="light"]) .iihub-admin-footer,
   html:not([data-theme="light"]) .iihub-admin-footer__note {
     color: var(--body-quiet-color);
+  }
+}
+
+/*
+ * Contraste modo oscuro: la marca forzaba --iihub-accent (violeta oscuro) sobre fondo #121212.
+ * Forzar variables de marca + enlaces en sidebar y columnas del admin.
+ */
+html[data-theme="dark"] {
+  --iihub-accent: var(--link-fg);
+  --iihub-muted: var(--body-quiet-color);
+  --iihub-text: var(--body-fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    --iihub-accent: var(--link-fg);
+    --iihub-muted: var(--body-quiet-color);
+    --iihub-text: var(--body-fg);
+  }
+}
+
+html[data-theme="dark"] a.section:link,
+html[data-theme="dark"] a.section:visited {
+  color: var(--link-fg) !important;
+}
+
+html[data-theme="dark"] #nav-sidebar a.section:link,
+html[data-theme="dark"] #nav-sidebar a.section:visited,
+html[data-theme="dark"] #nav-sidebar .current-app .section:link,
+html[data-theme="dark"] #nav-sidebar .current-app .section:visited {
+  color: var(--link-fg, #81d4fa) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) a.section:link,
+  html:not([data-theme="light"]) a.section:visited {
+    color: var(--link-fg) !important;
+  }
+
+  html:not([data-theme="light"]) #nav-sidebar a.section:link,
+  html:not([data-theme="light"]) #nav-sidebar a.section:visited,
+  html:not([data-theme="light"]) #nav-sidebar .current-app .section:link,
+  html:not([data-theme="light"]) #nav-sidebar .current-app .section:visited {
+    color: var(--link-fg, #81d4fa) !important;
+  }
+}
+
+html[data-theme="dark"] #nav-sidebar a:link,
+html[data-theme="dark"] #nav-sidebar a:visited,
+html[data-theme="dark"] #content-related a:link,
+html[data-theme="dark"] #content-related a:visited,
+html[data-theme="dark"] #content .module th a:link,
+html[data-theme="dark"] #content .module th a:visited,
+html[data-theme="dark"] #content .module caption a:link,
+html[data-theme="dark"] #content .module caption a:visited {
+  color: var(--link-fg) !important;
+}
+
+html[data-theme="dark"] #nav-sidebar a:hover,
+html[data-theme="dark"] #nav-sidebar a:focus,
+html[data-theme="dark"] #content-related a:hover,
+html[data-theme="dark"] #content-related a:focus,
+html[data-theme="dark"] #content .module th a:hover,
+html[data-theme="dark"] #content .module th a:focus {
+  color: var(--link-hover-color) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) #nav-sidebar a:link,
+  html:not([data-theme="light"]) #nav-sidebar a:visited,
+  html:not([data-theme="light"]) #content-related a:link,
+  html:not([data-theme="light"]) #content-related a:visited,
+  html:not([data-theme="light"]) #content .module th a:link,
+  html:not([data-theme="light"]) #content .module th a:visited,
+  html:not([data-theme="light"]) #content .module caption a:link,
+  html:not([data-theme="light"]) #content .module caption a:visited {
+    color: var(--link-fg) !important;
+  }
+
+  html:not([data-theme="light"]) #nav-sidebar a:hover,
+  html:not([data-theme="light"]) #nav-sidebar a:focus,
+  html:not([data-theme="light"]) #content-related a:hover,
+  html:not([data-theme="light"]) #content-related a:focus,
+  html:not([data-theme="light"]) #content .module th a:hover,
+  html:not([data-theme="light"]) #content .module th a:focus {
+    color: var(--link-hover-color) !important;
   }
 }

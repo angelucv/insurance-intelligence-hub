@@ -51,16 +51,18 @@ html[data-theme="dark"] #content .iihub-admin-links {
 }
 html[data-theme="dark"] #content .cortex-admin-links strong,
 html[data-theme="dark"] #content .iihub-admin-links strong {
-  color: var(--body-loud-color) !important;
+  color: var(--body-loud-color, #f5f5f5) !important;
 }
 html[data-theme="dark"] #content .cortex-admin-links a,
 html[data-theme="dark"] #content .iihub-admin-links a {
-  color: var(--link-fg) !important;
+  color: var(--link-fg, #81d4fa) !important;
 }
 html[data-theme="dark"] #content .cortex-admin-links a:hover,
-html[data-theme="dark"] #content .iihub-admin-links a:hover {
+html[data-theme="dark"] #content .cortex-admin-links a:focus,
+html[data-theme="dark"] #content .iihub-admin-links a:hover,
+html[data-theme="dark"] #content .iihub-admin-links a:focus {
   background: rgba(129, 212, 250, 0.12) !important;
-  color: var(--link-hover-color) !important;
+  color: var(--link-hover-color, #b3e5fc) !important;
 }
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) #content .cortex-admin-links,
@@ -69,16 +71,18 @@ html[data-theme="dark"] #content .iihub-admin-links a:hover {
   }
   html:not([data-theme="light"]) #content .cortex-admin-links strong,
   html:not([data-theme="light"]) #content .iihub-admin-links strong {
-    color: var(--body-loud-color) !important;
+    color: var(--body-loud-color, #f5f5f5) !important;
   }
   html:not([data-theme="light"]) #content .cortex-admin-links a,
   html:not([data-theme="light"]) #content .iihub-admin-links a {
-    color: var(--link-fg) !important;
+    color: var(--link-fg, #81d4fa) !important;
   }
   html:not([data-theme="light"]) #content .cortex-admin-links a:hover,
-  html:not([data-theme="light"]) #content .iihub-admin-links a:hover {
+  html:not([data-theme="light"]) #content .cortex-admin-links a:focus,
+  html:not([data-theme="light"]) #content .iihub-admin-links a:hover,
+  html:not([data-theme="light"]) #content .iihub-admin-links a:focus {
     background: rgba(129, 212, 250, 0.12) !important;
-    color: var(--link-hover-color) !important;
+    color: var(--link-hover-color, #b3e5fc) !important;
   }
 }
 </style>
