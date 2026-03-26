@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx
 import reflex as rx
+from plotly.graph_objects import Figure as PlotlyFigure
 
 # Marca Seguros La Fe (alineado con Streamlit / Admin)
 _BRAND_PURPLE = "#7029B3"
@@ -34,6 +35,13 @@ class State(rx.State):
     market_plot_layout: dict[str, Any] = {}
     market_plot_ok: bool = False
     market_plot_error: str = ""
+
+    @rx.var(cache=True, auto_deps=True)
+    def market_plot_figure(self) -> PlotlyFigure:
+        """Reflex 0.8 exige `Figure` en rx.plotly(data=...), no listas sueltas."""
+        if not self.market_plot_ok or not self.market_plot_data:
+            return PlotlyFigure()
+        return PlotlyFigure(data=self.market_plot_data, layout=self.market_plot_layout or {})
 
     async def hydrate_urls(self):
         """Lee variables de entorno en runtime (Reflex Cloud / servidor)."""
@@ -293,13 +301,13 @@ def index() -> rx.Component:
                         ),
                         rx.cond(
                             State.market_plot_ok,
-                            rx.plotly(data=State.market_plot_data, layout=State.market_plot_layout),
+                            rx.plotly(data=State.market_plot_figure),
                         ),
                         rx.cond(
                             State.market_plot_error != "",
                             rx.callout(
                                 State.market_plot_error,
-                                icon="alert_triangle",
+                                icon="triangle_alert",
                                 color_scheme="red",
                                 width="100%",
                             ),
