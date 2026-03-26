@@ -1,20 +1,27 @@
 /* Home del admin: acciones rápidas y sidebar de ayuda */
 
+/* Columna principal del admin en flex: permite que imágenes y bloques usen 100% sin desbordar. */
+.dashboard #content,
+.dashboard #content-main {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .iihub-suite-map {
   margin-bottom: 2rem;
   padding: 0 0.15rem;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
-/* Contenedor: en móvil permite ver mapas anchos sin recortar (scroll horizontal táctil). */
+/* Contenedor: el mapa escala al ancho disponible (sin desbordar el viewport en móvil). */
 .iihub-suite-map__scroll {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
   padding-bottom: 0.25rem;
 }
 
@@ -24,12 +31,6 @@
   line-height: 1.45;
   color: #64748b;
   max-width: 48rem;
-}
-
-@media (min-width: 768px) {
-  .iihub-suite-map__intro {
-    display: none;
-  }
 }
 
 .iihub-suite-map__figure {
@@ -44,7 +45,10 @@
   width: 100%;
   max-width: 100%;
   height: auto;
+  min-width: 0;
   min-height: 0;
+  object-fit: contain;
+  object-position: top center;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
@@ -54,6 +58,13 @@
 @media (min-width: 768px) {
   .iihub-suite-map__figure {
     max-width: 56rem;
+  }
+
+  /* En escritorio, si el PNG es muy ancho, se puede desplazar sin romper el layout global */
+  .iihub-suite-map__scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
 }
 
