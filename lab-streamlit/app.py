@@ -223,39 +223,28 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Respaldos fijos si la API no tiene datos en BD (no se exponen en la UI).
+_KPI_SEED_FALLBACK = 42
+_KPI_N_POLICIES_FALLBACK = 8000
+
 with st.sidebar:
-    st.markdown("### Módulo")
+    st.markdown("### Vista")
     lab_module = st.radio(
-        "Área activa",
+        "Seleccione",
         options=["cohorte", "mercado"],
-        format_func=lambda x: "Cohorte demo (KPI cartera)" if x == "cohorte" else "Mercado SUDEASEG",
+        format_func=lambda x: "Cartera (KPIs)" if x == "cohorte" else "Mercado SUDEASEG",
         horizontal=False,
+        label_visibility="collapsed",
     )
+    st.caption("Cartera: datos en Supabase por año. Mercado: series SUDEASEG.")
     st.divider()
     if lab_module == "cohorte":
-        st.markdown("**Parámetros cohorte**")
-        use_db = st.toggle("Usar datos en base de datos", value=True)
-        cohort_year = st.slider("Año cohorte", 2019, 2026, 2022)
-        seed = st.number_input(
-            "Semilla (datos sintéticos de respaldo)",
-            min_value=1,
-            max_value=9999,
-            value=42,
-            step=1,
-        )
-        n_policies = st.select_slider(
-            "Tamaño cohorte sintética (respaldo)",
-            options=[1000, 2000, 4000, 8000, 15000],
-            value=8000,
-        )
+        cohort_year = st.slider("Año de la cohorte", 2019, 2026, 2022)
         m_from = m_to = 2023
         m_mode = "monthly_flow"
         mercado_vista = "primas"
     else:
-        use_db = True
         cohort_year = 2022
-        seed = 42
-        n_policies = 8000
         st.markdown("**Series de mercado**")
         m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1, key="sb_m_from")
         m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1, key="sb_m_to")
@@ -281,12 +270,21 @@ with st.sidebar:
 if lab_module == "cohorte":
     st.markdown(
         f'<p style="font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.25rem 0;">'
-        "Cohorte demo</p>",
+        "Cartera por cohorte</p>",
         unsafe_allow_html=True,
     )
-    st.caption("KPI de cartera vía API compute; parámetros en la barra lateral.")
+    st.caption(
+        "Indicadores desde la API sobre pólizas del año elegido en la barra lateral. "
+        "Si no hay filas en base para ese año, la API muestra una cartera de respaldo (solo demo)."
+    )
     try:
-        data = _fetch_kpi(base, cohort_year, int(seed), int(n_policies), use_db)
+        data = _fetch_kpi(
+            base,
+            cohort_year,
+            _KPI_SEED_FALLBACK,
+            _KPI_N_POLICIES_FALLBACK,
+            True,
+        )
     except Exception as e:
         st.error(f"No se pudo obtener los indicadores. Comprueba la conexión o inténtalo más tarde. ({e})")
         st.stop()
