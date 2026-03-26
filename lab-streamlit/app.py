@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -133,7 +134,10 @@ def _portal_reflex_url() -> str | None:
     return env_u or None
 
 
-def _fetch_market_series(
+_CACHE_TTL_SEC = 300
+
+
+def _fetch_market_series_impl(
     base: str,
     path: str,
     from_year: int,
@@ -147,6 +151,60 @@ def _fetch_market_series(
     )
     r.raise_for_status()
     return r.json()
+
+
+@st.cache_data(ttl=_CACHE_TTL_SEC, show_spinner=False)
+def _fetch_market_series_cached(
+    base: str,
+    path: str,
+    from_year: int,
+    to_year: int,
+    mode: str,
+) -> dict[str, Any]:
+    """Un endpoint de mercado; cacheado por base + rango + modo."""
+    return _fetch_market_series_impl(base, path, from_year, to_year, mode)
+
+
+def _http_get_json(base: str, path: str, params: dict[str, Any] | None, timeout: int) -> dict[str, Any]:
+    r = requests.get(f"{base}{path}", params=params or {}, timeout=timeout)
+    r.raise_for_status()
+    return r.json()
+
+
+@st.cache_data(
+    ttl=_CACHE_TTL_SEC,
+    show_spinner="Cargando datos de mercado (precarga en paralelo)…",
+)
+def _mercado_bundle_cached(
+    base: str,
+    m_from: int,
+    m_to: int,
+    m_mode: str,
+) -> dict[str, Any]:
+    """Precarga en paralelo todas las series usadas en las pestañas de mercado (misma clave de caché)."""
+    params = {"from_year": int(m_from), "to_year": int(m_to), "mode": str(m_mode)}
+    tasks: list[tuple[str, str, dict[str, Any] | None, int]] = [
+        ("la_resumen", "/api/v1/market/la-fe/resumen-series", params, 90),
+        ("tot_resumen", "/api/v1/market/resumen/totals-series", params, 90),
+        ("la_ext", "/api/v1/market/la-fe/resumen-extended", params, 90),
+        ("tot_ext", "/api/v1/market/resumen/totals-extended", params, 90),
+        ("la_cuadro", "/api/v1/market/la-fe/cuadro-series", params, 90),
+        ("tot_cuadro", "/api/v1/market/cuadro/totals-series", params, 90),
+        ("snapshot", "/api/v1/market/la-fe/snapshot-latest", {}, 60),
+    ]
+    out: dict[str, Any] = {}
+    with ThreadPoolExecutor(max_workers=7) as ex:
+        future_map = {
+            ex.submit(_http_get_json, base, path, par, timeout): key
+            for key, path, par, timeout in tasks
+        }
+        for fut in as_completed(future_map):
+            key = future_map[fut]
+            try:
+                out[key] = fut.result()
+            except Exception as e:
+                out[key] = e
+    return out
 
 
 def _merge_market_primas(
@@ -216,7 +274,7 @@ _CUADRO_METRIC_LABELS: dict[str, str] = {
 }
 
 
-def _fetch_kpi(
+def _fetch_kpi_impl(
     base: str,
     cohort_year: int,
     seed: int,
@@ -235,6 +293,22 @@ def _fetch_kpi(
     )
     r.raise_for_status()
     return r.json()
+
+
+@st.cache_data(ttl=_CACHE_TTL_SEC, show_spinner=False)
+def _fetch_kpi_cached(
+    base: str,
+    cohort_year: int,
+    seed: int,
+    n_policies: int,
+    use_db: bool,
+) -> dict[str, Any]:
+    return _fetch_kpi_impl(base, cohort_year, seed, n_policies, use_db)
+
+
+@st.cache_data(ttl=_CACHE_TTL_SEC, show_spinner=False)
+def _fetch_snapshot_cached(base: str) -> dict[str, Any]:
+    return _http_get_json(base, "/api/v1/market/la-fe/snapshot-latest", {}, 60)
 
 
 # —— Cabecera: logo al lado del título (misma fila) ——
@@ -330,11 +404,18 @@ with st.sidebar:
             format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)",
             key="sb_m_mode",
         )
+        precarga_paralela = st.checkbox(
+            "Precarga paralela (todas las series de mercado)",
+            value=True,
+            help="Activa: una sola ronda de peticiones en paralelo y datos en caché. "
+            "Desactiva: cada pestaña consulta por separado (útil si la API limita concurrencia).",
+            key="sb_mercado_prefetch",
+        )
 
 if lab_module == "cohorte":
     data: dict[str, Any] | None = None
     try:
-        data = _fetch_kpi(
+        data = _fetch_kpi_cached(
             base,
             cohort_year,
             _KPI_SEED_FALLBACK,
@@ -476,6 +557,8 @@ else:
     if m_from > m_to:
         st.warning("Ajusta el rango de años (desde ≤ hasta).")
     else:
+        mb = _mercado_bundle_cached(base, int(m_from), int(m_to), str(m_mode)) if precarga_paralela else None
+
         tab_primas, tab_snapshot, tab_extend, tab_cuadro = st.tabs(
             [
                 "Primas vs mercado",
@@ -488,28 +571,44 @@ else:
         with tab_primas:
             st.markdown("##### Primas vs mercado")
             st.caption("Comparación La Fe frente al total mercado en el rango y modo elegidos en la barra lateral.")
-            try:
-                la_payload = _fetch_market_series(
-                    base,
-                    "/api/v1/market/la-fe/resumen-series",
-                    int(m_from),
-                    int(m_to),
-                    str(m_mode),
-                )
-                tot_payload = _fetch_market_series(
-                    base,
-                    "/api/v1/market/resumen/totals-series",
-                    int(m_from),
-                    int(m_to),
-                    str(m_mode),
-                )
-            except Exception as e:
+            la_payload: dict[str, Any] | None = None
+            tot_payload: dict[str, Any] | None = None
+            err_prim: Exception | None = None
+            if mb is not None:
+                _la = mb.get("la_resumen")
+                _tot = mb.get("tot_resumen")
+                if isinstance(_la, Exception):
+                    err_prim = _la
+                elif isinstance(_tot, Exception):
+                    err_prim = _tot
+                else:
+                    la_payload = _la
+                    tot_payload = _tot
+            else:
+                try:
+                    la_payload = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/la-fe/resumen-series",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                    tot_payload = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/resumen/totals-series",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                except Exception as e:
+                    err_prim = e
+            if err_prim is not None:
                 st.error(
                     "No se pudieron obtener las series de mercado. "
                     "Comprueba DATABASE_URL y migraciones SUDEASEG. "
-                    f"({e})"
+                    f"({err_prim})"
                 )
-            else:
+            elif la_payload is not None and tot_payload is not None:
                 merged = _merge_market_primas(la_payload, tot_payload)
                 if merged.empty:
                     st.info("No hay puntos en el rango elegido o faltan datos en la tabla de mercado.")
@@ -559,13 +658,22 @@ else:
         with tab_snapshot:
             st.markdown("##### Último cierre")
             st.caption("Instantánea YTD al último mes con dato La Fe (independiente del rango lateral).")
-            try:
-                snap_r = requests.get(f"{base}/api/v1/market/la-fe/snapshot-latest", timeout=60)
-                snap_r.raise_for_status()
-                snap = snap_r.json()
-            except Exception as e:
-                st.warning(f"No hay snapshot o la API falló: {e}")
+            snap: dict[str, Any] | None = None
+            snap_err: Exception | None = None
+            if mb is not None:
+                _sn = mb.get("snapshot")
+                if isinstance(_sn, Exception):
+                    snap_err = _sn
+                else:
+                    snap = _sn
             else:
+                try:
+                    snap = _fetch_snapshot_cached(base)
+                except Exception as e:
+                    snap_err = e
+            if snap_err is not None:
+                st.warning(f"No hay snapshot o la API falló: {snap_err}")
+            elif snap is not None:
                 py, pm = snap["period_year"], snap["period_month"]
                 st.markdown(f"**Cierre:** {py}-{pm:02d} · Miles de Bs. (ratios como fracción)")
                 lf = snap.get("la_fe") or {}
@@ -606,24 +714,40 @@ else:
         with tab_extend:
             st.markdown("##### Métricas resumen")
             st.caption("Serie extendida — resumen por empresa (La Fe) y comparación con totales de mercado.")
-            try:
-                la_ext = _fetch_market_series(
-                    base,
-                    "/api/v1/market/la-fe/resumen-extended",
-                    int(m_from),
-                    int(m_to),
-                    str(m_mode),
-                )
-                tot_ext = _fetch_market_series(
-                    base,
-                    "/api/v1/market/resumen/totals-extended",
-                    int(m_from),
-                    int(m_to),
-                    str(m_mode),
-                )
-            except Exception as e:
-                st.error(f"No se pudieron cargar series extendidas: {e}")
+            la_ext: dict[str, Any] | None = None
+            tot_ext: dict[str, Any] | None = None
+            err_ext: Exception | None = None
+            if mb is not None:
+                _a = mb.get("la_ext")
+                _b = mb.get("tot_ext")
+                if isinstance(_a, Exception):
+                    err_ext = _a
+                elif isinstance(_b, Exception):
+                    err_ext = _b
+                else:
+                    la_ext = _a
+                    tot_ext = _b
             else:
+                try:
+                    la_ext = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/la-fe/resumen-extended",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                    tot_ext = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/resumen/totals-extended",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                except Exception as e:
+                    err_ext = e
+            if err_ext is not None:
+                st.error(f"No se pudieron cargar series extendidas: {err_ext}")
+            elif la_ext is not None and tot_ext is not None:
                 df_lf = _df_market_points(la_ext)
                 df_mk = _df_market_points(tot_ext)
                 if df_lf.empty:
@@ -707,24 +831,40 @@ else:
         with tab_cuadro:
             st.markdown("##### Cuadro de resultados")
             st.caption("La Fe frente al total mercado — líneas de resultado técnico y operativo.")
-            try:
-                la_c = _fetch_market_series(
-                    base,
-                    "/api/v1/market/la-fe/cuadro-series",
-                    int(m_from),
-                    int(m_to),
-                    str(m_mode),
-                )
-                tot_c = _fetch_market_series(
-                    base,
-                    "/api/v1/market/cuadro/totals-series",
-                    int(m_from),
-                    int(m_to),
-                    str(m_mode),
-                )
-            except Exception as e:
-                st.error(f"No se pudieron cargar series de cuadro: {e}")
+            la_c: dict[str, Any] | None = None
+            tot_c: dict[str, Any] | None = None
+            err_c: Exception | None = None
+            if mb is not None:
+                _lc = mb.get("la_cuadro")
+                _tc = mb.get("tot_cuadro")
+                if isinstance(_lc, Exception):
+                    err_c = _lc
+                elif isinstance(_tc, Exception):
+                    err_c = _tc
+                else:
+                    la_c = _lc
+                    tot_c = _tc
             else:
+                try:
+                    la_c = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/la-fe/cuadro-series",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                    tot_c = _fetch_market_series_cached(
+                        base,
+                        "/api/v1/market/cuadro/totals-series",
+                        int(m_from),
+                        int(m_to),
+                        str(m_mode),
+                    )
+                except Exception as e:
+                    err_c = e
+            if err_c is not None:
+                st.error(f"No se pudieron cargar series de cuadro: {err_c}")
+            elif la_c is not None and tot_c is not None:
                 df_lfc = _df_market_points(la_c)
                 df_ttc = _df_market_points(tot_c)
                 if df_lfc.empty:
