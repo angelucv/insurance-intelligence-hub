@@ -43,6 +43,13 @@ body.dashboard .iihub-dashboard-main {
   min-width: 0;
 }
 
+/* Texto explicativo e ilustraciones debajo del listado «Panel de administración». */
+body.dashboard .iihub-dashboard-reference {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--hairline-color, #e2e8f0);
+}
+
 @media (min-width: 900px) {
   body.dashboard #content.colMS {
     display: grid;

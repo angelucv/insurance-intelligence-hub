@@ -13,6 +13,35 @@
 
 {% block content %}
 <div class="iihub-dashboard-main">
+<section class="iihub-quick-actions" aria-label="{% translate 'Acciones rápidas' %}">
+  <h2 class="iihub-quick-actions__title">{% translate "Acciones rápidas" %}</h2>
+  <div class="iihub-quick-grid">
+    <a href="{% url 'upload_policies' %}" class="iihub-card iihub-card--primary">
+      <span class="iihub-card__label">{% translate "Carga de pólizas" %}</span>
+      <span class="iihub-card__hint">CSV / Excel · cohortes y KPI</span>
+    </a>
+    <a href="{% url 'upload_claims' %}" class="iihub-card">
+      <span class="iihub-card__label">{% translate "Carga de siniestros" %}</span>
+      <span class="iihub-card__hint">{% translate "Enlazados a pólizas existentes" %}</span>
+    </a>
+    {% if reflex_portal_url %}
+    <a href="{{ reflex_portal_url }}" class="iihub-card iihub-card--ghost" target="_blank" rel="noopener noreferrer">
+      <span class="iihub-card__label">{% translate "Portal Reflex" %}</span>
+      <span class="iihub-card__hint">{% translate "KPI y cartera (solo lectura)" %}</span>
+    </a>
+    {% endif %}
+    <a href="{% url 'data_model_doc' %}" class="iihub-card iihub-card--ghost">
+      <span class="iihub-card__label">{% translate "Modelo de datos" %}</span>
+      <span class="iihub-card__hint">{% translate "Cómo se organizan los datos (con detalle técnico opcional)" %}</span>
+    </a>
+  </div>
+</section>
+
+<div id="content-main">
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+</div>
+
+<div class="iihub-dashboard-reference">
 <div class="iihub-dashboard-hero">
   <p class="iihub-dashboard-lead">
     {% blocktranslate %}Aquí se <strong>cargan y consultan</strong> datos maestros (pólizas y siniestros) con <strong>usuario y contraseña</strong>, y se <strong>filtran y buscan</strong> casos ya registrados. En el sector asegurador, los <strong>cores operativos</strong> habituales incluyen soluciones como <strong>Acsel/x</strong> (Consis) o <strong>Rector</strong> (Indra); este panel no sustituye ese core completo, pero sí el <strong>paralelo en Excel/Access</strong> que muchas áreas usan para cuadros y seguimiento. Lo que suba o consulte aquí alimenta el mismo <strong>PostgreSQL</strong> (en este entorno en la nube; puede montarse en servidor local) que usa el <strong>servicio de indicadores</strong> y las pantallas de solo lectura del portal ejecutivo y del laboratorio analítico.{% endblocktranslate %}
@@ -136,33 +165,6 @@
     </article>
   </div>
 </section>
-
-<section class="iihub-quick-actions" aria-label="{% translate 'Acciones rápidas' %}">
-  <h2 class="iihub-quick-actions__title">{% translate "Acciones rápidas" %}</h2>
-  <div class="iihub-quick-grid">
-    <a href="{% url 'upload_policies' %}" class="iihub-card iihub-card--primary">
-      <span class="iihub-card__label">{% translate "Carga de pólizas" %}</span>
-      <span class="iihub-card__hint">CSV / Excel · cohortes y KPI</span>
-    </a>
-    <a href="{% url 'upload_claims' %}" class="iihub-card">
-      <span class="iihub-card__label">{% translate "Carga de siniestros" %}</span>
-      <span class="iihub-card__hint">{% translate "Enlazados a pólizas existentes" %}</span>
-    </a>
-    {% if reflex_portal_url %}
-    <a href="{{ reflex_portal_url }}" class="iihub-card iihub-card--ghost" target="_blank" rel="noopener noreferrer">
-      <span class="iihub-card__label">{% translate "Portal Reflex" %}</span>
-      <span class="iihub-card__hint">{% translate "KPI y cartera (solo lectura)" %}</span>
-    </a>
-    {% endif %}
-    <a href="{% url 'data_model_doc' %}" class="iihub-card iihub-card--ghost">
-      <span class="iihub-card__label">{% translate "Modelo de datos" %}</span>
-      <span class="iihub-card__hint">{% translate "Cómo se organizan los datos (con detalle técnico opcional)" %}</span>
-    </a>
-  </div>
-</section>
-
-<div id="content-main">
-  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
 </div>
 </div>
 {% endblock %}
