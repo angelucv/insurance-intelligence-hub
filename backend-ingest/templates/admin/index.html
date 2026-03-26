@@ -5,7 +5,7 @@
 
 {% block responsive %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/dashboard-layout.css' %}">{% endblock %}
 
-{% block coltype %}colM{% endblock %}
+{% block coltype %}colMS{% endblock %}
 
 {% block bodyclass %}{{ block.super }} dashboard{% endblock %}
 
@@ -42,7 +42,6 @@
 <div id="content-main">
   {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
 </div>
-{% include "admin/includes/dashboard_index_sidebar.html" %}
 </div>
 
 <div class="iihub-dashboard-reference">
@@ -175,4 +174,4 @@
 </div>
 {% endblock %}
 
-{% block sidebar %}{% endblock %}
+{% block sidebar %}{% include "admin/includes/dashboard_index_sidebar.html" %}{% endblock %}

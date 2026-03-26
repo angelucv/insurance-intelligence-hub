@@ -1,5 +1,24 @@
 {% load i18n log %}
 <div id="content-related">
+  <div class="module iihub-sidebar-help">
+    <h2>{% translate "Enlaces útiles" %}</h2>
+    <p class="iihub-sidebar-lead">
+      {% translate "Accesos externos al portal de solo lectura y al laboratorio; la configuración del API es en cada despliegue." %}
+    </p>
+    <ul class="iihub-link-list">
+      {% if reflex_portal_url %}
+      <li><a href="{{ reflex_portal_url }}" target="_blank" rel="noopener noreferrer">{% translate "Portal BI (Reflex)" %}</a></li>
+      {% endif %}
+      {% if streamlit_lab_url %}
+      <li><a href="{{ streamlit_lab_url }}" target="_blank" rel="noopener noreferrer">{% translate "Laboratorio Streamlit" %}</a></li>
+      {% endif %}
+      <li><a href="{% url 'data_model_doc' %}">{% translate "Modelo de datos y flujos (Supabase)" %}</a></li>
+      {% if compute_api_public_hint %}
+      <li><span class="iihub-quiet">{{ compute_api_public_hint }}</span></li>
+      {% endif %}
+      <li class="iihub-link-list__hint">{% translate "API de cómputo: configure COMPUTE_API_URL en Reflex / Streamlit (no almacene secretos en el admin)." %}</li>
+    </ul>
+  </div>
   <div class="module" id="recent-actions-module">
     <h2>{% translate "Acciones recientes" %}</h2>
     <h3>{% translate "Mis acciones" %}</h3>

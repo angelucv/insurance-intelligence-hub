@@ -36,8 +36,8 @@ body.dashboard main.content #content {
 }
 
 /*
- * Django base.css pone #content-main { float:left } y #content-related { float:right } → columna estrecha a la derecha.
- * Flex en columna anula el float y apila: acciones → tablas → enlaces debajo, alineados a la izquierda.
+ * #content-related va en {% block sidebar %} (orden tras el bloque content en base.html).
+ * Rejilla: fila 1 = acciones+tablas | Enlaces/Recientes; fila 2 = texto «Panel de administración» a ancho completo.
  */
 body.dashboard .iihub-dashboard-top {
   display: flex;
@@ -47,29 +47,75 @@ body.dashboard .iihub-dashboard-top {
   min-width: 0;
 }
 
-body.dashboard .iihub-dashboard-top #content-related {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-self: flex-start;
-  width: 100% !important;
-  max-width: min(32rem, 100%);
-  float: none !important;
-  clear: both !important;
-  margin: 1.5rem 0 0 !important;
-  padding: 0;
-  position: static;
-}
-
-body.dashboard .iihub-dashboard-top #content-related > .module {
-  margin-bottom: 0;
-  width: 100%;
-  box-sizing: border-box;
-}
-
 body.dashboard .iihub-dashboard-top #content-main {
   float: none !important;
   width: 100% !important;
+}
+
+@media (min-width: 900px) {
+  body.dashboard #content.colMS {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
+    grid-template-rows: auto auto;
+    column-gap: 1.25rem;
+    row-gap: 0;
+    align-items: start;
+    margin-right: 0 !important;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-top {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  body.dashboard #content.colMS > #content-related {
+    grid-column: 2;
+    grid-row: 1;
+    float: none !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 280px;
+    position: sticky;
+    top: 0.75rem;
+    align-self: start;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-reference {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  body.dashboard #content.colMS > br.clear {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  body.dashboard #content.colMS {
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-top {
+    order: 1;
+  }
+
+  body.dashboard #content.colMS > #content-related {
+    order: 2;
+    float: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    position: static;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-reference {
+    order: 3;
+  }
 }
 
 body.dashboard .iihub-dashboard-page-title {

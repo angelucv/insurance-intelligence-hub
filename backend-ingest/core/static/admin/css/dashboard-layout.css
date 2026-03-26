@@ -1,6 +1,6 @@
-/* Carga después de responsive.css: anula ancho 600px del dashboard y refuerza #content al 100%. */
+/* Carga después de responsive.css: anula 600px y refuerza la rejilla colMS de la portada. */
 
-body.dashboard main.content #content.colM,
+body.dashboard main.content #content.colMS,
 body.dashboard main.content #content {
   width: 100% !important;
   max-width: 100% !important;
@@ -11,18 +11,30 @@ body.dashboard .main > #nav-sidebar + .content {
   min-width: 0 !important;
 }
 
-/* Anula floats de base.css en la portada (evita columna derecha estrecha). */
-body.dashboard .iihub-dashboard-top {
-  display: flex !important;
-  flex-direction: column !important;
-}
+@media (min-width: 900px) {
+  body.dashboard #content.colMS {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 280px) !important;
+    grid-template-rows: auto auto !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
 
-body.dashboard .iihub-dashboard-top #content-main {
-  float: none !important;
-  width: 100% !important;
-}
+  body.dashboard #content.colMS > .iihub-dashboard-top {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
 
-body.dashboard .iihub-dashboard-top #content-related {
-  float: none !important;
-  margin-left: 0 !important;
+  body.dashboard #content.colMS > #content-related {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    float: none !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  body.dashboard #content.colMS > .iihub-dashboard-reference {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+  }
 }
