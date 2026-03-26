@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
+
+# Streamlit Cloud suele usar la raíz del repo como cwd; el módulo vive junto a app.py.
+_LAB_DIR = Path(__file__).resolve().parent
+if str(_LAB_DIR) not in sys.path:
+    sys.path.insert(0, str(_LAB_DIR))
 
 import pandas as pd
 import plotly.graph_objects as go
