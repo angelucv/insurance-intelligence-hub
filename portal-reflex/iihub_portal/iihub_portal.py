@@ -1,48 +1,41 @@
-"""Portal ejecutivo: panorama API (mercado + cohorte) y acciones operativas."""
+"""Portal ejecutivo: layout CRM + mercado / cohorte."""
 
 from __future__ import annotations
 
 import reflex as rx
 
 from iihub_portal import copy
+from iihub_portal.components.dashboard_header import dashboard_header
+from iihub_portal.components.layout import dashboard_layout
 from iihub_portal.components.panels import cohorte_panel, mercado_panel
-from iihub_portal.components.shell import hero_strip, shell_header, tab_bar
 from iihub_portal.state import State
 
 
 def index() -> rx.Component:
-    return rx.fragment(
-        rx.box(
-            rx.color_mode.button(position="top-right"),
-            shell_header(),
-            hero_strip(),
-            tab_bar(),
-            rx.box(
-                rx.cond(
-                    State.ui_main_tab == "mercado",
-                    mercado_panel(),
-                    cohorte_panel(),
-                ),
-                width="100%",
-                min_height="50vh",
-                style={"background": "var(--gray-2)"},
+    return dashboard_layout(
+        dashboard_header(),
+        rx.cond(
+            State.ui_main_tab == "mercado",
+            mercado_panel(),
+            cohorte_panel(),
+        ),
+        rx.el.footer(
+            rx.el.p(
+                copy.FOOTER_LEGAL,
+                class_name="text-center text-xs text-gray-400 pt-10 pb-4 max-w-3xl mx-auto leading-relaxed",
             ),
-            rx.box(
-                rx.text(
-                    copy.FOOTER_LEGAL,
-                    size="1",
-                    color="gray",
-                    text_align="center",
-                    width="100%",
-                ),
-                padding_y="4",
-                width="100%",
-                style={"background": "var(--gray-2)"},
-            ),
-            min_height="100vh",
+            class_name="mt-auto border-t border-gray-200/80 bg-transparent",
         ),
     )
 
 
-app = rx.App()
+app = rx.App(
+    theme=rx.theme(appearance="light"),
+    head_components=[
+        rx.el.link(
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+            rel="stylesheet",
+        ),
+    ],
+)
 app.add_page(index, on_load=State.portal_on_load)

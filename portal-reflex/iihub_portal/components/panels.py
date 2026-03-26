@@ -1,262 +1,229 @@
-"""Paneles Mercado SUDEASEG y Cartera cohorte."""
+"""Paneles Mercado y Cartera — tarjetas redondeadas estilo dashboard CRM."""
 
 import reflex as rx
 
 from iihub_portal import copy
 from iihub_portal.state import State
-from iihub_portal.theme import BRAND_DEEP, BRAND_PURPLE, BRAND_MUTED, CONTENT_MAX_WIDTH
+from iihub_portal.theme import BRAND_DEEP, BRAND_PURPLE
 
 
 def snap_hero_cell(label: str, value: rx.Var) -> rx.Component:
-    return rx.box(
-        rx.vstack(
-            rx.text(
-                label,
-                size="2",
-                style={"color": "rgba(255,255,255,0.88)", "font_weight": "600"},
-            ),
-            rx.heading(value, size="7", style={"color": "white", "margin": 0, "line_height": "1.1"}),
-            spacing="1",
-            align_items="start",
-            width="100%",
-        ),
-        padding="1.1rem",
-        border_radius="14px",
-        width="100%",
-        style={
-            "background": "rgba(255,255,255,0.12)",
-            "border": "1px solid rgba(255,255,255,0.28)",
-            "backdrop_filter": "blur(10px)",
-        },
+    return rx.el.div(
+        rx.el.p(label, class_name="text-xs font-semibold text-white/80 uppercase tracking-wide"),
+        rx.el.p(value, class_name="text-xl sm:text-2xl font-bold text-white mt-1 tabular-nums"),
+        class_name="rounded-xl px-4 py-3 bg-white/10 border border-white/20 backdrop-blur-md",
     )
 
 
-def kpi_card(title: str, value: rx.Var) -> rx.Component:
-    return rx.card(
-        rx.vstack(
-            rx.text(title, size="2", weight="bold", color="gray"),
-            rx.heading(value, size="6", style={"color": BRAND_DEEP}),
-            spacing="1",
-            align_items="start",
-            width="100%",
+def kpi_stat_card(title: str, value: rx.Var, icon: str) -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(title, class_name="text-sm font-medium text-gray-500"),
+            rx.el.span(
+                rx.icon(icon, size=18, class_name="text-violet-600"),
+                class_name="p-2 bg-violet-50 rounded-xl",
+            ),
+            class_name="flex justify-between items-start gap-2",
         ),
-        style={
-            "border": "1px solid var(--gray-6)",
-            "box_shadow": "0 4px 16px rgba(15, 23, 42, 0.06)",
-            "min_height": "118px",
-        },
-        width="100%",
+        rx.el.p(value, class_name="text-2xl sm:text-3xl font-bold text-gray-900 mt-3 tabular-nums tracking-tight"),
+        class_name="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200",
     )
 
 
 def mercado_panel() -> rx.Component:
-    return rx.vstack(
-        rx.box(
-            rx.box(
-                rx.vstack(
-                    rx.text(
-                        "Último cierre con dato La Fe · YTD (miles Bs.; ratios como fracción)",
-                        size="2",
-                        style={"color": "rgba(255,255,255,0.9)", "font_weight": "600"},
+    snap_grid = rx.el.div(
+        snap_hero_cell("Período", State.snap_period),
+        snap_hero_cell("Primas YTD La Fe", State.snap_primas),
+        snap_hero_cell("Loss ratio La Fe", State.snap_lr),
+        snap_hero_cell("Cuota primas", State.snap_cuota),
+        class_name="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full",
+    )
+    snap_more = rx.el.div(
+        snap_hero_cell("Siniestros tot. La Fe", State.snap_sini),
+        snap_hero_cell("Comisiones YTD", State.snap_comisiones),
+        snap_hero_cell("Gasto adm. YTD", State.snap_gadm),
+        snap_hero_cell("Loss ratio mercado", State.snap_mk_lr),
+        class_name="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full mt-4",
+    )
+    return rx.el.div(
+        rx.el.section(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h2(
+                        copy.MERCADO_SNAPSHOT_TITLE,
+                        class_name="text-lg font-semibold text-white",
                     ),
-                    rx.cond(
-                        State.snap_ok,
-                        rx.grid(
-                            snap_hero_cell("Período", State.snap_period),
-                            snap_hero_cell("Primas YTD La Fe", State.snap_primas),
-                            snap_hero_cell("Loss ratio La Fe", State.snap_lr),
-                            snap_hero_cell("Cuota primas", State.snap_cuota),
-                            columns="4",
-                            spacing="3",
-                            width="100%",
-                        ),
-                        rx.text("Sin snapshot disponible.", color="white"),
+                    rx.el.p(
+                        copy.MERCADO_SNAPSHOT_HINT,
+                        class_name="text-xs text-white/75 mt-1",
                     ),
-                    rx.button(
-                        rx.cond(State.show_snap_more, "Ocultar detalle del cierre", "Ver más indicadores del cierre"),
-                        on_click=State.toggle_snap_more,
-                        variant="outline",
-                        style={
-                            "color": "white",
-                            "border_color": "rgba(255,255,255,0.55)",
-                            "margin_top": "0.5rem",
-                        },
-                    ),
-                    rx.cond(
-                        State.show_snap_more,
-                        rx.cond(
-                            State.snap_ok,
-                            rx.box(
-                                rx.grid(
-                                    snap_hero_cell("Siniestros tot. La Fe", State.snap_sini),
-                                    snap_hero_cell("Comisiones YTD", State.snap_comisiones),
-                                    snap_hero_cell("Gasto adm. YTD", State.snap_gadm),
-                                    snap_hero_cell("Loss ratio mercado", State.snap_mk_lr),
-                                    columns="4",
-                                    spacing="3",
-                                    width="100%",
-                                ),
-                                margin_top="0.75rem",
-                                width="100%",
-                            ),
-                        ),
-                    ),
-                    spacing="3",
-                    width="100%",
+                    class_name="mb-5",
                 ),
-                width="100%",
-                max_width=CONTENT_MAX_WIDTH,
-                margin_x="auto",
-                padding_x="6",
-                padding_y="6",
+                rx.cond(
+                    State.snap_ok,
+                    snap_grid,
+                    rx.el.p("Sin snapshot disponible.", class_name="text-white/90 text-sm"),
+                ),
+                rx.button(
+                    rx.cond(State.show_snap_more, "Ocultar detalle", "Ver más indicadores"),
+                    on_click=State.toggle_snap_more,
+                    variant="outline",
+                    size="2",
+                    class_name="mt-4 text-white border-white/40 hover:bg-white/10",
+                ),
+                rx.cond(
+                    State.show_snap_more,
+                    rx.cond(State.snap_ok, snap_more),
+                ),
+                class_name="p-6 sm:p-8",
             ),
-            width="100%",
+            class_name="rounded-2xl overflow-hidden shadow-xl shadow-violet-900/20 border border-violet-500/20",
             style={
-                "background": f"linear-gradient(120deg, {BRAND_DEEP} 0%, {BRAND_PURPLE} 50%, #4c1d95 100%)",
+                "background": f"linear-gradient(135deg, {BRAND_DEEP} 0%, {BRAND_PURPLE} 48%, #4c1d95 100%)",
             },
         ),
-        rx.box(
-            rx.card(
-                rx.vstack(
-                    rx.text(copy.MERCADO_PARAMS_TITLE, weight="bold", size="3", color=BRAND_DEEP),
-                    rx.text(
-                        copy.MERCADO_PARAMS_BODY,
-                        size="2",
-                        color="gray",
+        rx.el.section(
+            rx.el.div(
+                rx.el.h3(
+                    copy.MERCADO_PARAMS_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.MERCADO_PARAMS_BODY,
+                    class_name="text-sm text-gray-500 mt-1 mb-6 leading-relaxed",
+                ),
+                rx.hstack(
+                    rx.vstack(
+                        rx.text("Desde", size="1", color="gray"),
+                        rx.input(value=State.market_fy, on_change=State.set_market_fy, width="90px", size="2"),
+                        spacing="1",
+                        align_items="start",
                     ),
-                    rx.hstack(
-                        rx.vstack(
-                            rx.text("Desde", size="1", color="gray"),
-                            rx.input(
-                                value=State.market_fy,
-                                on_change=State.set_market_fy,
-                                width="90px",
-                            ),
-                            spacing="1",
-                            align_items="start",
-                        ),
-                        rx.vstack(
-                            rx.text("Hasta", size="1", color="gray"),
-                            rx.input(
-                                value=State.market_ty,
-                                on_change=State.set_market_ty,
-                                width="90px",
-                            ),
-                            spacing="1",
-                            align_items="start",
-                        ),
-                        rx.vstack(
-                            rx.text("Modo", size="1", color="gray"),
-                            rx.select(
-                                ["monthly_flow", "ytd"],
-                                value=State.market_mode,
-                                on_change=State.set_market_mode,
-                                size="2",
-                                width="160px",
-                            ),
-                            spacing="1",
-                            align_items="start",
-                        ),
-                        rx.button(
-                            "Actualizar gráficos",
-                            on_click=State.load_sudeaseg_preview,
-                            loading=State.market_charts_busy,
-                            color_scheme="purple",
-                            style={"align_self": "flex-end"},
-                        ),
-                        spacing="4",
-                        align_items="end",
-                        flex_wrap="wrap",
-                        width="100%",
+                    rx.vstack(
+                        rx.text("Hasta", size="1", color="gray"),
+                        rx.input(value=State.market_ty, on_change=State.set_market_ty, width="90px", size="2"),
+                        spacing="1",
+                        align_items="start",
                     ),
-                    spacing="3",
+                    rx.vstack(
+                        rx.text("Modo", size="1", color="gray"),
+                        rx.select(
+                            ["monthly_flow", "ytd"],
+                            value=State.market_mode,
+                            on_change=State.set_market_mode,
+                            size="2",
+                            width="160px",
+                        ),
+                        spacing="1",
+                        align_items="start",
+                    ),
+                    rx.button(
+                        "Actualizar gráficos",
+                        on_click=State.load_sudeaseg_preview,
+                        loading=State.market_charts_busy,
+                        color_scheme="purple",
+                        size="3",
+                        class_name="rounded-xl",
+                        style={"align_self": "flex-end"},
+                    ),
+                    spacing="4",
+                    align_items="end",
+                    flex_wrap="wrap",
                     width="100%",
                 ),
-                style={"border": f"1px solid {BRAND_PURPLE}22", "box_shadow": "0 8px 28px rgba(88,28,135,0.08)"},
+                class_name="p-6 sm:p-8",
+            ),
+            class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm",
+        ),
+        rx.el.section(
+            rx.el.div(
+                rx.el.h3(
+                    copy.MERCADO_CHART_PRIM_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.MERCADO_CHART_PRIM_SUB,
+                    class_name="text-xs text-gray-500 mt-1 mb-4",
+                ),
+                rx.cond(State.market_plot_ok, rx.plotly(data=State.market_plot_figure)),
+                class_name="p-5 sm:p-6",
+            ),
+            class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
+        ),
+        rx.el.section(
+            rx.el.div(
+                rx.el.h3(
+                    copy.MERCADO_CHART_LR_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.MERCADO_CHART_LR_SUB,
+                    class_name="text-xs text-gray-500 mt-1 mb-4",
+                ),
+                rx.cond(State.market_ratio_ok, rx.plotly(data=State.market_ratio_figure)),
+                class_name="p-5 sm:p-6",
+            ),
+            class_name="mt-6 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
+        ),
+        rx.cond(
+            State.market_plot_error != "",
+            rx.callout(
+                State.market_plot_error,
+                icon="triangle_alert",
+                color_scheme="red",
                 width="100%",
             ),
-            width="100%",
-            max_width=CONTENT_MAX_WIDTH,
-            margin_x="auto",
-            padding_x="6",
-            padding_top="5",
         ),
-        rx.box(
-            rx.text(
-                "Primas netas (miles Bs.): La Fe vs total sector. Abajo: evolución del loss ratio proxy.",
-                size="2",
-                color="gray",
-            ),
-            rx.cond(
-                State.market_plot_ok,
-                rx.plotly(data=State.market_plot_figure),
-            ),
-            rx.cond(
-                State.market_ratio_ok,
-                rx.plotly(data=State.market_ratio_figure),
-            ),
-            rx.cond(
-                State.market_plot_error != "",
-                rx.callout(
-                    State.market_plot_error,
-                    icon="triangle_alert",
-                    color_scheme="red",
-                    width="100%",
-                ),
-            ),
-            spacing="4",
-            width="100%",
-            max_width=CONTENT_MAX_WIDTH,
-            margin_x="auto",
-            padding_x="6",
-            padding_bottom="8",
-            align_items="stretch",
-        ),
-        spacing="0",
-        width="100%",
+        class_name="w-full space-y-0 pb-8",
     )
 
 
 def cohorte_panel() -> rx.Component:
-    return rx.vstack(
-        rx.heading(copy.COHORT_TITLE, size="5", style={"color": BRAND_DEEP}),
-        rx.text(
+    return rx.el.div(
+        rx.el.p(
             copy.COHORT_LEAD,
-            size="2",
-            color="gray",
+            class_name="text-sm text-gray-500 mb-6 leading-relaxed",
         ),
-        rx.hstack(
-            rx.text("Año cohorte:", weight="medium", color=BRAND_MUTED),
-            rx.input(
-                value=State.input_year,
-                on_change=State.set_input_year,
-                width="100px",
+        rx.el.section(
+            rx.el.div(
+                rx.hstack(
+                    rx.vstack(
+                        rx.text("Año de cohorte", size="2", weight="medium", color="gray"),
+                        rx.input(
+                            value=State.input_year,
+                            on_change=State.set_input_year,
+                            width="110px",
+                            size="3",
+                        ),
+                        spacing="1",
+                        align_items="start",
+                    ),
+                    rx.button(
+                        "Actualizar KPIs",
+                        on_click=State.load_kpi,
+                        loading=State.busy,
+                        color_scheme="purple",
+                        size="3",
+                        class_name="rounded-xl mt-5",
+                    ),
+                    spacing="4",
+                    align_items="end",
+                    flex_wrap="wrap",
+                ),
+                class_name="p-6 sm:p-8",
             ),
-            rx.button(
-                "Actualizar indicadores",
-                on_click=State.load_kpi,
-                loading=State.busy,
-                color_scheme="purple",
-            ),
-            spacing="3",
-            align_items="center",
-            flex_wrap="wrap",
+            class_name="rounded-2xl bg-white border border-gray-100 shadow-sm mb-8",
         ),
-        rx.grid(
-            kpi_card("Persistencia", State.persistency),
-            kpi_card("Pólizas activas", State.active_n),
-            kpi_card("Prima media anual", State.avg_premium),
-            columns="3",
-            spacing="3",
-            width="100%",
+        rx.el.div(
+            kpi_stat_card("Persistencia", State.persistency, "percent"),
+            kpi_stat_card("Pólizas activas", State.active_n, "users"),
+            kpi_stat_card("Prima media anual", State.avg_premium, "wallet"),
+            class_name="grid grid-cols-1 md:grid-cols-3 gap-4 w-full",
         ),
-        rx.grid(
-            kpi_card("Lapsos", State.lapsed_n),
-            kpi_card("Ratio técnico (demo)", State.tlr),
-            columns="2",
-            spacing="3",
-            width="100%",
-            max_width="720px",
+        rx.el.div(
+            kpi_stat_card("Lapsos", State.lapsed_n, "user-minus"),
+            kpi_stat_card("Ratio técnico (demo)", State.tlr, "gauge"),
+            class_name="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-[900px] mt-4",
         ),
         rx.cond(
             State.note != "",
@@ -267,11 +234,5 @@ def cohorte_panel() -> rx.Component:
                 width="100%",
             ),
         ),
-        spacing="5",
-        width="100%",
-        max_width=CONTENT_MAX_WIDTH,
-        margin_x="auto",
-        padding_x="6",
-        padding_y="8",
-        align_items="stretch",
+        class_name="w-full pb-8 space-y-4",
     )

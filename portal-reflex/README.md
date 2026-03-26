@@ -38,4 +38,10 @@ Tras el deploy, añade en **Streamlit Secrets** `PORTAL_REFLEX_URL` con la URL q
 
 ## Estructura
 
-Generada con `reflex init --name iihub_portal --template blank`. Lógica principal en `iihub_portal/iihub_portal.py`.
+- `iihub_portal/iihub_portal.py` — app, tema e página principal.
+- `iihub_portal/state.py` — estado (API, KPIs, gráficos).
+- `iihub_portal/copy.py` — textos de interfaz.
+- `iihub_portal/theme.py` — colores marca.
+- `iihub_portal/components/` — layout tipo dashboard (`sidebar`, `layout`, `dashboard_header`, `panels`).
+
+Inspiración de layout: [Broker-CRM-Dashboard](https://github.com/angelucv/Broker-CRM-Dashboard) (sidebar + contenido principal + tarjetas).
