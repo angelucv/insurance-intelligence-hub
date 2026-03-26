@@ -27,7 +27,8 @@ body.dashboard .main > #nav-sidebar + .content {
   max-width: 100% !important;
 }
 
-body.dashboard #content {
+/* base.css fija .dashboard #content a 600px: sin !important + selector fuerte reaparece el vacío a la derecha. */
+body.dashboard main.content #content {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0;
