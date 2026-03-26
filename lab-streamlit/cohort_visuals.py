@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 import plotly.express as px
-import requests
 import plotly.graph_objects as go
+import requests
+import streamlit as st
 from plotly.subplots import make_subplots
 
 # Centroides aproximados (demo visual) — nombres alineados a `portfolio_analytics._VE_ESTADOS`
@@ -37,6 +40,39 @@ VE_CENTROIDS: dict[str, tuple[float, float]] = {
     "Yaracuy": (10.34, -68.74),
     "Zulia": (9.0, -71.5),
 }
+
+# Natural Earth (ne_10m) usa "Vargas" para el estado hoy conocido como La Guaira.
+VE_ESTADO_TO_NE_CHOROPLETH: dict[str, str] = {"La Guaira": "Vargas"}
+
+# GeoJSON recortado (solo estados VE, propiedades mínimas) — ver `assets/venezuela_admin1.geojson`.
+_VE_ADMIN1_GEOJSON_PATH = Path(__file__).resolve().parent / "assets" / "venezuela_admin1.geojson"
+
+
+@st.cache_data(ttl=7 * 24 * 3600, show_spinner="Cargando mapa de estados (Venezuela)…")
+def _ve_admin1_geojson() -> dict[str, Any] | None:
+    try:
+        if not _VE_ADMIN1_GEOJSON_PATH.is_file():
+            return None
+        raw = _VE_ADMIN1_GEOJSON_PATH.read_text(encoding="utf-8")
+        g = json.loads(raw)
+    except Exception:
+        return None
+    feats = [f for f in g.get("features", []) if f.get("properties", {}).get("name")]
+    if not feats:
+        return None
+    return {"type": "FeatureCollection", "features": feats}
+
+
+def _paid_by_ne_choropleth_name(rows: list[dict[str, Any]]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for r in rows:
+        en = r.get("estado") or ""
+        if en not in VE_CENTROIDS:
+            continue
+        ne = VE_ESTADO_TO_NE_CHOROPLETH.get(en, en)
+        val = float(r.get("paid_total") or r.get("prima_total") or 0)
+        out[ne] = out.get(ne, 0.0) + val
+    return out
 
 
 def _gauge(title: str, value: float, rng: tuple[float, float], color: str) -> go.Indicator:
@@ -114,8 +150,6 @@ def render_territorio_ve(
     *,
     brand_purple: str,
 ) -> None:
-    import streamlit as st
-
     geo = pack.get("geo_estado_demo") or {}
     rows = geo.get("rows") or []
     if geo.get("note"):
@@ -123,38 +157,20 @@ def render_territorio_ve(
     if not rows:
         st.info("Sin filas territoriales.")
         return
-    lats, lons, sizes, colors, texts = [], [], [], [], []
-    for r in rows:
-        en = r["estado"]
-        if en not in VE_CENTROIDS:
-            continue
-        lat, lon = VE_CENTROIDS[en]
-        lats.append(lat)
-        lons.append(lon)
-        npol = max(1, int(r["n_policies"]))
-        sizes.append(12 + min(48, npol**0.5 * 2))
-        colors.append(float(r.get("paid_total") or r.get("prima_total") or 0))
-        texts.append(
-            f"{en}<br>Pólizas: {r['n_policies']:,}<br>Siniestros: {r['n_claims']:,}<br>Pagado: {r['paid_total']:,.0f} Bs."
-        )
-    fig = go.Figure(
-        go.Scattergeo(
-            lat=lats,
-            lon=lons,
-            mode="markers",
-            marker=dict(
-                size=sizes,
-                color=colors,
-                colorscale=[[0, "#e9d5ff"], [0.5, "#a78bfa"], [1, brand_purple]],
-                colorbar=dict(title="Pagado (Bs.)"),
-                line=dict(width=1, color="white"),
-                sizemode="diameter",
-            ),
-            text=texts,
-            hoverinfo="text",
-        )
+
+    modo = st.radio(
+        "Visualización del mapa",
+        options=["estados", "pines", "calor"],
+        format_func=lambda x: {
+            "estados": "Estados completos (relleno)",
+            "pines": "Pines por estado",
+            "calor": "Mapa tipo calor",
+        }[x],
+        horizontal=True,
+        key="ve_map_mode",
     )
-    fig.update_geos(
+
+    _geo_common = dict(
         scope="south america",
         lonaxis_range=[-74.5, -58.5],
         lataxis_range=[0.5, 13.5],
@@ -165,13 +181,102 @@ def render_territorio_ve(
         showocean=True,
         projection_type="natural earth",
     )
-    fig.update_layout(
-        title="Venezuela — intensidad operativa demo por estado (tamaño ≈ pólizas, color ≈ pagado)",
-        height=520,
-        margin=dict(l=0, r=0, t=48, b=0),
-        paper_bgcolor="rgba(0,0,0,0)",
-    )
-    st.plotly_chart(fig, use_container_width=True)
+
+    if modo in ("estados", "calor"):
+        fc = _ve_admin1_geojson()
+        if not fc:
+            st.warning("No se pudo cargar el mapa de estados; se muestran pines.")
+            modo = "pines"
+        else:
+            val_by = _paid_by_ne_choropleth_name(rows)
+            locations: list[str] = []
+            zvals: list[float] = []
+            hover_texts: list[str] = []
+            for f in fc["features"]:
+                nm = f["properties"]["name"]
+                locations.append(nm)
+                zv = float(val_by.get(nm, 0.0))
+                zvals.append(zv)
+                row_hint = next((r for r in rows if VE_ESTADO_TO_NE_CHOROPLETH.get(r["estado"], r["estado"]) == nm), None)
+                if row_hint:
+                    hover_texts.append(
+                        f"{row_hint['estado']}<br>Pólizas: {row_hint['n_policies']:,}<br>"
+                        f"Siniestros: {row_hint['n_claims']:,}<br>Pagado: {row_hint['paid_total']:,.0f} Bs."
+                    )
+                else:
+                    hover_texts.append(f"{nm}<br>Pagado agregado: {zv:,.0f} Bs.")
+
+            if modo == "calor":
+                cscale = "YlOrRd"
+                title = "Venezuela — intensidad (escala tipo calor, pagado Bs. por estado)"
+            else:
+                cscale = [[0, "#f5f3ff"], [0.45, "#c4b5fd"], [1, brand_purple]]
+                title = "Venezuela — pagado por estado (relleno regional)"
+
+            fig = go.Figure(
+                go.Choropleth(
+                    geojson=fc,
+                    locations=locations,
+                    z=zvals,
+                    featureidkey="properties.name",
+                    colorscale=cscale,
+                    marker_line_color="#ffffff",
+                    marker_line_width=0.6,
+                    colorbar=dict(title="Pagado (Bs.)"),
+                    text=hover_texts,
+                    hoverinfo="text",
+                )
+            )
+            fig.update_geos(**_geo_common)
+            fig.update_layout(
+                title=title,
+                height=520,
+                margin=dict(l=0, r=0, t=48, b=0),
+                paper_bgcolor="rgba(0,0,0,0)",
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+    if modo == "pines":
+        lats, lons, sizes, colors, texts = [], [], [], [], []
+        for r in rows:
+            en = r["estado"]
+            if en not in VE_CENTROIDS:
+                continue
+            lat, lon = VE_CENTROIDS[en]
+            lats.append(lat)
+            lons.append(lon)
+            npol = max(1, int(r["n_policies"]))
+            sizes.append(10 + min(36, npol**0.5 * 1.6))
+            colors.append(float(r.get("paid_total") or r.get("prima_total") or 0))
+            texts.append(
+                f"{en}<br>Pólizas: {r['n_policies']:,}<br>Siniestros: {r['n_claims']:,}<br>Pagado: {r['paid_total']:,.0f} Bs."
+            )
+        fig = go.Figure(
+            go.Scattergeo(
+                lat=lats,
+                lon=lons,
+                mode="markers",
+                marker=dict(
+                    size=sizes,
+                    color=colors,
+                    colorscale=[[0, "#e9d5ff"], [0.5, "#a78bfa"], [1, brand_purple]],
+                    colorbar=dict(title="Pagado (Bs.)"),
+                    line=dict(width=1.5, color="white"),
+                    sizemode="diameter",
+                    symbol="circle",
+                ),
+                text=texts,
+                hoverinfo="text",
+            )
+        )
+        fig.update_geos(**_geo_common)
+        fig.update_layout(
+            title="Venezuela — pines por estado (tamaño ≈ pólizas, color ≈ pagado)",
+            height=520,
+            margin=dict(l=0, r=0, t=48, b=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
     df_b = pd.DataFrame(rows)
     if not df_b.empty and "paid_total" in df_b.columns:
@@ -213,8 +318,6 @@ def render_portfolio_pack(
     brand_deep: str,
     accent_blue: str,
 ) -> None:
-    import streamlit as st
-
     cy = pack["cohort_year"]
     st.subheader("Laboratorio analítico de cartera")
     lr = pack.get("operational_loss_ratio_pct")
@@ -266,19 +369,46 @@ def render_portfolio_pack(
         if pack.get("claim_status_breakdown"):
             st.markdown("**Estado del siniestro (carga)**")
             cs = pack["claim_status_breakdown"]
-            fig_cs = go.Figure(
-                go.Bar(
-                    x=list(cs.keys()),
-                    y=list(cs.values()),
-                    marker_color=accent_blue,
-                    text=list(cs.values()),
-                    textposition="outside",
+            n_cat = len(cs)
+            if n_cat <= 1:
+                if n_cat == 1:
+                    label, qty = next(iter(cs.items()))
+                    st.metric(label=f"Siniestros en estado «{label}»", value=f"{int(qty):,}")
+                    st.caption("Un solo estado en la carga: se muestra como métrica en lugar de barras.")
+                else:
+                    st.info("Sin categorías de estado de siniestro.")
+            elif n_cat <= 6:
+                labels = list(cs.keys())
+                vals = [int(cs[k]) for k in labels]
+                fig_cs = go.Figure(
+                    go.Bar(
+                        y=labels,
+                        x=vals,
+                        orientation="h",
+                        marker_color=accent_blue,
+                        text=vals,
+                        textposition="outside",
+                    )
                 )
-            )
-            fig_cs.update_xaxes(title_text="Estado")
-            fig_cs.update_yaxes(title_text="Cantidad")
-            _brand_layout(fig_cs, height=320)
-            st.plotly_chart(fig_cs, use_container_width=True)
+                fig_cs.update_yaxes(title_text="Estado")
+                fig_cs.update_xaxes(title_text="Cantidad")
+                fig_cs.update_layout(title="Distribución por estado de carga")
+                _brand_layout(fig_cs, height=max(280, 56 * n_cat))
+                st.plotly_chart(fig_cs, use_container_width=True)
+            else:
+                fig_cs = go.Figure(
+                    go.Bar(
+                        x=list(cs.keys()),
+                        y=list(cs.values()),
+                        marker_color=accent_blue,
+                        text=list(cs.values()),
+                        textposition="outside",
+                    )
+                )
+                fig_cs.update_xaxes(title_text="Estado")
+                fig_cs.update_yaxes(title_text="Cantidad")
+                _brand_layout(fig_cs, height=320)
+                st.plotly_chart(fig_cs, use_container_width=True)
 
     with tab_b:
         ibm = pack.get("issue_by_month") or []
@@ -286,28 +416,40 @@ def render_portfolio_pack(
             months = [r["month"] for r in ibm]
             pols = [r["policies"] for r in ibm]
             prs = [r["premium_sum"] for r in ibm]
-            fig_e = make_subplots(specs=[[{"secondary_y": True}]])
-            fig_e.add_trace(
-                go.Bar(x=months, y=pols, name="Pólizas emitidas", marker_color=brand_purple),
-                secondary_y=False,
-            )
-            fig_e.add_trace(
-                go.Scatter(
-                    x=months,
-                    y=prs,
-                    name="Prima emitida (Bs.)",
-                    mode="lines+markers",
-                    line=dict(color=accent_blue, width=2),
-                    marker=dict(size=8),
-                ),
-                secondary_y=True,
-            )
-            fig_e.update_xaxes(title_text="Mes de emisión (issue_date)")
-            fig_e.update_yaxes(title_text="Número de pólizas", secondary_y=False)
-            fig_e.update_yaxes(title_text="Suma prima anual (Bs.)", secondary_y=True)
-            fig_e.update_layout(legend=dict(orientation="h", y=1.12))
-            _brand_layout(fig_e, height=400)
-            st.plotly_chart(fig_e, use_container_width=True)
+            if len(ibm) == 1:
+                r0 = ibm[0]
+                c_m1, c_m2 = st.columns(2)
+                with c_m1:
+                    st.metric("Pólizas emitidas", f"{int(r0['policies']):,}", help=f"Mes {r0['month']}")
+                with c_m2:
+                    st.metric("Prima emitida (Bs.)", f"{float(r0['premium_sum']):,.0f}", help="Suma prima anual en el mes")
+                st.caption(
+                    f"Mes de emisión (issue_date): **{r0['month']}** · Solo hay un período en los datos; "
+                    "el combo barras+línea no aporta, así que se muestran métricas."
+                )
+            else:
+                fig_e = make_subplots(specs=[[{"secondary_y": True}]])
+                fig_e.add_trace(
+                    go.Bar(x=months, y=pols, name="Pólizas emitidas", marker_color=brand_purple),
+                    secondary_y=False,
+                )
+                fig_e.add_trace(
+                    go.Scatter(
+                        x=months,
+                        y=prs,
+                        name="Prima emitida (Bs.)",
+                        mode="lines+markers",
+                        line=dict(color=accent_blue, width=2),
+                        marker=dict(size=8),
+                    ),
+                    secondary_y=True,
+                )
+                fig_e.update_xaxes(title_text="Mes de emisión (issue_date)")
+                fig_e.update_yaxes(title_text="Número de pólizas", secondary_y=False)
+                fig_e.update_yaxes(title_text="Suma prima anual (Bs.)", secondary_y=True)
+                fig_e.update_layout(legend=dict(orientation="h", y=1.12))
+                _brand_layout(fig_e, height=400)
+                st.plotly_chart(fig_e, use_container_width=True)
 
         c1, c2 = st.columns(2)
         ph = pack.get("premium_histogram") or {}

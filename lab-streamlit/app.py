@@ -204,13 +204,13 @@ def _fetch_kpi(
     return r.json()
 
 
-# —— Cabecera: logo grande centrado (sin tarjeta “Laboratorio analítico”) ——
-_, ctr, _ = st.columns([1, 2.2, 1])
-with ctr:
-    if _LOGO_FE1.is_file():
-        st.image(str(_LOGO_FE1), use_container_width=True)
-    else:
-        st.markdown("### Insurance Intelligence Hub")
+# —— Cabecera compacta (el logo va en la barra lateral, abajo) ——
+st.markdown(
+    f'<p style="text-align:center;font-size:1.45rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.35rem 0;">'
+    "Insurance Intelligence Hub</p>"
+    '<p style="text-align:center;color:#64748b;font-size:0.95rem;margin:0 0 0.75rem 0;">Laboratorio · visualización</p>',
+    unsafe_allow_html=True,
+)
 
 base = _api_base()
 upload_path = _admin_upload_hint()
@@ -710,6 +710,12 @@ else:
                             mime="text/csv",
                             key="dl_cuad_mk",
                         )
+
+with st.sidebar:
+    st.markdown("---")
+    if _LOGO_FE1.is_file():
+        st.image(str(_LOGO_FE1), width=108)
+    st.caption("Seguros La Fe · demo IIH")
 
 st.caption(
     "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · Insurance Intelligence Hub (demo técnico)."
