@@ -69,3 +69,13 @@ def upload_claims(request):  # noqa: ANN001
             except Exception as e:
                 context["error"] = str(e)
     return TemplateResponse(request, "admin/upload_claims.html", context)
+
+
+@staff_member_required
+def data_model(request):  # noqa: ANN001
+    """Documentación del modelo lógico en PostgreSQL/Supabase (diagramas + tablas)."""
+    context = {
+        **admin.site.each_context(request),
+        "title": "Modelo de datos y flujos",
+    }
+    return TemplateResponse(request, "admin/data_model.html", context)

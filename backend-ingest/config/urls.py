@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from django.views.generic import RedirectView
 
-from core.views import upload_claims, upload_policies
+from core.views import data_model, upload_claims, upload_policies
 
 admin.site.site_header = "Portal BI Ejecutivo · La Fe"
 admin.site.site_title = "Admin · IIHub La Fe"
@@ -12,5 +12,6 @@ urlpatterns = [
     path("", RedirectView.as_view(pattern_name="admin:index", permanent=False)),
     path("admin/upload-policies/", upload_policies, name="upload_policies"),
     path("admin/upload-claims/", upload_claims, name="upload_claims"),
+    path("admin/data-model/", data_model, name="data_model_doc"),
     path("admin/", admin.site.urls),
 ]

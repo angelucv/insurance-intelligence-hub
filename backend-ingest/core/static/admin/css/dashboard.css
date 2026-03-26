@@ -77,9 +77,9 @@ body.dashboard #content {
 .iihub-suite-map__img {
   display: block;
   width: 100%;
-  max-width: 100%;
+  max-width: 100% !important;
   height: auto;
-  min-width: 0;
+  min-width: 0 !important;
   min-height: 0;
   object-fit: contain;
   object-position: top center;

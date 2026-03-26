@@ -138,6 +138,37 @@ object,
   color: var(--iihub-accent);
 }
 
+/* Diagramas y figuras en el contenido del Admin: nunca desbordan el ancho útil (Supabase, PNG, etc.). */
+#content img,
+main.content img {
+  max-width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+#content figure,
+main.content figure {
+  margin: 1rem 0;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.iihub-img-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+img.iihub-fluid-img {
+  display: block;
+  width: 100%;
+  max-width: 100% !important;
+  height: auto;
+}
+
 .iihub-admin-footer {
   margin-top: 2rem;
   padding: 1.25rem 0 0;

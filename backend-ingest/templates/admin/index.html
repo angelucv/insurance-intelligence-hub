@@ -95,6 +95,10 @@
       <span class="iihub-card__hint">{% translate "KPI y cartera (solo lectura)" %}</span>
     </a>
     {% endif %}
+    <a href="{% url 'data_model_doc' %}" class="iihub-card iihub-card--ghost">
+      <span class="iihub-card__label">{% translate "Modelo de datos" %}</span>
+      <span class="iihub-card__hint">{% translate "Diagramas y tablas en PostgreSQL / SUDEASEG" %}</span>
+    </a>
   </div>
 </section>
 
@@ -117,6 +121,7 @@
       {% if streamlit_lab_url %}
       <li><a href="{{ streamlit_lab_url }}" target="_blank" rel="noopener noreferrer">{% translate "Laboratorio Streamlit" %}</a></li>
       {% endif %}
+      <li><a href="{% url 'data_model_doc' %}">{% translate "Modelo de datos y flujos (Supabase)" %}</a></li>
       {% if compute_api_public_hint %}
       <li><span class="iihub-quiet">{{ compute_api_public_hint }}</span></li>
       {% endif %}

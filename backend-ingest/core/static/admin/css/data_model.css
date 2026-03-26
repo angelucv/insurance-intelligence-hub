@@ -1,0 +1,98 @@
+/* Página «Modelo de datos» — tipografía y tablas resumen */
+
+.iihub-doc {
+  max-width: 56rem;
+  min-width: 0;
+}
+
+.iihub-doc__lead {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0 0 1.25rem;
+}
+
+.iihub-doc h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 2rem 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.iihub-doc h2:first-of-type {
+  margin-top: 0;
+}
+
+.iihub-doc__figure {
+  margin: 1rem 0 1.5rem;
+}
+
+.iihub-doc__caption {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+  line-height: 1.45;
+}
+
+.iihub-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 0.75rem 0 1.25rem;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.iihub-doc table thead {
+  background: #f8fafc;
+}
+
+.iihub-doc th,
+.iihub-doc td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.iihub-doc code {
+  font-size: 0.78rem;
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.iihub-doc ul {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+@media (prefers-color-scheme: dark) {
+  .iihub-doc h2 {
+    color: #f1f5f9;
+  }
+
+  .iihub-doc__lead,
+  .iihub-doc ul {
+    color: #cbd5e1;
+  }
+
+  .iihub-doc th,
+  .iihub-doc td {
+    border-color: #334155;
+  }
+
+  .iihub-doc table thead {
+    background: #1e293b;
+  }
+
+  .iihub-doc code {
+    background: #334155;
+    color: #e2e8f0;
+  }
+}
