@@ -528,8 +528,10 @@ with st.sidebar:
     if _SUITE_MAP_IMG.is_file():
         with st.expander("Mapa de la suite · estás aquí", expanded=False):
             st.caption(
-                "Estás en el laboratorio analítico BI (Streamlit): exploración y detalle vía la misma API. "
-                "La carga de archivos se hace en el panel de operaciones (Django Admin), no en esta app."
+                "Estás en el laboratorio analítico BI: exploración y detalle vía el mismo servicio de datos que el portal ejecutivo. "
+                "Incluye una sección de lienzo donde puedes arrastrar campos, filtrar y armar vistas al estilo autoservicio "
+                "(similar en espíritu a Power BI), sin depender de un Excel aparte. "
+                "La carga de archivos y la gestión de usuarios de operaciones están en el panel Django Admin, no aquí."
             )
             st.image(str(_SUITE_MAP_IMG), use_container_width=True)
     st.divider()

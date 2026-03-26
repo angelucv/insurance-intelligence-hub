@@ -128,102 +128,109 @@ TAB_CARTERA = "Mi cartera"
 TAB_MERCADO = "Mercado SUDEASEG"
 TAB_SUITE = "La suite"
 
-# Vista documentación / demo (mapa del ecosistema)
-SUITE_PAGE_HEADING = "Mapa de la suite"
-# Infografía contextual (variante Reflex: resaltado portal ejecutivo)
-SUITE_MAP_HEADING = "Tu lugar en la suite"
-SUITE_MAP_ALT_REFLEX = (
-    "Diagrama de la arquitectura IIHub; resaltado: portal ejecutivo de BI (Reflex)."
-)
+# Vista documentación / demo (tono ejecutivo-formal)
+SUITE_PAGE_HEADING = "Demostración · documentación de la suite"
+# Infografía 1: mapa (variante Reflex resaltada)
+SUITE_MAP_HEADING = "1. Ubicación actual (este portal)"
+SUITE_MAP_ALT_REFLEX = "Mapa de la arquitectura; resaltado: portal ejecutivo de consulta de indicadores."
 SUITE_MAP_CAPTION_REFLEX = (
-    "Estás en el portal ejecutivo de BI: KPI, cartera y mercado en lectura vía API. "
-    "La carga manual de pólizas y siniestros (CSV/Excel) se hace en el panel de operaciones."
+    "La vista actual corresponde al **portal ejecutivo**: módulos **Mi cartera** y **Mercado** con representaciones gráficas e indicadores. "
+    "Los datos se obtienen mediante un **servicio de datos** cifrado (HTTPS); la **carga de ficheros** (pólizas y siniestros) se realiza en el **panel de operaciones**."
+)
+# Infografía 2 y 3: argumentario para presentación
+SUITE_COMPARISON_HEADING = "2. Enfoque basado en tablero frente a suite integral"
+SUITE_COMPARISON_ALT = "Comparación entre un enfoque centrado en tableros y una suite con ingesta, almacén y servicio de datos."
+SUITE_COMPARISON_CAPTION = (
+    "**Microsoft Power BI** y soluciones afines destacan en **visualización y autoservicio** sobre información previamente preparada. "
+    "**La presente suite** incorpora el **proceso de extremo a extremo**: ingesta validada, **almacén unificado**, **motor de cálculo de indicadores** y **dos capas de presentación analítica**. "
+    "Ambos enfoques no son excluyentes: numerosas organizaciones combinan **suite de datos** y **tablero corporativo**."
+)
+SUITE_HEART_HEADING = "3. Proceso de datos previo a la capa gráfica"
+SUITE_HEART_ALT = "Secuencia: ingesta, almacén, cómputo y aplicaciones Reflex y Streamlit."
+SUITE_HEART_CAPTION = (
+    "Sin **ingesta ordenada**, **repositorio único** y **reglas de cálculo centralizadas**, el cuadro de mando carece de sustento consistente. "
+    "La **visualización** constituye la capa final; el **proceso de datos** es el que garantiza **coherencia numérica** entre usuarios."
 )
 HEADER_SUB_SUITE = (
-    "Núcleo: Postgres + carga manual (CSV/Excel) y API de cómputo; Reflex y Streamlit leen vía HTTPS, no SQL desde el navegador."
+    "Núcleo actuarial integrado: operaciones con control de acceso, almacén PostgreSQL, servicio de indicadores y analítica "
+    "(portal ejecutivo y laboratorio). Despliegue demostrativo en nube; arquitectura adaptable a entorno on-premise."
 )
 SUITE_ARCHITECTURE_MD = """
-### Idea central
+### Contenido de esta sección
 
-**PostgreSQL** es el **núcleo persistente**: tablas de pólizas, lotes de carga y (según migraciones) mercado SUDEASEG. El **API de cómputo** (FastAPI en `backend-compute`) **lee** esa base para KPI, cohortes y series; **escribe** en ella cuando entra una ingesta por API. Las pantallas **no** abren conexión SQL directa: **Reflex** y **Streamlit** llaman al mismo **API HTTP** (`COMPUTE_API_URL`).
+El texto que sigue tiene carácter de **documentación ejecutiva** para la demostración: describe el alcance de la suite, define el **servicio de datos (interfaz de programación de aplicaciones, API)** en formulación comprensible para el negocio y establece el **posicionamiento** frente a una solución limitada a cuadros de mando (p. ej. **Microsoft Power BI**).
 
-### Núcleo ampliado: carga → base → API → UIs
+### Definición sintética del “core actuarial”
 
-**1. Carga manual de información (operativa típica)**  
-En **Django Admin** (`backend-ingest`) los formularios *Carga de pólizas* y *Carga de siniestros* aceptan **CSV** y **Excel** (`.xlsx` / `.xls`). Los datos se validan con **Pydantic** (contratos compartidos) y se insertan en Postgres (p. ej. `policies`, `claims`, lotes en `upload_batches`). Es el camino habitual en demo: subir fichero → ver KPI en Reflex/Streamlit tras refrescar.
+Constituye un **conjunto integrado y escalable**: se **ingieren y consolidan** datos (pólizas, siniestros y, según el caso, series de mercado); un **servicio centralizado** calcula y expone **indicadores homogéneos**; a continuación, **dos aplicaciones web** —portal ejecutivo y laboratorio analítico— **consultan dichos resultados** mediante canales seguros. El modelo permite **incrementar volumen y reglas** sin dispersar la lógica crítica en ficheros locales.
 
-**2. Ingesta alternativa por API (automatización / integraciones)**  
-El mismo servicio FastAPI expone **`POST /api/v1/ingest/policies`** (multipart con fichero `.csv` / `.xlsx`), protegido con cabecera **`X-API-Key`**. Escribe en las **mismas tablas** que la carga manual; el núcleo sigue siendo la misma base.
+La **arquitectura de software** es **parametrizable** según organización (reglas, textos, despliegue). Buena parte de los componentes de referencia son de **código abierto** y admiten despliegue en **entornos de nube de coste contenido**, en función del proveedor y del volumen transaccional.
 
-**3. API que alimenta la lectura (desde la base hacia las apps)**  
-`backend-compute` consulta Postgres (SELECT y agregados; DuckDB donde aplica) y publica endpoints REST: **`/api/v1/kpi/...`**, mercado SUDEASEG, etc. Esa es la **puerta de lectura** que usan el portal y el laboratorio en la arquitectura recomendada.
+### Cores tradicionales en seguros (Acsel/x, Rector) y aportación de la presente suite
 
-**4. De la base de datos a Reflex y a Streamlit**  
-- **Reflex** (este portal) y **Streamlit** (`lab-streamlit`) son clientes **HTTPS** contra **`COMPUTE_API_URL`**.  
-- Enlaces opcionales: `STREAMLIT_LAB_URL` en Reflex, `PORTAL_REFLEX_URL` en Streamlit, `DJANGO_ADMIN_BASE_URL` para ir a la carga.  
-- No hace falta “conectar la BD” en el front: basta con la URL pública del API y, para carga, la del Admin.
+En **Latinoamérica** y en **Venezuela**, numerosas aseguradoras sustentan la operación en **sistemas core** consolidados. Entre los referentes de mayor difusión figuran:
 
-### Cómo nombrar herramientas (recomendación para demos)
+- **Acsel/x** — oferta de **Consis International**: plataforma de gestión aseguradora (pólizas, siniestros, cobranzas, canales, contabilidad, entre otros), con implantación regional amplia.
+- **Rector** — solución de **Indra** para administración de seguros (emisión, reservas técnicas, reaseguro, entre otros), presente asimismo en el mercado venezolano y regional.
 
-- **En diagramas ejecutivos:** nombra **capas y productos** que despliegas (**PostgreSQL**, **FastAPI**, **Django Admin**, **Reflex**, **Streamlit**). Responde “qué piezas existen” sin saturar.
-- **Evita** en la infografía principal una lista larga de librerías (Plotly, pandas, httpx…): mejor en README o documentación técnica.
-- **Versiones** de runtime: en guías de despliegue, no en el dibujo de negocio.
-- Si la audiencia es **no técnica**, prioriza **roles** (“carga de datos”, “portal ejecutivo”, “laboratorio BI”) y deja marcas en segundo plano o en un pie.
+Dichas soluciones constituyen el **sistema de registro operativo**. **La presentación demostrativa no sustituye de forma integral un despliegue Acsel/x o Rector**: sustituye la **capa paralela informal** habitual —**hojas de cálculo, bases de escritorio y extractos manuales** para actuaría, reporting y seguimiento—, con el **riesgo asociado a versiones divergentes** entre unidades.
 
-### Flujo de datos (resumen)
+**Lo que aporta el “core actuarial” aquí descrito:** **ingesta validada**, **PostgreSQL** como repositorio analítico, **servicio unificado de indicadores** y **capa de inteligencia de negocio** (portal y laboratorio). La solución puede **coexistir** con el core legado (alimentación vía ficheros, integraciones posteriores) o evaluarse como **capa de datos** conforme a la política de cada entidad.
 
-1. **Ingesta** — Admin (CSV/XLSX) **o** `POST /api/v1/ingest/policies` → Postgres.
-2. **Cómputo** — FastAPI expone KPI, cohortes y mercado SUDEASEG (cuando hay datos y migraciones).
-3. **Consumo** — Reflex y Streamlit consumen **el API** por HTTPS; misma línea de datos, distinta UX.
+### Funcionalidades objeto de la demostración
 
-### Dónde “arranca” cada rol
+| Área | Alcance |
+|------|---------|
+| **Panel de operaciones** (personal autorizado) | **Autenticación** y administración de acceso; **ingesta** de pólizas y siniestros (CSV/Excel) con validación y **lotes trazables**; **consultas en solo lectura** con **criterios de búsqueda, filtrado y ordenación** para revisión de casos (año, estado, fechas, entre otros). El diseño apunta a **sustituir el entorno paralelo Excel/Access** junto al núcleo operativo (p. ej. coexistiendo con **Acsel/x** o **Rector**), no a replicar la totalidad del core tradicional en una única interfaz. |
+| **Almacén de datos** | **PostgreSQL** como motor principal (en el escenario demostrativo, habitualmente **en nube**, p. ej. Supabase u homólogo); el esquema puede desplegarse en **infraestructura local** si la política corporativa lo requiere. **Historización única** de maestros; coherencia entre indicadores y origen. |
+| **Servicio de datos** (“API”) | Componente que **atiende solicitudes** con KPI, cohortes y series de mercado **precalculados**. Las aplicaciones cliente **no acceden directamente** al motor de base de datos: **interrogan únicamente** al servicio mediante **HTTPS**. |
+| **Este portal** | **Mi cartera**: indicadores, métricas y gráficos de composición. **Mercado SUDEASEG**: series y comparativas con referencia pública. Orientado a **consulta ejecutiva expedita** (incluido acceso móvil). |
+| **Laboratorio analítico** (enlace en el menú) | Además de visualizaciones y tabulados predefinidos, incorpora un módulo de **exploración tipo lienzo** que permite **definir dimensiones, filtros y vistas** en modalidad análoga al **autoservicio** de Power BI, sobre la misma información servida por la API (sin dependencia de ficheros Excel externos). **Consistencia numérica** con el portal ejecutivo. |
 
-| Rol | Punto de entrada natural |
-|-----|---------------------------|
-| **Carga de datos** | Django Admin → *Carga de pólizas / siniestros* (CSV/Excel) |
-| **Ingesta por integración** | `POST /api/v1/ingest/policies` + API key (misma BD) |
-| **Lectura ejecutiva (esta demo)** | **Reflex** → *Mi cartera* / *Mercado* |
-| **Análisis exploratorio** | Streamlit (*Análisis BI detallado* en el menú) |
+### El servicio de datos (API) en términos de negocio
 
-No hay una única URL obligatoria: la suite es **un core de datos** con **varias aplicaciones** alrededor.
+Puede conceptualizarse como un **punto único de solicitud** de información: ante una petición del tipo «resumen de cartera del año X», el servidor devuelve un conjunto de datos **homogéneo y validado**, evitando divergencias de cálculo entre aplicaciones. En términos técnicos se implementa como **API REST** sobre **HTTPS**; desde la perspectiva de negocio constituye la **interfaz oficial** para indicadores y series.
 
-### Diagrama lógico (Mermaid)
+### Despliegue: entornos en nube y on-premise
 
-Si tu visor Markdown renderiza Mermaid (p. ej. GitHub, VS Code), verás el diagrama; si no, copia el bloque a [mermaid.live](https://mermaid.live).
+La **demostración** se exhibe habitualmente **en infraestructura de nube** (coste y despliegue acotados). La arquitectura admite **traslado a instalación local** o nube privada: mismos componentes (panel de operaciones, PostgreSQL, servicio de datos, aplicaciones de presentación), con políticas de red, seguridad y respaldo acordes al entorno.
 
-```mermaid
-flowchart TB
-  subgraph entrada["Hacia PostgreSQL"]
-    DJ["Django Admin · CSV / XLSX"]
-    ING["POST /api/v1/ingest/policies · X-API-Key"]
-  end
-  PG[("PostgreSQL · núcleo")]
-  DJ -->|INSERT validado| PG
-  ING -->|INSERT validado| PG
-  API["FastAPI · KPI / mercado / cohortes"]
-  PG -->|SELECT| API
-  RF["Portal Reflex · HTTPS"]
-  ST["Streamlit · HTTPS"]
-  API -->|COMPUTE_API_URL| RF
-  API -->|COMPUTE_API_URL| ST
-```
+### Diferenciación frente a una solución exclusivamente orientada a tableros
 
-### Componentes del repositorio (monorepo)
+**Microsoft Power BI** constituye un referente en **visualización y autoservicio de inteligencia de negocio** sobre datos conectados o previamente modelados; en numerosas organizaciones desempeña la función de **capa de presentación** corporativa.
 
-- **`backend-ingest`** — Django: formularios de carga manual, listados de solo lectura.
-- **`backend-compute`** — FastAPI: `/api/v1/kpi/...`, mercado SUDEASEG, ingest `/api/v1/ingest/policies`.
-- **`portal-reflex`** — Este portal (KPI, Plotly, series).
-- **`lab-streamlit`** — Laboratorio exploratorio vía mismo API.
-- **`shared`** — Contratos Pydantic compartidos entre ingesta y API.
+La **presentación demostrativa** incorpora, además, **ingesta controlada**, **repositorio unificado**, **cálculo centralizado** y **dos modalidades de análisis**. Las figuras precedentes ilustran la **comparación de enfoques** y la **secuencia previa a la visualización**.
 
-### Variables de entorno típicas
+**Ventajas recurrentes frente a una arquitectura basada únicamente en tableros** (sin menoscabar el valor de Power BI):
 
-- **`DATABASE_URL`** — Postgres (compartida por Django y API de cómputo).
-- **`COMPUTE_API_URL`** — Base del API; Reflex y Streamlit la usan para leer datos.
-- **`INGEST_API_KEY`** (servidor) — Protege el endpoint de ingestión por API.
-- Enlaces a **Admin** y **Streamlit** se resuelven en runtime (`DJANGO_ADMIN_BASE_URL`, `STREAMLIT_LAB_URL`, etc.).
+- **Trazabilidad**: cada ingesta genera **lote** y registro de auditoría; no únicamente una actualización de informe sin trazabilidad del fichero fuente.
+- **Fuente única de verdad** para los indicadores servidos; reducción del riesgo de **discrepancias entre cuadros de mando homólogos**.
+- **Coste y soberanía tecnológica**: ecosistema abierto y despliegues accesibles; las soluciones propietarias habituales implican **licenciamiento y gobierno** (enfoques complementarios, no excluyentes).
+- **Control del proceso**: reglas y validaciones **previas** a la materialización gráfica.
+- **Gobernanza frente al uso paralelo de herramientas ofimáticas**: menor exposición cuando los indicadores residen en **Excel** desarticulados del **core** (**Acsel/x**, **Rector** u otro).
 
-*Texto orientado a demo académica; validar siempre cifras operativas en sistemas oficiales.*
+**Ventajas complementarias del enfoque “core actuarial”** frente a cadenas exclusivamente ofimáticas adyacentes al core:
+
+- **Reproducibilidad**: reglas homogéneas en servidor para **ingesta, cómputo y consulta**; independiente del usuario que mantenga abierto un determinado fichero `.xlsx`.
+- **Canal único para aplicaciones**: portal ejecutivo, laboratorio y consumidores futuros acceden al **mismo servicio de datos**, no a réplicas inconsistentes.
+- **Escalabilidad técnica**: PostgreSQL y servicios sin estado de sesión escalan con la organización; sin la limitación inherente a ficheros compartidos o bases de escritorio.
+- **Menor acoplamiento a un único proveedor de visualización**: la capa gráfica resulta **sustituible**; el activo reside en **datos y reglas centralizadas**.
+
+**Coexistencia con Power BI**: es frecuente alimentar el tablero corporativo desde el **mismo almacén o canal de datos** que una suite de este tipo.
+
+### Ubicación por rol
+
+| Rol | Punto de acceso |
+|-----|-----------------|
+| **Ingesta y revisión de casos** | Panel de operaciones → carga de pólizas / siniestros; listados filtrados |
+| **Lectura ejecutiva** | Este portal → **Mi cartera** / **Mercado** |
+| **Análisis exploratorio y autoservicio tipo lienzo** | **Análisis BI detallado** (laboratorio), menú principal |
+
+### Anexo (ámbito técnico)
+
+Repositorios (`backend-ingest`, `backend-compute`, `portal-reflex`, `lab-streamlit`), definición de endpoints y variables de entorno: documentación del proyecto. Dicho detalle no resulta imprescindible para la **exposición del valor para el negocio**.
+
+*Las cifras operativas deben contrastarse siempre con los sistemas oficiales de registro.*
 """
 
 # Pie

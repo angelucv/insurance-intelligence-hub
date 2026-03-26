@@ -12,27 +12,30 @@
 {% block content %}
 <div class="iihub-dashboard-hero">
   <p class="iihub-dashboard-lead">
-    {% blocktranslate %}Este panel concentra la <strong>ingestión</strong> de maestros y la <strong>consulta</strong> de lo ya cargado. La misma base PostgreSQL alimenta el API de cómputo (KPI, cohortes) y el portal Reflex (visualización).{% endblocktranslate %}
+    {% blocktranslate %}Aquí se <strong>cargan y consultan</strong> datos maestros (pólizas y siniestros) con <strong>usuario y contraseña</strong>, y se <strong>filtran y buscan</strong> casos ya registrados. En el sector asegurador, los <strong>cores operativos</strong> habituales incluyen soluciones como <strong>Acsel/x</strong> (Consis) o <strong>Rector</strong> (Indra); este panel no sustituye ese core completo, pero sí el <strong>paralelo en Excel/Access</strong> que muchas áreas usan para cuadros y seguimiento. Lo que suba o consulte aquí alimenta el mismo <strong>PostgreSQL</strong> (en este entorno en la nube; puede montarse en servidor local) que usa el <strong>servicio de indicadores</strong> y las pantallas de solo lectura del portal ejecutivo y del laboratorio analítico.{% endblocktranslate %}
   </p>
 </div>
 
 <section class="iihub-suite-map" aria-labelledby="iihub-suite-map-title">
   <h2 id="iihub-suite-map-title" class="iihub-guide__main-title">{% translate "Tu lugar en la suite" %}</h2>
-  <figure class="iihub-suite-map__figure">
-    <img
-      src="{% static 'admin/img/suite-arquitectura-django.png' %}"
-      alt="{% translate 'Diagrama de la arquitectura; resaltado: panel de operaciones y carga de datos.' %}"
-      width="1200"
-      loading="lazy"
-      class="iihub-suite-map__img"
-    />
-    <figcaption class="iihub-suite-map__caption">
-      {% blocktranslate %}
-        Está en el <strong>panel de operaciones</strong>: autenticación y carga manual de pólizas y siniestros (CSV/Excel).
-        Los KPI y visualizaciones de lectura están en el portal ejecutivo (Reflex) y en el laboratorio analítico (Streamlit), ambos vía API.
-      {% endblocktranslate %}
-    </figcaption>
-  </figure>
+  <p class="iihub-suite-map__intro">{% translate "Deslice horizontalmente en el móvil si el mapa es más ancho que la pantalla." %}</p>
+  <div class="iihub-suite-map__scroll" role="region" aria-label="{% translate 'Mapa de la suite' %}">
+    <figure class="iihub-suite-map__figure">
+      <img
+        src="{% static 'admin/img/suite-arquitectura-django.png' %}"
+        alt="{% translate 'Mapa de la suite; resaltado: panel de operaciones y carga de archivos.' %}"
+        loading="lazy"
+        decoding="async"
+        sizes="(max-width: 640px) 100vw, min(1200px, 100vw)"
+        class="iihub-suite-map__img"
+      />
+      <figcaption class="iihub-suite-map__caption">
+        {% blocktranslate %}
+          <strong>Usted está en el panel de operaciones</strong> (carga y consulta con trazabilidad). Los indicadores de lectura están en el portal ejecutivo y en el laboratorio; el mismo flujo evita depender solo de Excel/Access al lado del core tradicional (Acsel/x, Rector u otro).
+        {% endblocktranslate %}
+      </figcaption>
+    </figure>
+  </div>
 </section>
 
 <section class="iihub-guide" aria-labelledby="iihub-guide-title">
@@ -51,7 +54,7 @@
     <article class="iihub-guide-card">
       <h3 class="iihub-guide-card__title">{% translate "Consulta y listados" %}</h3>
       <ul class="iihub-guide-list">
-        <li>{% translate "En «Pólizas» y «Siniestros» puede buscar, filtrar y ordenar registros ya persistidos (vista de solo lectura)." %}</li>
+        <li>{% blocktranslate %}En «Pólizas» y «Siniestros» puede <strong>buscar, filtrar y ordenar</strong> registros ya persistidos (vista de solo lectura), con el mismo criterio de datos que alimenta los tableros: menos riesgo de divergencia que con listas en Excel paralelas.{% endblocktranslate %}</li>
         <li>{% translate "No está habilitado crear, editar ni eliminar desde este Admin: los datos llegan por archivos o por API de ingestión según su política." %}</li>
         <li>{% translate "Use los filtros laterales (año, estado, fechas) para acotar listas grandes." %}</li>
       </ul>
@@ -69,7 +72,7 @@
       <h3 class="iihub-guide-card__title">{% translate "Otros entornos" %}</h3>
       <ul class="iihub-guide-list">
         <li>{% blocktranslate %}<strong>Portal Reflex:</strong> KPI, tacómetros y gráficos de cartera/mercado sobre los mismos datos (solo lectura).{% endblocktranslate %}</li>
-        <li>{% blocktranslate %}<strong>Streamlit:</strong> laboratorio BI exploratorio si está configurado (variable de entorno).{% endblocktranslate %}</li>
+        <li>{% blocktranslate %}<strong>Laboratorio analítico:</strong> gráficos, tablas y un lienzo de exploración tipo autoservicio (mismos datos que este almacén); la carga sigue siendo aquí.{% endblocktranslate %}</li>
         <li>{% translate "El API de cómputo se consume con URL y claves definidas en cada despliegue, no desde esta pantalla." %}</li>
       </ul>
     </article>
