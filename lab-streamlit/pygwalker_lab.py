@@ -156,7 +156,9 @@ def render_table_picker_and_walker(
         index=0,
         key=select_key,
     )
-    df = tables.get(pick) or pd.DataFrame()
+    df = tables.get(pick)
+    if df is None:
+        df = pd.DataFrame()
     st.caption(
         f"**{pick}** · {len(df):,} filas × {len(df.columns)} columnas. "
         "Arrastre dimensiones y medidas en el lienzo PyGWalker."
