@@ -277,18 +277,6 @@ La **presentación demostrativa** incorpora, además, **ingesta controlada**, **
 **Coexistencia con Power BI**: es frecuente alimentar el tablero corporativo desde el **mismo almacén o canal de datos** que una suite de este tipo.
 """
 
-SUITE_MD_BLOCK8 = """
-### Ubicación por rol
-
-| Rol | Punto de acceso |
-|-----|-----------------|
-| **Ingesta y revisión de casos** | Panel de operaciones → carga de pólizas / siniestros; listados filtrados |
-| **Lectura ejecutiva** | Este portal → **Mi cartera** / **Mercado** |
-| **Análisis exploratorio y autoservicio tipo lienzo** | **Análisis BI detallado** (laboratorio), menú principal |
-
-*Las cifras operativas deben contrastarse siempre con los sistemas oficiales de registro.*
-"""
-
 # Textos emparejados con cada infografía (vista documentación completa)
 SUITE_PAIR1_MD = "\n\n".join([SUITE_MD_BLOCK1, SUITE_MD_BLOCK4])
 SUITE_PAIR3_MD = "\n\n".join([SUITE_MD_BLOCK2, SUITE_MD_BLOCK5, SUITE_MD_BLOCK6])
@@ -299,7 +287,6 @@ SUITE_ARCHITECTURE_MD = "\n\n".join(
         SUITE_MD_BLOCK7,
         SUITE_PAIR3_MD,
         SUITE_MD_BLOCK3,
-        SUITE_MD_BLOCK8,
     ]
 )
 
@@ -309,7 +296,6 @@ SUITE_TOC_ENTRIES: list[tuple[str, str]] = [
     ("suite-2", "Tablero vs suite"),
     ("suite-3", "Proceso y plataforma"),
     ("suite-cores", "Cores tradicionales"),
-    ("suite-roles", "Roles"),
 ]
 
 # Errores API — cartera / mercado

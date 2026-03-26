@@ -259,7 +259,7 @@ def _suite_infographics() -> rx.Component:
 
 
 def _suite_doc_blocks_full() -> rx.Component:
-    """Documentación completa: cada infografía principal va con su texto; luego cores y roles."""
+    """Documentación completa: cada infografía principal va con su texto; luego bloque de cores."""
     return rx.fragment(
         _suite_pair_section(
             "suite-1",
@@ -289,7 +289,6 @@ def _suite_doc_blocks_full() -> rx.Component:
             loading="lazy",
         ),
         _suite_block3_with_figure(),
-        _md_block("suite-roles", copy.SUITE_MD_BLOCK8, 4),
     )
 
 
