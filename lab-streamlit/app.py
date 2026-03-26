@@ -1,4 +1,4 @@
-"""Laboratorio: visualización rica (Plotly) + KPIs API; carga solo vía Django Admin."""
+"""App Streamlit: KPIs y mercado SUDEASEG vía API compute; carga de datos vía Django Admin."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from cohort_visuals import (
 )
 
 st.set_page_config(
-    page_title="Insurance Intelligence Hub — Laboratorio",
+    page_title="Insurance Intelligence Hub",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -37,6 +37,50 @@ _LOGO_FE1 = Path(__file__).resolve().parent / "assets" / "logo-fe-1.jpg"
 _BRAND_PURPLE = "#7029B3"
 _BRAND_DEEP = "#5a1f94"
 _MARKET_TOTAL_LINE = "#0284c7"
+
+# Estilo barra lateral: navegación tipo pestañas / bloques ejecutivos
+st.markdown(
+    f"""
+    <style>
+      [data-testid="stSidebar"] section[data-testid="stSidebarContent"] {{
+        background: linear-gradient(180deg, #faf8fc 0%, #ffffff 48%);
+      }}
+      [data-testid="stSidebar"] .block-container {{
+        padding-top: 1.25rem;
+      }}
+      [data-testid="stSidebar"] div[data-baseweb="radio"] > div {{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.4rem;
+      }}
+      [data-testid="stSidebar"] div[data-baseweb="radio"] label {{
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.65rem 0.85rem;
+        margin: 0 !important;
+        background: #ffffff;
+        font-weight: 600;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }}
+      [data-testid="stSidebar"] div[data-baseweb="radio"] label[aria-checked="true"] {{
+        border-color: {_BRAND_PURPLE};
+        background: linear-gradient(135deg, #f5edfc 0%, #ffffff 55%);
+        color: {_BRAND_DEEP};
+        box-shadow: 0 1px 3px rgba(112, 41, 179, 0.12);
+      }}
+      [data-testid="stSidebar"] .nav-section-title {{
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin: 0.75rem 0 0.35rem 0;
+      }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def _api_base() -> str:
@@ -195,21 +239,19 @@ def _fetch_kpi(
 
 # —— Cabecera: logo al lado del título (misma fila) ——
 if _LOGO_FE1.is_file():
-    _col_logo, _col_title = st.columns([0.95, 4.5], gap="small")
+    _col_logo, _col_title = st.columns([1.15, 4.5], gap="small")
     with _col_logo:
-        st.image(str(_LOGO_FE1), width=82)
+        st.image(str(_LOGO_FE1), width=132, use_container_width=False)
     with _col_title:
         st.markdown(
-            f'<p style="font-size:1.42rem;font-weight:700;color:{_BRAND_DEEP};margin:0.35rem 0 0.15rem 0;line-height:1.2;">'
-            "Insurance Intelligence Hub</p>"
-            '<p style="color:#64748b;font-size:0.95rem;margin:0;">Laboratorio · visualización</p>',
+            f'<p style="font-size:1.42rem;font-weight:700;color:{_BRAND_DEEP};margin:0.55rem 0 0.15rem 0;line-height:1.2;">'
+            "Insurance Intelligence Hub</p>",
             unsafe_allow_html=True,
         )
 else:
     st.markdown(
-        f'<p style="font-size:1.42rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.15rem 0;">'
-        "Insurance Intelligence Hub</p>"
-        '<p style="color:#64748b;font-size:0.95rem;margin:0 0 0.85rem 0;">Laboratorio · visualización</p>',
+        f'<p style="font-size:1.42rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.85rem 0;">'
+        "Insurance Intelligence Hub</p>",
         unsafe_allow_html=True,
     )
 
@@ -222,22 +264,38 @@ portal = _portal_reflex_url()
 _KPI_SEED_FALLBACK = 42
 _KPI_N_POLICIES_FALLBACK = 8000
 
+_COHORT_YEAR_OPTIONS = list(range(2025, 2022, -1))  # 2025 → 2023 (reciente primero)
+_MARKET_YEAR_MIN = 2023
+_MARKET_YEAR_MAX = 2025
+
 with st.sidebar:
-    st.markdown("### Vista")
+    st.markdown(
+        '<p class="nav-section-title">Ámbito</p>',
+        unsafe_allow_html=True,
+    )
     lab_module = st.radio(
-        "Seleccione",
+        "Ámbito",
         options=["cohorte", "mercado"],
-        format_func=lambda x: "Cartera (KPIs)" if x == "cohorte" else "Mercado SUDEASEG",
+        format_func=lambda x: "Cartera (KPIs y cartera)" if x == "cohorte" else "Mercado SUDEASEG",
         horizontal=False,
         label_visibility="collapsed",
     )
-    st.caption("Cartera: datos en Supabase por año. Mercado: series SUDEASEG.")
+    st.caption("Cartera: cohortes por año. Mercado: series oficiales (ventana 2023–2025).")
     st.divider()
     if lab_module == "cohorte":
-        cohort_year = st.slider("Año de la cohorte", 2019, 2026, 2022)
-        st.markdown("**Sección cartera**")
+        cohort_year = st.selectbox(
+            "Año de la cohorte",
+            options=_COHORT_YEAR_OPTIONS,
+            index=0,
+            help="Listado del año más reciente al más antiguo. Mínimo 2023.",
+        )
+        st.markdown(
+            '<p class="nav-section-title">Vista de cartera</p>',
+            unsafe_allow_html=True,
+        )
+        st.caption("Cada opción es una vista completa del módulo.")
         cohorte_seccion = st.radio(
-            "Navegación",
+            "Vista_cartera",
             options=["resumen", "analitica", "territorio"],
             format_func=lambda x: {
                 "resumen": "Resumen + tacómetros",
@@ -246,32 +304,31 @@ with st.sidebar:
             }[x],
             label_visibility="collapsed",
         )
-        m_from = m_to = 2023
+        m_from = _MARKET_YEAR_MIN
+        m_to = _MARKET_YEAR_MAX
         m_mode = "monthly_flow"
-        mercado_vista = "primas"
     else:
-        cohort_year = 2022
+        cohort_year = _COHORT_YEAR_OPTIONS[0]
         cohorte_seccion = "resumen"
-        st.markdown("**Series de mercado**")
-        m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1, key="sb_m_from")
-        m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1, key="sb_m_to")
+        st.markdown(
+            '<p class="nav-section-title">Series de mercado</p>',
+            unsafe_allow_html=True,
+        )
+        st.caption("Rango disponible: desde 2023 hasta 2025 (sin años futuros).")
+        _m_years = list(range(_MARKET_YEAR_MIN, _MARKET_YEAR_MAX + 1))
+        m_from = st.selectbox("Desde año", options=_m_years, index=0, key="sb_m_from")
+        _m_to_allowed = [y for y in _m_years if y >= m_from]
+        m_to = st.selectbox(
+            "Hasta año",
+            options=_m_to_allowed,
+            index=len(_m_to_allowed) - 1,
+            key="sb_m_to",
+        )
         m_mode = st.selectbox(
             "Modo temporal",
             options=["monthly_flow", "ytd"],
             format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)",
             key="sb_m_mode",
-        )
-        st.divider()
-        st.markdown("**Vista del mercado**")
-        mercado_vista = st.radio(
-            "Contenido principal",
-            options=["primas", "snapshot", "extendido", "cuadro"],
-            format_func=lambda x: {
-                "primas": "Primas vs mercado",
-                "snapshot": "Último cierre",
-                "extendido": "Métricas resumen",
-                "cuadro": "Cuadro de resultados",
-            }[x],
         )
 
 if lab_module == "cohorte":
@@ -413,13 +470,24 @@ else:
     st.caption(
         "SUDEASEG en Postgres (API compute). Miles de bolívares salvo ratios. "
         "Modo mensual = flujo del mes; YTD = acumulado a cierre de mes. "
-        "Ajusta rango y modo en la barra lateral; elige la vista abajo en el mismo menú."
+        "Use la barra lateral para el período (2023–2025); cada pestaña abajo es una sección de análisis."
     )
 
     if m_from > m_to:
         st.warning("Ajusta el rango de años (desde ≤ hasta).")
-    elif mercado_vista == "primas":
-            st.subheader("Primas netas: La Fe vs total de mercado")
+    else:
+        tab_primas, tab_snapshot, tab_extend, tab_cuadro = st.tabs(
+            [
+                "Primas vs mercado",
+                "Último cierre",
+                "Métricas resumen",
+                "Cuadro de resultados",
+            ]
+        )
+
+        with tab_primas:
+            st.markdown("##### Primas vs mercado")
+            st.caption("Comparación La Fe frente al total mercado en el rango y modo elegidos en la barra lateral.")
             try:
                 la_payload = _fetch_market_series(
                     base,
@@ -488,8 +556,9 @@ else:
                         st.write(la_payload.get("empresa_filter_note", ""))
                         st.write(tot_payload.get("empresa_filter_note", ""))
 
-    elif mercado_vista == "snapshot":
-            st.subheader("Último cierre con dato La Fe (YTD a ese mes)")
+        with tab_snapshot:
+            st.markdown("##### Último cierre")
+            st.caption("Instantánea YTD al último mes con dato La Fe (independiente del rango lateral).")
             try:
                 snap_r = requests.get(f"{base}/api/v1/market/la-fe/snapshot-latest", timeout=60)
                 snap_r.raise_for_status()
@@ -502,6 +571,7 @@ else:
                 lf = snap.get("la_fe") or {}
                 mk = snap.get("mercado_total") or {}
                 c1, c2, c3, c4 = st.columns(4)
+
                 def _mnum(x: Any, fmt: str = ",.2f") -> str:
                     if x is None:
                         return "—"
@@ -533,8 +603,9 @@ else:
                     mime="application/json",
                 )
 
-    elif mercado_vista == "extendido":
-            st.subheader("Serie extendida — resumen por empresa (La Fe)")
+        with tab_extend:
+            st.markdown("##### Métricas resumen")
+            st.caption("Serie extendida — resumen por empresa (La Fe) y comparación con totales de mercado.")
             try:
                 la_ext = _fetch_market_series(
                     base,
@@ -633,8 +704,9 @@ else:
                             key="dl_mk_ext",
                         )
 
-    elif mercado_vista == "cuadro":
-            st.subheader("Cuadro de resultados — La Fe vs total mercado")
+        with tab_cuadro:
+            st.markdown("##### Cuadro de resultados")
+            st.caption("La Fe frente al total mercado — líneas de resultado técnico y operativo.")
             try:
                 la_c = _fetch_market_series(
                     base,
@@ -717,7 +789,7 @@ with st.sidebar:
         )
     st.markdown("")
     if _LOGO_FE1.is_file():
-        st.image(str(_LOGO_FE1), width=108)
+        st.image(str(_LOGO_FE1), width=132, use_container_width=False)
     st.caption("Seguros La Fe · demo IIH")
 
 st.caption(

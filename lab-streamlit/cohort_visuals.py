@@ -422,7 +422,7 @@ def render_portfolio_pack(
     accent_blue: str,
 ) -> None:
     cy = pack["cohort_year"]
-    st.subheader("Laboratorio analítico de cartera")
+    st.subheader("Analítica de cartera")
     lr = pack.get("operational_loss_ratio_pct")
     st.caption(
         f"Cohorte **{cy}** · {pack['policies_total']:,} pólizas · {pack['claims_total']:,} siniestros · "
