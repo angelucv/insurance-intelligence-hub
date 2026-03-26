@@ -193,19 +193,25 @@ def _fetch_kpi(
     return r.json()
 
 
-# —— Cabecera: logo tamaño moderado + título ——
-_h_left, _h_mid, _h_right = st.columns([2.2, 1.35, 2.2])
-with _h_mid:
-    if _LOGO_FE1.is_file():
-        st.image(str(_LOGO_FE1), use_container_width=True)
-    else:
-        st.markdown("### Insurance Intelligence Hub")
-st.markdown(
-    f'<p style="text-align:center;font-size:1.35rem;font-weight:700;color:{_BRAND_DEEP};margin:0.15rem 0 0.2rem 0;">'
-    "Insurance Intelligence Hub</p>"
-    '<p style="text-align:center;color:#64748b;font-size:0.92rem;margin:0 0 0.85rem 0;">Laboratorio · visualización</p>',
-    unsafe_allow_html=True,
-)
+# —— Cabecera: logo al lado del título (misma fila) ——
+if _LOGO_FE1.is_file():
+    _col_logo, _col_title = st.columns([0.95, 4.5], gap="small")
+    with _col_logo:
+        st.image(str(_LOGO_FE1), width=82)
+    with _col_title:
+        st.markdown(
+            f'<p style="font-size:1.42rem;font-weight:700;color:{_BRAND_DEEP};margin:0.35rem 0 0.15rem 0;line-height:1.2;">'
+            "Insurance Intelligence Hub</p>"
+            '<p style="color:#64748b;font-size:0.95rem;margin:0;">Laboratorio · visualización</p>',
+            unsafe_allow_html=True,
+        )
+else:
+    st.markdown(
+        f'<p style="font-size:1.42rem;font-weight:700;color:{_BRAND_DEEP};margin:0 0 0.15rem 0;">'
+        "Insurance Intelligence Hub</p>"
+        '<p style="color:#64748b;font-size:0.95rem;margin:0 0 0.85rem 0;">Laboratorio · visualización</p>',
+        unsafe_allow_html=True,
+    )
 
 base = _api_base()
 upload_path = _admin_upload_hint()

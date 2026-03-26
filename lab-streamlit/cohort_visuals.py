@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import copy
+import json
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -10,6 +13,11 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 from plotly.subplots import make_subplots
+
+try:
+    import pydeck as pdk
+except ImportError:
+    pdk = None
 
 # Centroides aproximados (demo visual) — nombres alineados a `portfolio_analytics._VE_ESTADOS`
 VE_CENTROIDS: dict[str, tuple[float, float]] = {
@@ -39,40 +47,131 @@ VE_CENTROIDS: dict[str, tuple[float, float]] = {
     "Zulia": (9.0, -71.5),
 }
 
-def _paid_by_estado(rows: list[dict[str, Any]]) -> dict[str, float]:
-    """Suma pagado/prima por nombre de estado (mismas claves que `VE_CENTROIDS`)."""
-    out: dict[str, float] = {}
+# Mismo GeoJSON que [Actuarial Cortex — Gestión Social](https://github.com/angelucv/actuarial-cortex-suite-gestion-social)
+_VE_STATES_GEOJSON_PATH = Path(__file__).resolve().parent / "assets" / "venezuela_estados.geojson"
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    s = hex_color.strip().removeprefix("#")
+    if len(s) != 6:
+        return 112, 41, 179
+    return int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16)
+
+
+def _api_estado_to_geo_name_upper(estado_api: str) -> str:
+    """El GeoJSON de Cortex usa VARGAS; en cartera usamos La Guaira."""
+    if estado_api == "La Guaira":
+        return "VARGAS"
+    return (estado_api or "").strip().upper()
+
+
+def _aggregate_rows_by_estado(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    m: dict[str, dict[str, Any]] = {}
     for r in rows:
-        en = r.get("estado") or ""
-        if en not in VE_CENTROIDS:
+        e = r.get("estado") or ""
+        if e not in VE_CENTROIDS:
             continue
-        val = float(r.get("paid_total") or r.get("prima_total") or 0)
-        out[en] = out.get(en, 0.0) + val
-    return out
+        o = m.setdefault(
+            e,
+            {"n_policies": 0, "n_claims": 0, "paid_total": 0.0},
+        )
+        o["n_policies"] += int(r.get("n_policies", 0))
+        o["n_claims"] += int(r.get("n_claims", 0))
+        o["paid_total"] += float(r.get("paid_total") or r.get("prima_total") or 0.0)
+    return m
 
 
 @st.cache_data(show_spinner=False)
-def _ve_choropleth_geojson_squares() -> dict[str, Any]:
-    """Polígonos aproximados por estado (cuadrados alrededor del centroide), como en Actuarial Cortex Gestión Social."""
-    h = 0.42
-    feats: list[dict[str, Any]] = []
-    for nombre, (lat, lon) in VE_CENTROIDS.items():
-        ring = [
-            [lon - h, lat - h],
-            [lon + h, lat - h],
-            [lon + h, lat + h],
-            [lon - h, lat + h],
-            [lon - h, lat - h],
-        ]
-        feats.append(
-            {
-                "type": "Feature",
-                "id": nombre,
-                "properties": {"name": nombre},
-                "geometry": {"type": "Polygon", "coordinates": [ring]},
-            }
+def _venezuela_estados_geojson_template() -> dict[str, Any] | None:
+    if not _VE_STATES_GEOJSON_PATH.is_file():
+        return None
+    return json.loads(_VE_STATES_GEOJSON_PATH.read_text(encoding="utf-8"))
+
+
+def _pydeck_geojson_colored(
+    rows: list[dict[str, Any]],
+    *,
+    heat_mode: bool,
+    brand_purple: str,
+) -> dict[str, Any] | None:
+    """Enriquece el GeoJSON con fill_r/g/b por pagado (lógica similar al pydeck de Gestión Social)."""
+    tpl = _venezuela_estados_geojson_template()
+    if not tpl:
+        return None
+    g = copy.deepcopy(tpl)
+    by_api = _aggregate_rows_by_estado(rows)
+    paid_geo: dict[str, float] = {}
+    meta_geo: dict[str, dict[str, Any]] = {}
+    for api_e, met in by_api.items():
+        gu = _api_estado_to_geo_name_upper(api_e)
+        paid_geo[gu] = paid_geo.get(gu, 0.0) + float(met.get("paid_total", 0.0))
+        mg = meta_geo.setdefault(
+            gu,
+            {"n_policies": 0, "n_claims": 0, "paid_total": 0.0},
         )
-    return {"type": "FeatureCollection", "features": feats}
+        mg["n_policies"] += int(met["n_policies"])
+        mg["n_claims"] += int(met["n_claims"])
+        mg["paid_total"] += float(met["paid_total"])
+
+    pays: list[float] = []
+    for feat in g.get("features", []):
+        nm = ((feat.get("properties") or {}).get("name") or "").strip().upper()
+        pays.append(float(paid_geo.get(nm, 0.0)))
+    max_p = max(pays) if pays else 0.0
+    nz = [x for x in pays if x > 0]
+    min_p = min(nz) if nz else 0.0
+
+    br, bg_c, bb = _hex_to_rgb(brand_purple)
+    lr, lg, lb = 245, 243, 255
+
+    def heat_rgb(t: float) -> tuple[int, int, int]:
+        t = max(0.0, min(1.0, t))
+        if t < 0.33:
+            u = t / 0.33
+            return (255, int(237 - 20 * u), int(160 - 40 * u))
+        if t < 0.66:
+            u = (t - 0.33) / 0.33
+            return (int(255 - 3 * u), int(177 - 36 * u), int(100 - 11 * u))
+        u = (t - 0.66) / 0.34
+        return (int(252 - 73 * u), int(141 - 141 * u), int(89 - 11 * u))
+
+    for feat in g.get("features", []):
+        p = dict(feat.get("properties") or {})
+        name_u = (p.get("name") or "").strip().upper()
+        paid = float(paid_geo.get(name_u, 0.0))
+        met = meta_geo.get(name_u, {"n_policies": 0, "n_claims": 0, "paid_total": 0.0})
+        display_name = (p.get("name") or name_u or "").strip()
+
+        if max_p > 0 and paid > 0:
+            if max_p > min_p:
+                t_lin = (paid - min_p) / (max_p - min_p)
+            else:
+                t_lin = 1.0
+            t_lin = max(0.0, min(1.0, t_lin))
+            t = t_lin**0.35
+        elif paid > 0:
+            t = 1.0
+        else:
+            t = 0.0
+
+        if heat_mode:
+            r, g_b, b = heat_rgb(t) if paid > 0 else (203, 213, 225)
+        elif paid > 0:
+            r = int(lr + (br - lr) * t)
+            g_b = int(lg + (bg_c - lg) * t)
+            b = int(lb + (bb - lb) * t)
+        else:
+            r, g_b, b = 226, 232, 240
+
+        p["paid_total"] = round(paid, 0)
+        p["paid_label"] = f"{paid:,.0f}"
+        p["n_policies"] = int(met["n_policies"])
+        p["n_claims"] = int(met["n_claims"])
+        p["name"] = display_name
+        p["fill_r"], p["fill_g"], p["fill_b"] = r, g_b, b
+        feat["properties"] = p
+
+    return g
 
 
 def _gauge(title: str, value: float, rng: tuple[float, float], color: str) -> go.Indicator:
@@ -185,64 +284,60 @@ def render_territorio_ve(
     )
 
     if modo in ("estados", "calor"):
-        fc = _ve_choropleth_geojson_squares()
-        val_by = _paid_by_estado(rows)
-        locations: list[str] = []
-        zvals: list[float] = []
-        hover_texts: list[str] = []
-        for f in fc["features"]:
-            nm = f["properties"]["name"]
-            locations.append(nm)
-            zv = float(val_by.get(nm, 0.0))
-            zvals.append(zv)
-            row_hint = next((r for r in rows if r.get("estado") == nm), None)
-            if row_hint:
-                hover_texts.append(
-                    f"{row_hint['estado']}<br>Pólizas: {row_hint['n_policies']:,}<br>"
-                    f"Siniestros: {row_hint['n_claims']:,}<br>Pagado: {row_hint['paid_total']:,.0f} Bs."
+        if pdk is None:
+            st.error("Falta la dependencia **pydeck**. Añada `pydeck` al entorno (requirements.txt).")
+        else:
+            geo_data = _pydeck_geojson_colored(
+                rows,
+                heat_mode=(modo == "calor"),
+                brand_purple=brand_purple,
+            )
+            if not geo_data:
+                st.warning(
+                    f"No se encontró `{_VE_STATES_GEOJSON_PATH.name}` en assets. "
+                    "Copie `venezuela_estados.geojson` desde el proyecto Gestión Social."
                 )
             else:
-                hover_texts.append(f"{nm}<br>Pagado: {zv:,.0f} Bs.")
-
-        zmax_data = max(zvals) if zvals else 0.0
-        zmax_plot = zmax_data if zmax_data > 0 else 1.0
-
-        if modo == "calor":
-            cscale = "YlOrRd"
-            title = "Venezuela — mapa tipo calor (pagado Bs. por estado)"
-        else:
-            cscale = [[0, "#f5f3ff"], [0.35, "#ddd6fe"], [0.65, "#a78bfa"], [1, brand_purple]]
-            title = "Venezuela — estados coloreados por pagado (polígonos demo)"
-
-        fig = go.Figure(
-            go.Choropleth(
-                geojson=fc,
-                locations=locations,
-                z=zvals,
-                zmin=0,
-                zmax=zmax_plot,
-                featureidkey="properties.name",
-                colorscale=cscale,
-                marker_line_color="#334155",
-                marker_line_width=0.9,
-                colorbar=dict(title="Pagado (Bs.)"),
-                text=hover_texts,
-                hoverinfo="text",
-                showscale=True,
-            )
-        )
-        fig.update_geos(**_geo_common)
-        fig.update_layout(
-            title=title,
-            height=520,
-            margin=dict(l=0, r=0, t=48, b=0),
-            paper_bgcolor="rgba(0,0,0,0)",
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.caption(
-            "Polígonos aproximados por estado (cuadrados desde centroides), mismo criterio que el tablero "
-            "[Actuarial Cortex — Gestión Social](https://github.com/angelucv/actuarial-cortex-suite-gestion-social)."
-        )
+                title = (
+                    "Venezuela — estados rellenos por pagado (pydeck)"
+                    if modo == "estados"
+                    else "Venezuela — mapa tipo calor por pagado (pydeck)"
+                )
+                st.markdown(f"**{title}**")
+                layer = pdk.Layer(
+                    "GeoJsonLayer",
+                    geo_data,
+                    get_fill_color="[properties.fill_r, properties.fill_g, properties.fill_b, 215]",
+                    get_line_color=[30, 41, 59],
+                    line_width_min_pixels=1,
+                    pickable=True,
+                    auto_highlight=True,
+                )
+                deck = pdk.Deck(
+                    layers=[layer],
+                    initial_view_state=pdk.ViewState(
+                        latitude=7.8,
+                        longitude=-66.2,
+                        zoom=4.65,
+                        pitch=0,
+                        bearing=0,
+                    ),
+                    tooltip={
+                        "html": (
+                            "<b>{name}</b><br/>"
+                            "Pagado: {paid_label} Bs.<br/>"
+                            "Pólizas: {n_policies} · Siniestros: {n_claims}"
+                        ),
+                        "style": {"backgroundColor": "#1e1b4b", "color": "white", "fontSize": "13px"},
+                    },
+                )
+                st.pydeck_chart(deck, use_container_width=True)
+                st.caption(
+                    "Polígonos del mismo GeoJSON que "
+                    "[actuarial-cortex-suite-gestion-social](https://github.com/angelucv/actuarial-cortex-suite-gestion-social) "
+                    "(capa GeoJsonLayer + color por intensidad de pagado). "
+                    "La zona en reclamación no está modelada en ese archivo."
+                )
 
     if modo == "pines":
         lats, lons, sizes, colors, texts = [], [], [], [], []
