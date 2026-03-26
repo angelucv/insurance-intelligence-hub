@@ -47,13 +47,19 @@ def ingest_policies_file(
     valid_rows: list[PolicyRow] = []
     for idx, row in df.iterrows():
         try:
-            raw = {
+            raw: dict[str, Any] = {
                 "policy_id": row["policy_id"],
                 "cohort_year": int(row["cohort_year"]),
                 "issue_age": int(row["issue_age"]),
                 "annual_premium": float(row["annual_premium"]),
                 "status": row["status"],
             }
+            if "issue_date" in df.columns:
+                v = row["issue_date"]
+                if pd.notna(v):
+                    ts = pd.to_datetime(v, errors="coerce")
+                    if pd.notna(ts):
+                        raw["issue_date"] = ts.date()
         except (TypeError, ValueError) as e:
             errors.append({"row": int(idx) + 2, "error": f"celda inválida: {e}"})
             continue
@@ -83,8 +89,8 @@ def ingest_policies_file(
             batch_id = row[0]
 
             ins = """
-                INSERT INTO policies (batch_id, policy_id, cohort_year, issue_age, annual_premium, status)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO policies (batch_id, policy_id, cohort_year, issue_age, annual_premium, status, issue_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (policy_id) DO NOTHING
             """
             inserted = 0
@@ -99,6 +105,7 @@ def ingest_policies_file(
                         pr.issue_age,
                         pr.annual_premium,
                         pr.status,
+                        pr.issue_date,
                     ],
                 )
                 if cursor.rowcount:

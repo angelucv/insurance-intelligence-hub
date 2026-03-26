@@ -235,7 +235,7 @@ with st.sidebar:
     if lab_module == "cohorte":
         st.markdown("**Parámetros cohorte**")
         use_db = st.toggle("Usar datos en base de datos", value=True)
-        cohort_year = st.slider("Año cohorte", 2019, 2024, 2022)
+        cohort_year = st.slider("Año cohorte", 2019, 2026, 2022)
         seed = st.number_input(
             "Semilla (datos sintéticos de respaldo)",
             min_value=1,

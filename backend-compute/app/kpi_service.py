@@ -58,7 +58,7 @@ def _duckdb_aggregate(df: pd.DataFrame, cohort_year: int) -> dict[str, Any]:
 def kpi_from_database(session: Session, cohort_year: int) -> dict[str, Any] | None:
     q = text(
         """
-        SELECT policy_id, cohort_year, issue_age, annual_premium, status
+        SELECT policy_id, cohort_year, issue_age, annual_premium, status, issue_date
         FROM policies
         WHERE cohort_year = :y
         """
@@ -91,7 +91,13 @@ def _operational_claims_note(session: Session, cohort_year: int) -> str:
     try:
         q = text(
             """
-            SELECT COUNT(*)::int, COALESCE(SUM(c.paid_amount_bs), 0)::float
+            SELECT
+              COUNT(*)::int,
+              COALESCE(SUM(c.paid_amount_bs), 0)::float,
+              MIN(c.loss_date)::text,
+              MAX(c.loss_date)::text,
+              MIN(p.issue_date)::text,
+              MAX(p.issue_date)::text
             FROM policy_claims c
             INNER JOIN policies p ON p.policy_id = c.policy_id
             WHERE p.cohort_year = :y
@@ -103,9 +109,16 @@ def _operational_claims_note(session: Session, cohort_year: int) -> str:
         n_claims, paid_sum = int(row[0] or 0), float(row[1] or 0)
         if n_claims == 0:
             return ""
+        loss_min, loss_max = row[2], row[3]
+        iss_min, iss_max = row[4], row[5]
+        span = ""
+        if loss_min and loss_max:
+            span += f" Siniestros (loss_date): {loss_min} → {loss_max}."
+        if iss_min and iss_max:
+            span += f" Emisiones (issue_date): {iss_min} → {iss_max}."
         return (
             f"Operativo: {n_claims:,} siniestros en BD para cohorte {cohort_year} "
-            f"(pagado acum. demo {paid_sum:,.2f} Bs.). "
+            f"(pagado acum. demo {paid_sum:,.2f} Bs.).{span} "
             "Las cifras SUDEASEG del laboratorio son referencia de mercado (no consolidación de esta cartera)."
         )
     except Exception:  # noqa: BLE001

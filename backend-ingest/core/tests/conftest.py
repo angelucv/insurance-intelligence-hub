@@ -25,6 +25,7 @@ CREATE TABLE policies (
   issue_age INTEGER NOT NULL,
   annual_premium REAL NOT NULL,
   status TEXT NOT NULL,
+  issue_date TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   CHECK (issue_age >= 0 AND issue_age <= 110),
   CHECK (annual_premium > 0),
