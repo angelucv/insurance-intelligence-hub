@@ -1,29 +1,18 @@
-/* Carga después de responsive.css: refuerza flex y anula el ancho 600px del dashboard de Django. */
+/* Carga después de responsive.css: anula ancho 600px del dashboard y refuerza #content al 100%. */
 
-/* Django base.css: .dashboard #content { width: 600px } */
 body.dashboard main.content #content.colM,
 body.dashboard main.content #content {
   width: 100% !important;
   max-width: 100% !important;
 }
 
-/* Crece en el flex de .main sin pisar el max-width calc() de nav_sidebar.css */
 body.dashboard .main > #nav-sidebar + .content {
   flex: 1 1 0% !important;
   min-width: 0 !important;
 }
 
-@media (min-width: 900px) {
-  body.dashboard .iihub-dashboard-row {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: flex-start !important;
-    width: 100% !important;
-  }
-
-  body.dashboard .iihub-dashboard-row #content-related {
-    float: none !important;
-    margin-right: 0 !important;
-    margin-left: 0 !important;
-  }
+body.dashboard .iihub-dashboard-top #content-related {
+  float: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }

@@ -36,33 +36,29 @@ body.dashboard main.content #content {
 }
 
 /*
- * La barra #content-related está en el DOM junto a .iihub-dashboard-top dentro de .iihub-dashboard-row (flex).
- * Así queda a la derecha de acciones/tablas sin depender del orden content/sidebar de base.html.
+ * #content-related va debajo de las tablas (misma columna), ancho completo; las dos tarjetas en rejilla
+ * para aprovechar el ancho sin dejar un vacío a la derecha.
  */
-body.dashboard .iihub-dashboard-row {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 1.25rem;
+body.dashboard .iihub-dashboard-top {
   width: 100%;
   min-width: 0;
 }
 
-body.dashboard .iihub-dashboard-top {
-  flex: 1 1 0;
-  min-width: 0;
+body.dashboard .iihub-dashboard-top #content-related {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+  width: 100% !important;
+  max-width: 100% !important;
+  float: none !important;
+  clear: both;
+  margin: 1.5rem 0 0 !important;
+  padding: 0;
+  position: static;
 }
 
-body.dashboard .iihub-dashboard-row #content-related {
-  flex: 0 0 260px;
-  width: 260px;
-  max-width: 280px;
-  float: none !important;
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-  position: sticky;
-  top: 0.75rem;
-  align-self: flex-start;
+body.dashboard .iihub-dashboard-top #content-related > .module {
+  margin-bottom: 0;
 }
 
 body.dashboard .iihub-dashboard-top #content-main {
@@ -78,7 +74,7 @@ body.dashboard .iihub-dashboard-page-title {
   letter-spacing: -0.02em;
 }
 
-/* Texto explicativo e ilustraciones debajo de la fila operativa + barra lateral. */
+/* Texto explicativo e ilustraciones debajo del bloque operativo (acciones, tablas, enlaces). */
 body.dashboard .iihub-dashboard-reference {
   margin-top: 0;
   padding-top: 1.75rem;
@@ -87,20 +83,6 @@ body.dashboard .iihub-dashboard-reference {
 
 body.dashboard #content > br.clear {
   display: none;
-}
-
-@media (max-width: 899px) {
-  body.dashboard .iihub-dashboard-row {
-    flex-direction: column;
-  }
-
-  body.dashboard .iihub-dashboard-row #content-related {
-    position: static;
-    align-self: stretch;
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: none;
-  }
 }
 
 /* Columna principal del admin en flex: permite que imágenes y bloques usen 100% sin desbordar. */

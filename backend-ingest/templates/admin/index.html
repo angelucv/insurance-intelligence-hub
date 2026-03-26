@@ -14,7 +14,6 @@
 {% block content_title %}{% endblock %}
 
 {% block content %}
-<div class="iihub-dashboard-row">
 <div class="iihub-dashboard-top">
 <section class="iihub-quick-actions" aria-label="{% translate 'Acciones rápidas' %}">
   <h2 class="iihub-quick-actions__title">{% translate "Acciones rápidas" %}</h2>
@@ -42,7 +41,6 @@
 
 <div id="content-main">
   {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
-</div>
 </div>
 {% include "admin/includes/dashboard_index_sidebar.html" %}
 </div>
