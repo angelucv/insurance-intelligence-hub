@@ -3,6 +3,8 @@
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">{% endblock %}
 
+{% block responsive %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/dashboard-layout.css' %}">{% endblock %}
+
 {% block coltype %}colMS{% endblock %}
 
 {% block bodyclass %}{{ block.super }} dashboard{% endblock %}
@@ -10,6 +12,7 @@
 {% block nav-breadcrumbs %}{% endblock %}
 
 {% block content %}
+<div class="iihub-dashboard-main">
 <div class="iihub-dashboard-hero">
   <p class="iihub-dashboard-lead">
     {% blocktranslate %}Aquí se <strong>cargan y consultan</strong> datos maestros (pólizas y siniestros) con <strong>usuario y contraseña</strong>, y se <strong>filtran y buscan</strong> casos ya registrados. En el sector asegurador, los <strong>cores operativos</strong> habituales incluyen soluciones como <strong>Acsel/x</strong> (Consis) o <strong>Rector</strong> (Indra); este panel no sustituye ese core completo, pero sí el <strong>paralelo en Excel/Access</strong> que muchas áreas usan para cuadros y seguimiento. Lo que suba o consulte aquí alimenta el mismo <strong>PostgreSQL</strong> (en este entorno en la nube; puede montarse en servidor local) que usa el <strong>servicio de indicadores</strong> y las pantallas de solo lectura del portal ejecutivo y del laboratorio analítico.{% endblocktranslate %}
@@ -19,24 +22,24 @@
 <section class="iihub-data-desk" aria-labelledby="iihub-data-desk-title">
   <h2 id="iihub-data-desk-title" class="iihub-guide__main-title">{% translate "Qué datos cargamos y cómo se relacionan" %}</h2>
   <p class="iihub-data-desk__lead">
-    {% blocktranslate %}Las dos vistas siguientes resumen el <strong>modelo lógico</strong> en PostgreSQL: primero el
-    <strong>maestro operativo</strong> (pólizas y siniestros) que usted sube desde este panel; después la
-    <strong>capa SUDEASEG</strong>, alimentada por ETL sobre datos públicos de referencia de mercado (no sustituye
-    informes regulatorios oficiales).{% endblocktranslate %}
+    {% blocktranslate %}En las dos ilustraciones siguientes se ve, en lenguaje sencillo, <strong>qué guardamos en el
+    sistema</strong>: primero la <strong>cartera propia</strong> (pólizas y siniestros) que usted carga desde aquí;
+    después las <strong>cifras de mercado de referencia</strong> publicadas por la SUDEASEG, que sirven para
+    contextualizar resultados frente al sector (no reemplazan informes oficiales ni dictámenes regulatorios).{% endblocktranslate %}
   </p>
   <div class="iihub-data-desk__columns">
     <article class="iihub-data-desk__card">
       <h3 class="iihub-data-desk__card-title">{% translate "Pólizas y siniestros (operativo)" %}</h3>
       <p class="iihub-data-desk__text">
-        {% blocktranslate %}Cada archivo genera un <code>batch_id</code> en <code>upload_batches</code>. Las pólizas
-        quedan en <code>policies</code> con <code>policy_id</code> único, cohorte, prima y estado. Los siniestros van a
-        <code>policy_claims</code> y deben referenciar un <code>policy_id</code> ya existente; así se puede analizar
-        siniestralidad frente a la cartera cargada.{% endblocktranslate %}
+        {% blocktranslate %}Cada archivo subido queda registrado como un <strong>lote de carga</strong> (fecha, resumen y
+        trazabilidad). Las <strong>pólizas</strong> se guardan como fichas con un identificador único de póliza, cohorte,
+        prima y estado. Los <strong>siniestros</strong> se enlazan siempre a una póliza que ya exista en el sistema, para
+        poder medir siniestralidad sobre la misma cartera que usted cargó.{% endblocktranslate %}
       </p>
       <figure class="iihub-img-wrap iihub-data-desk__figure">
         <img
           src="{% static 'admin/img/data-polizas-siniestros.png' %}"
-          alt="{% translate 'Esquema: lotes de carga, tabla policies y policy_claims enlazada por policy_id.' %}"
+          alt="{% translate 'Esquema: lotes de carga, pólizas y siniestros enlazados por identificador de póliza.' %}"
           width="1600"
           height="900"
           loading="lazy"
@@ -48,15 +51,15 @@
     <article class="iihub-data-desk__card">
       <h3 class="iihub-data-desk__card-title">{% translate "Mercado SUDEASEG (referencia)" %}</h3>
       <p class="iihub-data-desk__text">
-        {% blocktranslate %}Las tablas <code>market_sudeaseg_*</code> guardan series por empresa y período
-        (año/mes), con nombre normalizado para filtrar La Fe y agregar el <strong>mercado total</strong>. No hay clave
-        foránea hacia <code>policies</code>: sirven para contextualizar KPI y gráficos del API de cómputo y del portal
-        Reflex frente al mercado.{% endblocktranslate %}
+        {% blocktranslate %}Aquí se almacenan <strong>series por empresa y por tiempo</strong> (por ejemplo año y mes),
+        con nombres homogéneos para poder aislar a La Fe y comparar con el <strong>conjunto del mercado</strong>. Esos
+        datos <strong>no se «enganchan» fila a fila</strong> a sus pólizas: son una referencia externa para tableros e
+        indicadores (portal y API de cómputo) que contrastan su cartera con el sector.{% endblocktranslate %}
       </p>
       <figure class="iihub-img-wrap iihub-data-desk__figure">
         <img
           src="{% static 'admin/img/data-sudeaseg-resumen.png' %}"
-          alt="{% translate 'Esquema: tablas resumen y cuadro SUDEASEG, carga vía ETL.' %}"
+          alt="{% translate 'Esquema: cuadros de mercado SUDEASEG y agregación para comparar con el sector.' %}"
           width="1600"
           height="900"
           loading="lazy"
@@ -65,7 +68,7 @@
         />
       </figure>
       <p class="iihub-data-desk__footnote">
-        {% translate "Detalle de columnas: página «Modelo de datos y flujos» y migraciones en el repositorio." %}
+        {% translate "Si necesita nombres de tablas o columnas técnicas: página «Modelo de datos y flujos» y definiciones en el repositorio." %}
         <a href="{% url 'data_model_doc' %}">{% translate "Abrir documentación" %}</a>
       </p>
     </article>
@@ -101,8 +104,8 @@
       <h3 class="iihub-guide-card__title">{% translate "Carga de archivos" %}</h3>
       <ul class="iihub-guide-list">
         <li>{% blocktranslate %}<strong>Pólizas:</strong> suba CSV o Excel validado (columnas según contrato hub-contracts). Cada carga genera un lote y filas insertadas u omitidas por duplicado.{% endblocktranslate %}</li>
-        <li>{% blocktranslate %}<strong>Siniestros:</strong> enlaza <code>claim_id</code> a <code>policy_id</code> que ya exista en pólizas; montos opcionales alimentan análisis de siniestralidad.{% endblocktranslate %}</li>
-        <li>{% translate "Tras cargar, el resumen muestra batch_id, insertadas, omitidas y errores por fila (JSON detallado en desplegable)." %}</li>
+        <li>{% blocktranslate %}<strong>Siniestros:</strong> cada registro debe citar la <strong>póliza</strong> a la que pertenece (identificador que ya conste en pólizas); los montos, si vienen en el archivo, alimentan el análisis de siniestralidad.{% endblocktranslate %}</li>
+        <li>{% translate "Tras cargar, el resumen muestra el identificador del lote, filas insertadas u omitidas y errores por fila (detalle en el desplegable)." %}</li>
       </ul>
     </article>
 
@@ -153,13 +156,14 @@
     {% endif %}
     <a href="{% url 'data_model_doc' %}" class="iihub-card iihub-card--ghost">
       <span class="iihub-card__label">{% translate "Modelo de datos" %}</span>
-      <span class="iihub-card__hint">{% translate "Diagramas y tablas en PostgreSQL / SUDEASEG" %}</span>
+      <span class="iihub-card__hint">{% translate "Cómo se organizan los datos (con detalle técnico opcional)" %}</span>
     </a>
   </div>
 </section>
 
 <div id="content-main">
   {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+</div>
 </div>
 {% endblock %}
 

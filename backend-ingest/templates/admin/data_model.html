@@ -19,20 +19,21 @@
 
 <div class="iihub-doc iihub-callout">
   <p class="iihub-doc__lead">
-    {% blocktranslate %}Esta página resume <strong>cómo se organizan los datos en PostgreSQL (Supabase)</strong>:
-    qué se carga desde este panel, cómo se relacionan las tablas operativas y en qué capa vive la
-    <strong>referencia de mercado SUDEASEG</strong> frente a los KPI de cartera. No sustituye el SQL de las
-    migraciones ni los informes regulatorios oficiales.{% endblocktranslate %}
+    {% blocktranslate %}Aquí se explica, en términos de negocio, <strong>cómo está organizada la información</strong>
+    en la base de datos (alojada en Supabase/PostgreSQL): qué sube usted desde el panel, cómo encajan pólizas y
+    siniestros, y dónde están las <strong>cifras de mercado de la SUDEASEG</strong> que sirven de contexto frente a
+    los indicadores de cartera. Para el detalle exacto de columnas y tipos, consulte las migraciones del proyecto;
+    esta página no sustituye informes regulatorios oficiales.{% endblocktranslate %}
   </p>
 </div>
 
 <section class="iihub-doc" aria-labelledby="doc-flujo">
-  <h2 id="doc-flujo">{% translate "1. Flujo integral (operativo → API → lectura)" %}</h2>
+  <h2 id="doc-flujo">{% translate "1. Flujo integral: desde la carga hasta los tableros" %}</h2>
   <p class="iihub-doc__lead">
-    {% blocktranslate %}Desde <strong>Django Admin</strong> se cargan archivos validados; el motor de ingesta
-    escribe en tablas maestras. El <strong>servicio FastAPI</strong> lee esas tablas (y las de mercado) para
-    calcular KPI y series. <strong>Reflex</strong> y <strong>Streamlit</strong> son clientes de solo lectura
-    sobre el mismo <code>DATABASE_URL</code>.{% endblocktranslate %}
+    {% blocktranslate %}Desde <strong>este panel</strong> se cargan archivos revisados; el proceso de ingesta guarda
+    la cartera y los siniestros en las tablas maestras. Un <strong>servicio de API</strong> lee esas tablas (y las de
+    mercado) para calcular indicadores y series. Los portales <strong>Reflex</strong> y <strong>Streamlit</strong> solo
+    consultan esos mismos datos (no modifican la carga).{% endblocktranslate %}
   </p>
   <figure class="iihub-doc__figure iihub-img-wrap">
     <img
@@ -51,26 +52,26 @@
 </section>
 
 <section class="iihub-doc" aria-labelledby="doc-operativo">
-  <h2 id="doc-operativo">{% translate "2. Tablas operativas (ingesta desde este Admin)" %}</h2>
+  <h2 id="doc-operativo">{% translate "2. Datos que usted carga desde el Admin" %}</h2>
   <table>
     <thead>
       <tr>
-        <th>{% translate "Tabla" %}</th>
-        <th>{% translate "Rol" %}</th>
+        <th>{% translate "Nombre técnico (tabla)" %}</th>
+        <th>{% translate "Qué representa" %}</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td><code>upload_batches</code></td>
-        <td>{% translate "Lote de carga (archivo, conteos, trazabilidad)." %}</td>
+        <td>{% translate "Cada archivo subido: resumen del lote, conteos y trazabilidad." %}</td>
       </tr>
       <tr>
         <td><code>policies</code></td>
-        <td>{% translate "Maestro de pólizas; cohorte, prima, estado. unique(policy_id)." %}</td>
+        <td>{% translate "Ficha de póliza: identificador único, cohorte, prima, estado y demás campos del contrato de datos." %}</td>
       </tr>
       <tr>
         <td><code>policy_claims</code></td>
-        <td>{% translate "Siniestros; policy_id debe existir en policies." %}</td>
+        <td>{% translate "Registro de siniestro enlazado a una póliza que ya exista en el maestro anterior." %}</td>
       </tr>
     </tbody>
   </table>
@@ -79,9 +80,9 @@
 <section class="iihub-doc" aria-labelledby="doc-sudeaseg">
   <h2 id="doc-sudeaseg">{% translate "3. Mercado SUDEASEG (referencia pública)" %}</h2>
   <p class="iihub-doc__lead">
-    {% blocktranslate %}Se cargan con el ETL/ scripts de <code>scripts/etl_sudeaseg.py</code> (no desde la
-    pantalla de pólizas). El grano habitual es <strong>(año, mes, empresa)</strong> con nombre normalizado
-    en <code>empresa_nombre_norm</code> para filtrar La Fe y comparar con el total de mercado.{% endblocktranslate %}
+    {% blocktranslate %}Estas cifras se cargan con procesos automáticos (scripts de ETL), <strong>no</strong> desde la
+    pantalla de pólizas. Lo habitual es una fila por <strong>empresa y período</strong> (por ejemplo año y mes), con
+    nombres homogéneos para poder localizar a La Fe y sumar el <strong>resto del mercado</strong> en los gráficos.{% endblocktranslate %}
   </p>
   <figure class="iihub-doc__figure iihub-img-wrap">
     <img
@@ -94,29 +95,29 @@
       class="iihub-fluid-img"
     >
     <figcaption class="iihub-doc__caption">
-      {% translate "Resumen analítico vs cuadro de resultados: mismas dimensiones temporales; el API agrega «mercado total» sumando empresas para las series de lectura." %}
+      {% translate "Hay dos vistas de mercado (resumen y resultado); comparten el mismo corte en el tiempo. Para los tableros, el total de mercado se obtiene agregando las empresas." %}
     </figcaption>
   </figure>
   <table>
     <thead>
       <tr>
-        <th>{% translate "Tabla" %}</th>
-        <th>{% translate "Contenido típico" %}</th>
+        <th>{% translate "Nombre técnico (tabla)" %}</th>
+        <th>{% translate "Contenido en pocas palabras" %}</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td><code>market_sudeaseg_resumen_empresa</code></td>
-        <td>{% translate "Primas, siniestros, comisiones, ratios; columnas YTD y mensuales (_mes). Fuente: resumen SUDEASEG." %}</td>
+        <td>{% translate "Indicadores por empresa: primas, siniestros, comisiones y ratios; suele haber totales del año y desglose por mes." %}</td>
       </tr>
       <tr>
         <td><code>market_sudeaseg_cuadro_resultados</code></td>
-        <td>{% translate "Resultado técnico, saldo operaciones, etc.; también YTD y mensual." %}</td>
+        <td>{% translate "Resultado técnico y magnitudes de explotación por empresa y período; también con vista acumulada y mensual." %}</td>
       </tr>
     </tbody>
   </table>
   <ul>
-    <li>{% translate "Ver definiciones exactas en: supabase/migrations/002_market_sudeaseg.sql y 003_market_sudeaseg_monthly.sql." %}</li>
+    <li>{% translate "Definición exacta de columnas: archivos SQL en supabase/migrations/ (p. ej. 002 y 003 de mercado SUDEASEG)." %}</li>
   </ul>
 </section>
 

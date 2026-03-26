@@ -1,0 +1,15 @@
+/* Carga después de admin/css/responsive.css: refuerza la rejilla de la portada del admin. */
+
+@media (min-width: 900px) {
+  body.dashboard #content.colMS {
+    display: grid !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  body.dashboard #content.colMS > #content-related {
+    float: none !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+}
