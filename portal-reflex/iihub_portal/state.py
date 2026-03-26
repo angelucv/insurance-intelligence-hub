@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import Any
 
 import httpx
+import plotly.graph_objects as go
 import reflex as rx
 from plotly.graph_objects import Figure as PlotlyFigure
 
-from iihub_portal.theme import BRAND_PURPLE
+from iihub_portal.plotly_charts import (
+    polish_market_subplots,
+    polish_ratio_figure,
+    trace_lr_la_fe,
+    trace_lr_mercado,
+    trace_primas_la_fe,
+    trace_primas_mercado,
+)
 
 
 class State(rx.State):
@@ -95,8 +104,10 @@ class State(rx.State):
 
     async def portal_on_load(self):
         await self.hydrate_urls()
-        await self.load_sudeaseg_preview()
-        await self.load_market_snapshot()
+        await asyncio.gather(
+            self.load_sudeaseg_preview(),
+            self.load_market_snapshot(),
+        )
 
     async def load_sudeaseg_preview(self):
         self.market_plot_ok = False
@@ -107,7 +118,6 @@ class State(rx.State):
         self.market_ratio_plot_data = []
         self.market_ratio_plot_layout = {}
         self.market_charts_busy = True
-        yield
         try:
             base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
             try:
@@ -119,15 +129,12 @@ class State(rx.State):
             mode = (self.market_mode or "monthly_flow").strip()
             if mode not in ("monthly_flow", "ytd"):
                 mode = "monthly_flow"
+            params = {"from_year": fy, "to_year": ty, "mode": mode}
             try:
                 async with httpx.AsyncClient(timeout=90.0) as client:
-                    r1 = await client.get(
-                        f"{base}/api/v1/market/la-fe/resumen-series",
-                        params={"from_year": fy, "to_year": ty, "mode": mode},
-                    )
-                    r2 = await client.get(
-                        f"{base}/api/v1/market/resumen/totals-series",
-                        params={"from_year": fy, "to_year": ty, "mode": mode},
+                    r1, r2 = await asyncio.gather(
+                        client.get(f"{base}/api/v1/market/la-fe/resumen-series", params=params),
+                        client.get(f"{base}/api/v1/market/resumen/totals-series", params=params),
                     )
                     r1.raise_for_status()
                     r2.raise_for_status()
@@ -135,7 +142,6 @@ class State(rx.State):
                 self.market_plot_error = f"No se pudo cargar la referencia de mercado. ({e})"
                 return
 
-            import plotly.graph_objects as go
             from plotly.subplots import make_subplots
 
             la = r1.json().get("points") or []
@@ -160,35 +166,12 @@ class State(rx.State):
             y_tot = [m2.get(k) for k in keys]
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
-            fig.add_trace(
-                go.Scatter(
-                    x=xs,
-                    y=y_la,
-                    name="La Fe (eje izq.)",
-                    mode="lines+markers",
-                    line={"color": BRAND_PURPLE},
-                ),
-                secondary_y=False,
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=xs,
-                    y=y_tot,
-                    name="Mercado total (eje der.)",
-                    mode="lines+markers",
-                    line={"color": "#0284c7"},
-                ),
-                secondary_y=True,
-            )
+            fig.add_trace(trace_primas_la_fe(xs, y_la), secondary_y=False)
+            fig.add_trace(trace_primas_mercado(xs, y_tot), secondary_y=True)
             fig.update_xaxes(title_text="Período")
             fig.update_yaxes(title_text="La Fe · miles de Bs.", secondary_y=False)
             fig.update_yaxes(title_text="Mercado total · miles de Bs.", secondary_y=True)
-            fig.update_layout(
-                height=360,
-                margin=dict(l=24, r=56, t=40, b=24),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                hovermode="x unified",
-            )
+            polish_market_subplots(fig, height=360)
             pj = fig.to_plotly_json()
             self.market_plot_data = pj["data"]
             self.market_plot_layout = pj.get("layout") or {}
@@ -206,33 +189,12 @@ class State(rx.State):
             lr2 = lr_map(tot)
             y_lr_la = [lr1.get(k) for k in keys]
             y_lr_mk = [lr2.get(k) for k in keys]
+
             fig_r = go.Figure()
-            fig_r.add_trace(
-                go.Scatter(
-                    x=xs,
-                    y=y_lr_la,
-                    name="Loss ratio La Fe (siniestros/primas)",
-                    mode="lines+markers",
-                    line={"color": BRAND_PURPLE},
-                ),
-            )
-            fig_r.add_trace(
-                go.Scatter(
-                    x=xs,
-                    y=y_lr_mk,
-                    name="Loss ratio mercado",
-                    mode="lines+markers",
-                    line={"color": "#0284c7"},
-                ),
-            )
-            fig_r.update_layout(
-                height=300,
-                margin=dict(l=24, r=24, t=40, b=24),
-                yaxis_title="Ratio (fracción)",
-                xaxis_title="Período",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                hovermode="x unified",
-            )
+            fig_r.add_trace(trace_lr_la_fe(xs, y_lr_la))
+            fig_r.add_trace(trace_lr_mercado(xs, y_lr_mk))
+            fig_r.update_layout(yaxis_title="Ratio (fracción)", xaxis_title="Período")
+            polish_ratio_figure(fig_r, height=300)
             pjr = fig_r.to_plotly_json()
             self.market_ratio_plot_data = pjr["data"]
             self.market_ratio_plot_layout = pjr.get("layout") or {}

@@ -133,7 +133,18 @@ def mercado_panel() -> rx.Component:
                 ),
                 class_name="p-6 sm:p-8",
             ),
-            class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm",
+                    class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm",
+        ),
+        rx.el.section(
+            rx.el.details(
+                rx.el.summary(
+                    copy.VISUAL_SUGGESTIONS_TITLE,
+                    class_name="cursor-pointer text-sm font-medium text-violet-700 list-none",
+                ),
+                rx.markdown(copy.VISUAL_SUGGESTIONS_MD),
+                class_name="mt-6 p-4 sm:p-5 rounded-2xl bg-violet-50/60 border border-violet-100 [&_summary::-webkit-details-marker]:hidden",
+            ),
+            class_name="mt-6 w-full",
         ),
         rx.el.section(
             rx.el.div(
@@ -145,7 +156,27 @@ def mercado_panel() -> rx.Component:
                     copy.MERCADO_CHART_PRIM_SUB,
                     class_name="text-xs text-gray-500 mt-1 mb-4",
                 ),
-                rx.cond(State.market_plot_ok, rx.plotly(data=State.market_plot_figure)),
+                rx.cond(
+                    State.market_charts_busy,
+                    rx.center(
+                        rx.vstack(
+                            rx.spinner(size="3"),
+                            rx.text("Cargando series de mercado…", size="2", color="gray"),
+                            spacing="2",
+                            align_items="center",
+                        ),
+                        width="100%",
+                        padding_y="10",
+                    ),
+                    rx.cond(
+                        State.market_plot_ok,
+                        rx.plotly(data=State.market_plot_figure),
+                        rx.el.p(
+                            "Sin datos de primas para el rango indicado.",
+                            class_name="text-sm text-gray-400",
+                        ),
+                    ),
+                ),
                 class_name="p-5 sm:p-6",
             ),
             class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
@@ -160,7 +191,27 @@ def mercado_panel() -> rx.Component:
                     copy.MERCADO_CHART_LR_SUB,
                     class_name="text-xs text-gray-500 mt-1 mb-4",
                 ),
-                rx.cond(State.market_ratio_ok, rx.plotly(data=State.market_ratio_figure)),
+                rx.cond(
+                    State.market_charts_busy,
+                    rx.center(
+                        rx.vstack(
+                            rx.spinner(size="3"),
+                            rx.text("Cargando loss ratio…", size="2", color="gray"),
+                            spacing="2",
+                            align_items="center",
+                        ),
+                        width="100%",
+                        padding_y="10",
+                    ),
+                    rx.cond(
+                        State.market_ratio_ok,
+                        rx.plotly(data=State.market_ratio_figure),
+                        rx.el.p(
+                            "Sin datos de loss ratio.",
+                            class_name="text-sm text-gray-400",
+                        ),
+                    ),
+                ),
                 class_name="p-5 sm:p-6",
             ),
             class_name="mt-6 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",

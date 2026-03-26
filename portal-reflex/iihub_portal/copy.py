@@ -10,6 +10,27 @@ SIDEBAR_BRAND_SHORT = "IIH"
 SIDEBAR_BRAND_LONG = "Insurance Intelligence Hub"
 SIDEBAR_SECTION_VIEWS = "Vistas"
 SIDEBAR_SECTION_OPS = "Operaciones"
+SIDEBAR_AUTHOR_LABEL = "Elaborado por"
+AUTHOR_NAME = "Prof. Angel Colmenares"
+AUTHOR_EMAIL = "angelc.ucv@gmail.com"
+
+# Sugerencias visuales (panel Mercado — bloque colapsable)
+VISUAL_SUGGESTIONS_TITLE = "Sugerencias visuales y rendimiento"
+VISUAL_SUGGESTIONS_MD = """
+**Gráficos que suelen funcionar bien en paneles ejecutivos**
+
+- **Área bajo la línea** (como en primas): refuerza tendencia sin saturar.
+- **Doble eje** para series con escala distinta (La Fe vs mercado): evita distorsionar la lectura.
+- **Barras apiladas o agrupadas** por ramo o canal: útiles para cuota y composición.
+- **Donut o barra horizontal** para participación de mercado en un solo período.
+- **Mapa de calor** (mes × métrica) para estacionalidad y picos.
+- **Sparklines** junto a KPIs en tablas resumen (tendencia en una línea).
+
+**Rendimiento**
+
+- Cargar datos en **paralelo** (series y snapshot) y **mostrar estado de carga** mientras llega la API.
+- En el futuro: **paginar** series largas, **reducir puntos** (muestreo) o **cachear** respuestas en servidor.
+"""
 
 # Cabecera de página (área principal)
 HEADER_GREETING = "Panel ejecutivo"

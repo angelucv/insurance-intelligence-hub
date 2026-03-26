@@ -97,6 +97,19 @@ def sidebar() -> rx.Component:
         ),
         rx.el.div(
             rx.color_mode.button(),
+            rx.el.div(
+                rx.el.p(
+                    copy.SIDEBAR_AUTHOR_LABEL,
+                    class_name="text-[10px] font-semibold text-gray-400 uppercase tracking-wider",
+                ),
+                rx.el.p(copy.AUTHOR_NAME, class_name="text-sm font-medium text-gray-800 mt-1"),
+                rx.link(
+                    copy.AUTHOR_EMAIL,
+                    href=f"mailto:{copy.AUTHOR_EMAIL}",
+                    class_name="text-xs text-violet-600 hover:underline mt-0.5 inline-block",
+                ),
+                class_name="mt-4 pt-3 border-t border-gray-200/80",
+            ),
             rx.el.p(
                 copy.FOOTER_LEGAL,
                 class_name="text-[10px] text-gray-400 leading-snug mt-3",
