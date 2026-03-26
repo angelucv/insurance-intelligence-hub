@@ -61,6 +61,7 @@ python manage.py runserver 8080
 
 - Admin: `http://127.0.0.1:8080/admin/`
 - Carga: `http://127.0.0.1:8080/admin/upload-policies/`
+- Opcional (enlaces en el panel): `REFLEX_PORTAL_URL` (por defecto `https://insurance-suite.reflex.run`), `STREAMLIT_LAB_URL`, `COMPUTE_API_PUBLIC_HINT` (texto informativo, sin secretos).
 
 ### 4. Streamlit
 

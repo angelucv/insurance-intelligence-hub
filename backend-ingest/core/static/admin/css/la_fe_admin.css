@@ -1,13 +1,61 @@
-/* Tema admin alineado con Seguros La Fe (morado #7029B3). Compatible con Django 5 admin. */
+/* Portal BI Ejecutivo — tema admin (La Fe). Compatible Django 5 admin + dark preference. */
+
+:root {
+  --iihub-brand: #7029b3;
+  --iihub-brand-deep: #5a1f94;
+  --iihub-brand-light: #ede9fe;
+  --iihub-accent: #5b21b6;
+  --iihub-text: #1e1b4b;
+  --iihub-muted: #64748b;
+  --iihub-radius: 10px;
+  --iihub-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --iihub-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  font-family: var(--iihub-font);
+}
 
 #header {
-  background: #7029b3;
+  background: linear-gradient(125deg, var(--iihub-brand-deep) 0%, var(--iihub-brand) 55%, #5b21b6 100%);
   color: #fff;
+  box-shadow: var(--iihub-shadow);
 }
 
 #site-name a:link,
 #site-name a:visited {
   color: #fff;
+}
+
+.iihub-branding a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  text-decoration: none;
+}
+
+.iihub-branding__logo {
+  height: 40px;
+  width: auto;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.iihub-branding__title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.iihub-branding__badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
 }
 
 #user-tools,
@@ -21,31 +69,53 @@
   color: #fff;
 }
 
+.module,
+.dashboard .module {
+  border-radius: var(--iihub-radius);
+  box-shadow: var(--iihub-shadow);
+  border: 1px solid var(--hairline-color, #e5e7eb);
+  overflow: hidden;
+}
+
 .module h2,
 .module caption,
 .inline-group h2 {
-  background: #5a1f94;
+  background: var(--iihub-brand-deep);
   color: #fff;
 }
 
+#changelist-filter h2,
+#changelist-filter h3 {
+  border-radius: 6px 6px 0 0;
+}
+
 div.breadcrumbs {
-  background: #ede9fe;
-  color: #1e1b4b;
+  background: var(--iihub-brand-light);
+  color: var(--iihub-text);
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
 }
 
 div.breadcrumbs a {
-  color: #5b21b6;
+  color: var(--iihub-accent);
+  font-weight: 500;
 }
 
 a:link,
 a:visited {
-  color: #6d28d9;
+  color: var(--iihub-accent);
+}
+
+#changelist .results tbody tr:hover {
+  background: #faf5ff;
 }
 
 .button.default,
 input[type="submit"].default,
 .submit-row input.default {
-  background: #7029b3;
+  background: var(--iihub-brand);
+  border-radius: 8px;
 }
 
 .button.default:active,
@@ -53,20 +123,198 @@ input[type="submit"].default,
 .button.default:hover,
 input[type="submit"].default:active,
 input[type="submit"].default:focus,
-input[type="submit"].default:hover {
-  background: #5a1f94;
+input[type="submit"].default:hover,
+.submit-row input.default:active,
+.submit-row input.default:focus,
+.submit-row input.default:hover {
+  background: var(--iihub-brand-deep);
 }
 
 object,
 .addlink,
 .changelink {
-  color: #5b21b6;
+  color: var(--iihub-accent);
 }
 
 .iihub-admin-footer {
   margin-top: 2rem;
-  padding: 1rem 0;
+  padding: 1.25rem 0 0;
   border-top: 1px solid var(--hairline-color, #e5e5e5);
+  font-size: 0.8rem;
+  color: var(--iihub-muted);
+  max-width: 56rem;
+}
+
+.iihub-admin-footer__line {
+  margin: 0 0 0.5rem;
+}
+
+.iihub-admin-footer__note {
+  margin: 0;
   font-size: 0.75rem;
-  color: #64748b;
+  color: #94a3b8;
+}
+
+/* Inputs de archivo */
+.iihub-file-input,
+input[type="file"] {
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px dashed #c4b5fd;
+  background: #fafafa;
+  max-width: 100%;
+}
+
+.iihub-callout {
+  background: linear-gradient(180deg, #f5f3ff 0%, #fafafa 100%);
+  border: 1px solid #ddd6fe;
+  border-radius: var(--iihub-radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.iihub-callout strong {
+  display: block;
+  color: var(--iihub-brand-deep);
+  margin-bottom: 0.35rem;
+}
+
+.iihub-callout p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.iihub-upload-form .form-row {
+  padding: 0.35rem 0;
+}
+
+.iihub-back-row {
+  padding-left: 0 !important;
+  margin-top: 1.5rem;
+}
+
+/* Resultado de carga */
+.iihub-result-module h2 {
+  margin-top: 0;
+}
+
+.iihub-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.iihub-stat {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+}
+
+.iihub-stat__label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--iihub-muted);
+}
+
+.iihub-stat__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.iihub-stat__value--ok {
+  color: #15803d;
+}
+
+.iihub-stat__value--warn {
+  color: #c2410c;
+}
+
+.iihub-error-list {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.iihub-error-list ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.iihub-quiet {
+  color: var(--iihub-muted);
+  font-size: 0.8rem;
+  margin: 0.5rem 0 0;
+}
+
+.iihub-json-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--iihub-accent);
+  padding: 0.35rem 0;
+}
+
+.iihub-json-pre {
+  overflow: auto;
+  max-height: 18rem;
+  padding: 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Dark mode (preferencia del sistema) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+
+  .iihub-callout {
+    background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%);
+    border-color: #4c1d95;
+  }
+
+  .iihub-callout p {
+    color: #e2e8f0;
+  }
+
+  .iihub-stat {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .iihub-stat__value {
+    color: #f1f5f9;
+  }
+
+  .iihub-json-pre {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .iihub-error-list {
+    background: #422006;
+    border-color: #92400e;
+    color: #fef3c7;
+  }
+
+  .iihub-file-input,
+  input[type="file"] {
+    background: #1e293b;
+    border-color: #6366f1;
+    color: #e2e8f0;
+  }
 }

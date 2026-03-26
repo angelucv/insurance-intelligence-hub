@@ -67,6 +67,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.portal_links",
             ],
         },
     },
@@ -111,3 +112,9 @@ STORAGES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Enlaces mostrados en el admin (sidebar / ayuda). Sobreescribibles por entorno en despliegue.
+REFLEX_PORTAL_URL = os.environ.get("REFLEX_PORTAL_URL", "https://insurance-suite.reflex.run").strip()
+STREAMLIT_LAB_URL = os.environ.get("STREAMLIT_LAB_URL", "").strip()
+# Texto opcional para documentación (p. ej. URL pública de la API de cómputo, sin secretos).
+COMPUTE_API_PUBLIC_HINT = os.environ.get("COMPUTE_API_PUBLIC_HINT", "").strip()

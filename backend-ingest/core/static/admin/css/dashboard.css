@@ -1,0 +1,135 @@
+/* Home del admin: acciones rápidas y sidebar de ayuda */
+
+.iihub-dashboard-hero {
+  margin-bottom: 1.5rem;
+  padding: 0 0.15rem;
+}
+
+.iihub-dashboard-lead {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.55;
+  max-width: 48rem;
+}
+
+.iihub-quick-actions {
+  margin-bottom: 2rem;
+}
+
+.iihub-quick-actions__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 0 0 0.75rem;
+}
+
+.iihub-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.iihub-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  text-decoration: none;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+
+.iihub-card:hover {
+  border-color: #c4b5fd;
+  box-shadow: 0 4px 14px rgba(91, 33, 182, 0.12);
+  transform: translateY(-1px);
+}
+
+.iihub-card--primary {
+  background: linear-gradient(135deg, #faf5ff 0%, #fff 100%);
+  border-color: #ddd6fe;
+}
+
+.iihub-card--ghost {
+  background: #f8fafc;
+}
+
+.iihub-card__label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #5b21b6;
+}
+
+.iihub-card--primary .iihub-card__label {
+  color: #5a1f94;
+}
+
+.iihub-card__hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.iihub-sidebar-help h2 {
+  font-size: 0.85rem !important;
+}
+
+.iihub-link-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.iihub-link-list a {
+  font-weight: 500;
+}
+
+.iihub-link-list__hint {
+  list-style: none;
+  margin-left: -1.1rem;
+  padding: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+@media (prefers-color-scheme: dark) {
+  .iihub-dashboard-lead {
+    color: #94a3b8;
+  }
+
+  .iihub-card {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9 !important;
+  }
+
+  .iihub-card:hover {
+    border-color: #7c3aed;
+  }
+
+  .iihub-card__label {
+    color: #e9d5ff !important;
+  }
+
+  .iihub-card__hint {
+    color: #94a3b8;
+  }
+
+  .iihub-card--primary {
+    background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+  }
+
+  .iihub-card--ghost {
+    background: #0f172a;
+  }
+}

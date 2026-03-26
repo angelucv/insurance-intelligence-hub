@@ -4,9 +4,9 @@ from django.views.generic import RedirectView
 
 from core.views import upload_claims, upload_policies
 
-admin.site.site_header = "Insurance Intelligence Hub"
-admin.site.site_title = "IIHub · Seguros La Fe"
-admin.site.index_title = "Administración"
+admin.site.site_header = "Portal BI Ejecutivo · La Fe"
+admin.site.site_title = "Admin · IIHub La Fe"
+admin.site.index_title = "Panel de administración"
 
 urlpatterns = [
     path("", RedirectView.as_view(pattern_name="admin:index", permanent=False)),

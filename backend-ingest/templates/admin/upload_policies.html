@@ -1,17 +1,26 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
-  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  <a href="{% url 'admin:index' %}">{% translate "Inicio" %}</a>
   &rsaquo; {{ title }}
 </div>
 {% endblock %}
 
 {% block content %}
-<form method="post" enctype="multipart/form-data" id="upload-policies-form">
+<div class="iihub-callout">
+  <strong>{% translate "Qué hace esta pantalla" %}</strong>
+  <p>
+    {% blocktranslate %}Sube un CSV o Excel con pólizas validadas. Los datos se guardan en PostgreSQL y
+    alimentan los KPI del API de cómputo (DuckDB) y las vistas del portal Reflex (cartera, gráficos).
+    Use las mismas columnas que exige el contrato hub-contracts.{% endblocktranslate %}
+  </p>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="upload-policies-form" class="iihub-upload-form">
   {% csrf_token %}
   <fieldset class="module aligned">
     {% for field in form %}
@@ -32,14 +41,9 @@
   <p class="errornote">{{ error }}</p>
 {% endif %}
 
-{% if result_json %}
-  <div class="module">
-    <h2>{% translate "Resultado" %}</h2>
-    <pre style="overflow: auto; max-height: 24rem; padding: 1rem; background: var(--body-bg, #f8f8f8); border: 1px solid var(--hairline-color, #e0e0e0);">{{ result_json }}</pre>
-  </div>
-{% endif %}
+{% include "admin/_upload_result.html" %}
 
-<p class="submit-row" style="padding-left: 0;">
+<p class="submit-row iihub-back-row">
   <a href="{% url 'admin:index' %}" class="button">{% translate "Volver al inicio" %}</a>
 </p>
 {% endblock %}

@@ -12,6 +12,14 @@ from core.forms import ClaimFileForm, PolicyFileForm
 from core.ingest_service import ingest_claims_file, ingest_policies_file
 
 
+def _result_payload(result: dict) -> dict[str, object]:
+    """Serialización para plantilla: resumen estructurado + JSON completo plegable."""
+    return {
+        "ingest_result": result,
+        "result_json": json.dumps(result, indent=2, ensure_ascii=False),
+    }
+
+
 @staff_member_required
 def upload_policies(request):  # noqa: ANN001
     """Persiste CSV/XLSX; plantilla integrada en el sitio Admin (base_site)."""
@@ -20,7 +28,9 @@ def upload_policies(request):  # noqa: ANN001
         "title": "Carga de pólizas (CSV / Excel)",
         "form": PolicyFileForm(),
         "error": None,
+        "ingest_result": None,
         "result_json": None,
+        "upload_type": "policies",
     }
     if request.method == "POST":
         form = PolicyFileForm(request.POST, request.FILES)
@@ -30,7 +40,7 @@ def upload_policies(request):  # noqa: ANN001
             content = f.read()
             try:
                 result = ingest_policies_file(content, f.name, source="django")
-                context["result_json"] = json.dumps(result, indent=2, ensure_ascii=False)
+                context.update(_result_payload(result))
             except Exception as e:
                 context["error"] = str(e)
     return TemplateResponse(request, "admin/upload_policies.html", context)
@@ -43,7 +53,9 @@ def upload_claims(request):  # noqa: ANN001
         "title": "Carga de siniestros (CSV / Excel)",
         "form": ClaimFileForm(),
         "error": None,
+        "ingest_result": None,
         "result_json": None,
+        "upload_type": "claims",
     }
     if request.method == "POST":
         form = ClaimFileForm(request.POST, request.FILES)
@@ -53,7 +65,7 @@ def upload_claims(request):  # noqa: ANN001
             content = f.read()
             try:
                 result = ingest_claims_file(content, f.name, source="django")
-                context["result_json"] = json.dumps(result, indent=2, ensure_ascii=False)
+                context.update(_result_payload(result))
             except Exception as e:
                 context["error"] = str(e)
     return TemplateResponse(request, "admin/upload_claims.html", context)

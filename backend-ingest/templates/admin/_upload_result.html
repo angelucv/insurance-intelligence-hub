@@ -1,0 +1,53 @@
+{% load i18n %}
+{% if ingest_result %}
+<div class="iihub-result-module module">
+  <h2>{% translate "Resumen de la carga" %}</h2>
+  <div class="iihub-result-grid">
+    <div class="iihub-stat">
+      <span class="iihub-stat__label">{% translate "Lote (batch_id)" %}</span>
+      <span class="iihub-stat__value">{{ ingest_result.batch_id|truncatechars:36 }}</span>
+    </div>
+    <div class="iihub-stat">
+      <span class="iihub-stat__label">{% translate "Filas válidas" %}</span>
+      <span class="iihub-stat__value">{{ ingest_result.rows_valid }}</span>
+    </div>
+    <div class="iihub-stat">
+      <span class="iihub-stat__label">{% translate "Insertadas" %}</span>
+      <span class="iihub-stat__value iihub-stat__value--ok">{{ ingest_result.inserted }}</span>
+    </div>
+    {% if upload_type == "policies" %}
+    <div class="iihub-stat">
+      <span class="iihub-stat__label">{% translate "Omitidas (duplicado policy_id)" %}</span>
+      <span class="iihub-stat__value">{{ ingest_result.skipped_duplicate_policy_id }}</span>
+    </div>
+    {% endif %}
+    {% if upload_type == "claims" %}
+    <div class="iihub-stat">
+      <span class="iihub-stat__label">{% translate "Omitidas (dup. / inválidas)" %}</span>
+      <span class="iihub-stat__value">{{ ingest_result.skipped_duplicate_or_invalid }}</span>
+    </div>
+    {% endif %}
+    <div class="iihub-stat">
+      <span class="iihub-stat__label">{% translate "Errores en archivo" %}</span>
+      <span class="iihub-stat__value {% if ingest_result.errors %}iihub-stat__value--warn{% endif %}">{{ ingest_result.errors|length }}</span>
+    </div>
+  </div>
+  {% if ingest_result.errors %}
+  <div class="iihub-error-list">
+    <strong>{% translate "Primeros avisos / errores" %}:</strong>
+    <ul>
+      {% for err in ingest_result.errors|slice:":8" %}
+      <li>{% translate "Fila" %} {{ err.row }}: {{ err.error }}</li>
+      {% endfor %}
+    </ul>
+    {% if ingest_result.error_truncated %}
+    <p class="iihub-quiet">{% translate "Lista truncada; revise el JSON completo abajo." %}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  <details class="iihub-json-details">
+    <summary>{% translate "Ver respuesta JSON completa" %}</summary>
+    <pre class="iihub-json-pre">{{ result_json }}</pre>
+  </details>
+</div>
+{% endif %}

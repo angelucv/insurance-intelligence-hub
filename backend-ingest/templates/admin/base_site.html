@@ -3,6 +3,13 @@
 
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
+{% block extrahead %}{{ block.super }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="{% static 'brand/logo-fe-2.jpg' %}">
+{% endblock %}
+
 {% block branding %}
 <div id="site-name" class="iihub-branding">
   <a href="{% url 'admin:index' %}">
@@ -11,9 +18,10 @@
       alt="Seguros La Fe"
       width="140"
       height="40"
-      style="height: 40px; width: auto; border-radius: 6px; vertical-align: middle; margin-right: 0.65rem;"
+      class="iihub-branding__logo"
     >
-    <span style="font-weight: 600; vertical-align: middle;">Insurance Intelligence Hub</span>
+    <span class="iihub-branding__title">Portal BI Ejecutivo</span>
+    <span class="iihub-branding__badge">Admin</span>
   </a>
 </div>
 {% endblock %}
@@ -27,6 +35,11 @@
 {% block footer %}
 {{ block.super }}
 <div class="iihub-admin-footer">
-  Seguros La Fe · RIF J-000467382 · Inscrita en la SUDEASEG bajo el N.º 62 · Demo técnico Insurance Intelligence Hub.
+  <p class="iihub-admin-footer__line">
+    Seguros La Fe · RIF J-000467382 · Inscrita en la SUDEASEG bajo el N.º 62 · Insurance Intelligence Hub.
+  </p>
+  <p class="iihub-admin-footer__note">
+    Entorno de demostración / académico: validar siempre cifras operativas en sistemas oficiales.
+  </p>
 </div>
 {% endblock %}
