@@ -25,6 +25,7 @@ VISUAL_SUGGESTIONS_MD = """
 - **Donut o barra horizontal** para participación de mercado en un solo período.
 - **Mapa de calor** (mes × métrica) para estacionalidad y picos.
 - **Sparklines** junto a KPIs en tablas resumen (tendencia en una línea).
+- **Tacómetros (gauge)** con Plotly `go.Indicator`: persistencia, ratios o participación en un vistazo.
 
 **Rendimiento**
 
@@ -35,7 +36,7 @@ VISUAL_SUGGESTIONS_MD = """
 # Cabecera de página (área principal)
 HEADER_GREETING = "Panel ejecutivo"
 HEADER_SUB_MERCADO = "Referencia SUDEASEG · último cierre y series La Fe vs mercado"
-HEADER_SUB_COHORTE = "KPIs de cohorte operativa · alineado con cargas en Admin"
+HEADER_SUB_CARTERA = "Indicadores de cartera · lectura rápida y cargas en Admin"
 
 # Mercado
 MERCADO_PARAMS_TITLE = "Parámetros de las series"
@@ -50,14 +51,28 @@ MERCADO_CHART_LR_TITLE = "Loss ratio proxy (siniestros / primas)"
 MERCADO_CHART_LR_SUB = "La Fe y mercado total · fracción"
 
 # Cartera
-COHORT_PAGE_HEADING = "Resumen de cohorte"
-COHORT_LEAD = (
-    "Indicadores vía API de cómputo. Datos reales en BD o respaldo sintético según carga."
+CARTERA_PAGE_HEADING = "Resumen de cartera"
+CARTERA_LEAD = (
+    "Vista prioritaria con el período más reciente por defecto. Los KPI se calculan vía API "
+    "(datos en BD o respaldo sintético según carga)."
 )
+CARTERA_HERO_TITLE = "Período de referencia"
+CARTERA_PARAMS_TITLE = "Filtro de período"
+CARTERA_PARAMS_BODY = (
+    "El año seleccionado define la cartera consultada por la API. El mes fija la etiqueta de "
+    "referencia (corte mensual detallado puede incorporarse después)."
+)
+CARTERA_GAUGE_TITLE = "Indicadores clave"
+CARTERA_GAUGE_SUB = "Tacómetros · persistencia, ratio técnico y peso de pólizas activas"
+CARTERA_METRICS_TITLE = "Cifras"
 
-# Pestañas / títulos cortos (sidebar + mobile)
+# Años para selector (emisión de cartera)
+CARTERA_YEAR_OPTIONS = [str(y) for y in range(2015, 2032)]
+CARTERA_MONTH_OPTIONS = [f"{m:02d}" for m in range(1, 13)]
+
+# Pestañas / títulos cortos (sidebar + mobile) — cartera primero en el menú
+TAB_CARTERA = "Mi cartera"
 TAB_MERCADO = "Mercado SUDEASEG"
-TAB_COHORTE = "Cartera cohorte"
 
 # Pie
 FOOTER_LEGAL = "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62"

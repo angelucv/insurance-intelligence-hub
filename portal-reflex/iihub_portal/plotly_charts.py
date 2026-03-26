@@ -145,3 +145,98 @@ def trace_lr_mercado(xs: list[str], y: list[Any]) -> go.Scatter:
         marker=dict(size=4, color=MARKET_BLUE, line=dict(width=0)),
         hovertemplate="%{x}<br>Mercado: %{y:.4f}<extra></extra>",
     )
+
+
+def build_kpi_gauge_figure(
+    *,
+    persistency_pct: float,
+    technical_loss_pct: float | None,
+    active_share_pct: float,
+    height: int = 320,
+) -> Figure:
+    """Tacómetros (Plotly Indicator) — resumen visual de KPIs de cartera."""
+    from plotly.subplots import make_subplots
+
+    tlr = float(technical_loss_pct) if technical_loss_pct is not None else 0.0
+    tlr_axis_max = max(120.0, tlr * 1.15, 1.0)
+
+    fig = make_subplots(
+        rows=1,
+        cols=3,
+        horizontal_spacing=0.06,
+        specs=[[{"type": "indicator"}, {"type": "indicator"}, {"type": "indicator"}]],
+    )
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=min(100.0, max(0.0, persistency_pct)),
+            number={"suffix": "%", "font": {"size": 28}},
+            title={"text": "Persistencia", "font": {"size": 13}},
+            gauge={
+                "axis": {"range": [0, 100], "tickwidth": 1},
+                "bar": {"color": BRAND_PURPLE},
+                "bgcolor": "white",
+                "borderwidth": 1,
+                "bordercolor": "#e2e8f0",
+                "steps": [
+                    {"range": [0, 40], "color": "#f8fafc"},
+                    {"range": [40, 70], "color": "#f1f5f9"},
+                    {"range": [70, 100], "color": "#e8e2f4"},
+                ],
+            },
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=min(tlr_axis_max, max(0.0, tlr)),
+            number={"suffix": "%", "font": {"size": 28}},
+            title={"text": "Ratio técnico (demo)", "font": {"size": 13}},
+            gauge={
+                "axis": {"range": [0, tlr_axis_max]},
+                "bar": {"color": MARKET_BLUE},
+                "bgcolor": "white",
+                "borderwidth": 1,
+                "bordercolor": "#e2e8f0",
+                "steps": [
+                    {"range": [0, tlr_axis_max * 0.5], "color": "#f0fdf4"},
+                    {"range": [tlr_axis_max * 0.5, tlr_axis_max * 0.8], "color": "#fef9c3"},
+                    {"range": [tlr_axis_max * 0.8, tlr_axis_max], "color": "#fee2e2"},
+                ],
+            },
+        ),
+        row=1,
+        col=2,
+    )
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=min(100.0, max(0.0, active_share_pct)),
+            number={"suffix": "%", "font": {"size": 28}},
+            title={"text": "Pólizas activas (share)", "font": {"size": 13}},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "#7c3aed"},
+                "bgcolor": "white",
+                "borderwidth": 1,
+                "bordercolor": "#e2e8f0",
+                "steps": [
+                    {"range": [0, 33], "color": "#f8fafc"},
+                    {"range": [33, 66], "color": "#f1f5f9"},
+                    {"range": [66, 100], "color": "#ede9fe"},
+                ],
+            },
+        ),
+        row=1,
+        col=3,
+    )
+    fig.update_layout(
+        template="plotly_white",
+        paper_bgcolor="rgba(255,255,255,0)",
+        font=_FONT,
+        height=height,
+        margin=dict(l=24, r=24, t=40, b=24),
+    )
+    return fig

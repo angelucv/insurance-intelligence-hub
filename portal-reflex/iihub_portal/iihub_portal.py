@@ -1,4 +1,4 @@
-"""Portal ejecutivo: layout CRM + mercado / cohorte."""
+"""Portal ejecutivo: layout CRM + cartera / mercado."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import reflex as rx
 from iihub_portal import copy
 from iihub_portal.components.dashboard_header import dashboard_header
 from iihub_portal.components.layout import dashboard_layout
-from iihub_portal.components.panels import cohorte_panel, mercado_panel
+from iihub_portal.components.panels import cartera_panel, mercado_panel
 from iihub_portal.state import State
 
 
@@ -15,9 +15,9 @@ def index() -> rx.Component:
     return dashboard_layout(
         dashboard_header(),
         rx.cond(
-            State.ui_main_tab == "mercado",
+            State.ui_main_tab == "cartera",
+            cartera_panel(),
             mercado_panel(),
-            cohorte_panel(),
         ),
         rx.el.footer(
             rx.el.p(

@@ -12,6 +12,7 @@ import reflex as rx
 from plotly.graph_objects import Figure as PlotlyFigure
 
 from iihub_portal.plotly_charts import (
+    build_kpi_gauge_figure,
     polish_market_subplots,
     polish_ratio_figure,
     trace_lr_la_fe,
@@ -28,7 +29,8 @@ class State(rx.State):
     admin_claims_upload_url: str = "http://127.0.0.1:8080/admin/upload-claims/"
     streamlit_lab_url: str = "http://127.0.0.1:8501"
 
-    input_year: str = "2022"
+    input_year: str = "2025"
+    input_month: str = "01"
     persistency: str = "—"
     active_n: str = "—"
     lapsed_n: str = "—"
@@ -38,7 +40,7 @@ class State(rx.State):
     busy: bool = False
     market_charts_busy: bool = False
 
-    ui_main_tab: str = "mercado"
+    ui_main_tab: str = "cartera"
     market_fy: str = "2023"
     market_ty: str = "2026"
     market_mode: str = "monthly_flow"
@@ -52,6 +54,10 @@ class State(rx.State):
     market_ratio_plot_data: list[Any] = []
     market_ratio_plot_layout: dict[str, Any] = {}
     market_ratio_ok: bool = False
+
+    kpi_gauge_data: list[Any] = []
+    kpi_gauge_layout: dict[str, Any] = {}
+    kpi_gauge_ok: bool = False
 
     snap_ok: bool = False
     snap_period: str = "—"
@@ -79,8 +85,28 @@ class State(rx.State):
             layout=self.market_ratio_plot_layout or {},
         )
 
+    @rx.var(cache=True, auto_deps=True)
+    def kpi_gauge_figure(self) -> PlotlyFigure:
+        if not self.kpi_gauge_ok or not self.kpi_gauge_data:
+            return PlotlyFigure()
+        return PlotlyFigure(data=self.kpi_gauge_data, layout=self.kpi_gauge_layout or {})
+
+    @rx.var(cache=True, auto_deps=True)
+    def cartera_period_label(self) -> str:
+        y = (self.input_year or "").strip() or "—"
+        m = (self.input_month or "").strip() or "—"
+        if m.isdigit() and len(m) == 1:
+            m = f"0{m}"
+        return f"{y}-{m}"
+
     async def hydrate_urls(self):
         """Lee variables de entorno en runtime (Reflex Cloud / servidor)."""
+        from datetime import datetime
+
+        now = datetime.now()
+        self.input_year = str(now.year)
+        self.input_month = f"{now.month:02d}"
+
         ab = os.environ.get("DJANGO_ADMIN_BASE_URL", "").strip().rstrip("/")
         if ab:
             self.admin_upload_url = f"{ab}/admin/upload-policies/"
@@ -107,6 +133,7 @@ class State(rx.State):
         await asyncio.gather(
             self.load_sudeaseg_preview(),
             self.load_market_snapshot(),
+            self.load_kpi(),
         )
 
     async def load_sudeaseg_preview(self):
@@ -256,6 +283,9 @@ class State(rx.State):
     def set_input_year(self, v: str):
         self.input_year = v
 
+    def set_input_month(self, v: str):
+        self.input_month = v
+
     def set_market_fy(self, v: str):
         self.market_fy = v
 
@@ -268,19 +298,21 @@ class State(rx.State):
     def pick_tab_mercado(self):
         self.ui_main_tab = "mercado"
 
-    def pick_tab_cohorte(self):
-        self.ui_main_tab = "cohorte"
+    def pick_tab_cartera(self):
+        self.ui_main_tab = "cartera"
 
     def toggle_snap_more(self):
         self.show_snap_more = not self.show_snap_more
 
     async def load_kpi(self):
         self.busy = True
-        yield
+        self.kpi_gauge_ok = False
+        self.kpi_gauge_data = []
+        self.kpi_gauge_layout = {}
         try:
             year = int(self.input_year.strip())
         except ValueError:
-            self.note = "Indica un año válido."
+            self.note = "Indique un año válido en el selector."
             self.busy = False
             return
         base = os.environ.get("COMPUTE_API_URL", "http://127.0.0.1:8000").rstrip("/")
@@ -292,13 +324,31 @@ class State(rx.State):
                 )
                 r.raise_for_status()
                 d = r.json()
-            self.persistency = f"{float(d['persistency_rate_pct']):.2f} %"
-            self.active_n = f"{int(d['policies_active']):,}"
-            self.lapsed_n = f"{int(d['policies_lapsed']):,}"
+            per = float(d["persistency_rate_pct"])
+            act = int(d["policies_active"])
+            lap = int(d["policies_lapsed"])
+            total_pl = act + lap
+            active_share = (act / total_pl * 100.0) if total_pl > 0 else 0.0
+            t_raw = d.get("technical_loss_ratio_pct")
+            tlr_f = float(t_raw) if t_raw is not None else None
+
+            self.persistency = f"{per:.2f} %"
+            self.active_n = f"{act:,}"
+            self.lapsed_n = f"{lap:,}"
             self.avg_premium = f"{float(d['avg_annual_premium']):,.2f}"
-            t = d.get("technical_loss_ratio_pct")
-            self.tlr = f"{float(t):.2f} %" if t is not None else "—"
+            self.tlr = f"{float(t_raw):.2f} %" if t_raw is not None else "—"
             self.note = str(d.get("data_note", ""))
+
+            gfig = build_kpi_gauge_figure(
+                persistency_pct=per,
+                technical_loss_pct=tlr_f,
+                active_share_pct=active_share,
+                height=320,
+            )
+            gpj = gfig.to_plotly_json()
+            self.kpi_gauge_data = gpj["data"]
+            self.kpi_gauge_layout = gpj.get("layout") or {}
+            self.kpi_gauge_ok = True
         except Exception as e:  # noqa: BLE001
             self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
         self.busy = False

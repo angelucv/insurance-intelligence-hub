@@ -15,18 +15,11 @@ def snap_hero_cell(label: str, value: rx.Var) -> rx.Component:
     )
 
 
-def kpi_stat_card(title: str, value: rx.Var, icon: str) -> rx.Component:
+def metric_strip_cell(label: str, value: rx.Var) -> rx.Component:
     return rx.el.div(
-        rx.el.div(
-            rx.el.span(title, class_name="text-sm font-medium text-gray-500"),
-            rx.el.span(
-                rx.icon(icon, size=18, class_name="text-violet-600"),
-                class_name="p-2 bg-violet-50 rounded-xl",
-            ),
-            class_name="flex justify-between items-start gap-2",
-        ),
-        rx.el.p(value, class_name="text-2xl sm:text-3xl font-bold text-gray-900 mt-3 tabular-nums tracking-tight"),
-        class_name="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200",
+        rx.el.p(label, class_name="text-[11px] font-semibold text-gray-500 uppercase tracking-wide"),
+        rx.el.p(value, class_name="text-lg font-bold text-gray-900 mt-1 tabular-nums"),
+        class_name="rounded-xl bg-gradient-to-br from-gray-50 to-white px-4 py-3 border border-gray-100/80 shadow-sm",
     )
 
 
@@ -229,52 +222,137 @@ def mercado_panel() -> rx.Component:
     )
 
 
-def cohorte_panel() -> rx.Component:
+def cartera_panel() -> rx.Component:
     return rx.el.div(
-        rx.el.p(
-            copy.COHORT_LEAD,
-            class_name="text-sm text-gray-500 mb-6 leading-relaxed",
+        rx.el.section(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h2(
+                        copy.CARTERA_HERO_TITLE,
+                        class_name="text-lg font-semibold text-white",
+                    ),
+                    rx.el.p(
+                        State.cartera_period_label,
+                        class_name="text-3xl sm:text-4xl font-bold text-white mt-2 tabular-nums tracking-tight",
+                    ),
+                    rx.el.p(
+                        copy.CARTERA_LEAD,
+                        class_name="text-xs text-white/80 mt-3 max-w-xl leading-relaxed",
+                    ),
+                    class_name="mb-2",
+                ),
+                class_name="p-6 sm:p-8",
+            ),
+            class_name="rounded-2xl overflow-hidden shadow-xl shadow-violet-900/15 border border-violet-500/25",
+            style={
+                "background": f"linear-gradient(125deg, {BRAND_DEEP} 0%, {BRAND_PURPLE} 45%, #5b21b6 100%)",
+            },
         ),
         rx.el.section(
             rx.el.div(
+                rx.el.h3(
+                    copy.CARTERA_PARAMS_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.CARTERA_PARAMS_BODY,
+                    class_name="text-sm text-gray-500 mt-1 mb-6 leading-relaxed",
+                ),
                 rx.hstack(
                     rx.vstack(
-                        rx.text("Año de cohorte", size="2", weight="medium", color="gray"),
-                        rx.input(
+                        rx.text("Año de cartera", size="2", weight="medium", color="gray"),
+                        rx.select(
+                            copy.CARTERA_YEAR_OPTIONS,
                             value=State.input_year,
                             on_change=State.set_input_year,
-                            width="110px",
                             size="3",
+                            width="120px",
+                        ),
+                        spacing="1",
+                        align_items="start",
+                    ),
+                    rx.vstack(
+                        rx.text("Mes de referencia", size="2", weight="medium", color="gray"),
+                        rx.select(
+                            copy.CARTERA_MONTH_OPTIONS,
+                            value=State.input_month,
+                            on_change=State.set_input_month,
+                            size="3",
+                            width="100px",
                         ),
                         spacing="1",
                         align_items="start",
                     ),
                     rx.button(
-                        "Actualizar KPIs",
+                        "Actualizar vista",
                         on_click=State.load_kpi,
                         loading=State.busy,
                         color_scheme="purple",
                         size="3",
-                        class_name="rounded-xl mt-5",
+                        class_name="rounded-xl",
+                        style={"align_self": "flex-end"},
                     ),
-                    spacing="4",
+                    spacing="5",
                     align_items="end",
                     flex_wrap="wrap",
+                    width="100%",
                 ),
                 class_name="p-6 sm:p-8",
             ),
-            class_name="rounded-2xl bg-white border border-gray-100 shadow-sm mb-8",
+            class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm",
         ),
-        rx.el.div(
-            kpi_stat_card("Persistencia", State.persistency, "percent"),
-            kpi_stat_card("Pólizas activas", State.active_n, "users"),
-            kpi_stat_card("Prima media anual", State.avg_premium, "wallet"),
-            class_name="grid grid-cols-1 md:grid-cols-3 gap-4 w-full",
+        rx.el.section(
+            rx.el.div(
+                rx.el.h3(
+                    copy.CARTERA_GAUGE_TITLE,
+                    class_name="text-base font-semibold text-gray-900",
+                ),
+                rx.el.p(
+                    copy.CARTERA_GAUGE_SUB,
+                    class_name="text-xs text-gray-500 mt-1 mb-4",
+                ),
+                rx.cond(
+                    State.busy,
+                    rx.center(
+                        rx.vstack(
+                            rx.spinner(size="3"),
+                            rx.text("Cargando indicadores…", size="2", color="gray"),
+                            spacing="2",
+                            align_items="center",
+                        ),
+                        width="100%",
+                        padding_y="12",
+                    ),
+                    rx.cond(
+                        State.kpi_gauge_ok,
+                        rx.plotly(data=State.kpi_gauge_figure),
+                        rx.el.p(
+                            "Sin datos para mostrar tacómetros.",
+                            class_name="text-sm text-gray-400",
+                        ),
+                    ),
+                ),
+                class_name="p-5 sm:p-6",
+            ),
+            class_name="mt-8 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden",
         ),
-        rx.el.div(
-            kpi_stat_card("Lapsos", State.lapsed_n, "user-minus"),
-            kpi_stat_card("Ratio técnico (demo)", State.tlr, "gauge"),
-            class_name="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-[900px] mt-4",
+        rx.el.section(
+            rx.el.div(
+                rx.el.h4(
+                    copy.CARTERA_METRICS_TITLE,
+                    class_name="text-sm font-semibold text-gray-800 mb-4",
+                ),
+                rx.el.div(
+                    metric_strip_cell("Persistencia", State.persistency),
+                    metric_strip_cell("Ratio técnico (demo)", State.tlr),
+                    metric_strip_cell("Prima media anual", State.avg_premium),
+                    metric_strip_cell("Pólizas activas", State.active_n),
+                    metric_strip_cell("Lapsos", State.lapsed_n),
+                    class_name="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full",
+                ),
+                class_name="p-5 sm:p-6",
+            ),
+            class_name="mt-6 rounded-2xl bg-white border border-gray-100 shadow-sm",
         ),
         rx.cond(
             State.note != "",
@@ -285,5 +363,5 @@ def cohorte_panel() -> rx.Component:
                 width="100%",
             ),
         ),
-        class_name="w-full pb-8 space-y-4",
+        class_name="w-full pb-8 space-y-0",
     )

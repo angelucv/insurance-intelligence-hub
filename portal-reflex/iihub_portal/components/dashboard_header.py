@@ -21,7 +21,7 @@ def dashboard_header() -> rx.Component:
                     class_name="font-bold text-gray-900 tracking-tight mt-1",
                 ),
                 rx.heading(
-                    copy.COHORT_PAGE_HEADING,
+                    copy.CARTERA_PAGE_HEADING,
                     size="8",
                     class_name="font-bold text-gray-900 tracking-tight mt-1",
                 ),
@@ -33,7 +33,7 @@ def dashboard_header() -> rx.Component:
                     class_name="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed",
                 ),
                 rx.el.p(
-                    copy.HEADER_SUB_COHORTE,
+                    copy.HEADER_SUB_CARTERA,
                     class_name="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed",
                 ),
             ),

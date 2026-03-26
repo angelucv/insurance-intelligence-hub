@@ -79,8 +79,8 @@ def sidebar() -> rx.Component:
         rx.el.div(
             rx.el.p(copy.SIDEBAR_SECTION_VIEWS, class_name="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2"),
             rx.el.div(
+                _nav_main(copy.TAB_CARTERA, "layout-dashboard", "cartera", State.pick_tab_cartera),
                 _nav_main(copy.TAB_MERCADO, "line-chart", "mercado", State.pick_tab_mercado),
-                _nav_main(copy.TAB_COHORTE, "layers", "cohorte", State.pick_tab_cohorte),
                 class_name="space-y-1",
             ),
             rx.el.p(
@@ -126,18 +126,18 @@ def mobile_tab_bar() -> rx.Component:
     return rx.el.div(
         rx.hstack(
             rx.button(
-                copy.TAB_MERCADO,
-                on_click=State.pick_tab_mercado,
+                copy.TAB_CARTERA,
+                on_click=State.pick_tab_cartera,
                 size="2",
-                variant=rx.cond(State.ui_main_tab == "mercado", "solid", "outline"),
+                variant=rx.cond(State.ui_main_tab == "cartera", "solid", "outline"),
                 color_scheme="purple",
                 class_name="flex-1 rounded-xl",
             ),
             rx.button(
-                copy.TAB_COHORTE,
-                on_click=State.pick_tab_cohorte,
+                copy.TAB_MERCADO,
+                on_click=State.pick_tab_mercado,
                 size="2",
-                variant=rx.cond(State.ui_main_tab == "cohorte", "solid", "outline"),
+                variant=rx.cond(State.ui_main_tab == "mercado", "solid", "outline"),
                 color_scheme="purple",
                 class_name="flex-1 rounded-xl",
             ),
