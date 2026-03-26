@@ -384,94 +384,56 @@ body.dashboard #content > br.clear {
   border-radius: 4px;
 }
 
+/* Barra tipo Gestión Social (cortex-admin-links): menú compacto, wrap + gap, no texto concatenado. */
 .iihub-quick-actions {
-  margin-bottom: 2rem;
-  max-width: 40rem;
-  margin-right: auto;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
-.iihub-quick-actions__title {
-  font-size: 0.85rem;
+.iihub-quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--hairline-color, #e2e8f0);
+  background: #f8fafc;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.iihub-quick-nav__heading {
+  margin: 0;
+  padding: 0;
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #64748b;
-  margin: 0 0 0.75rem;
+  flex: 0 0 auto;
 }
 
-/* Portada: lista vertical clara (los <a class="iihub-card"> deben ser bloque flex, no inline). */
-body.dashboard .iihub-quick-actions .iihub-quick-grid {
-  display: flex !important;
-  flex-direction: column !important;
-  flex-wrap: nowrap !important;
-  gap: 0.85rem;
-  width: 100%;
-  min-width: 0;
+.iihub-quick-nav__heading::after {
+  content: ":";
 }
 
-body.dashboard .iihub-quick-actions .iihub-quick-grid > a.iihub-card {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  white-space: normal !important;
-}
-
-.iihub-quick-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-  gap: 1rem;
-  min-width: 0;
-}
-
-body.dashboard .iihub-quick-actions .iihub-card {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.iihub-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
-  padding: 1.1rem 1.25rem;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  text-decoration: none;
-  color: #0f172a !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
-}
-
-.iihub-card:hover {
-  border-color: #c4b5fd;
-  box-shadow: 0 4px 14px rgba(91, 33, 182, 0.12);
-  transform: translateY(-1px);
-}
-
-.iihub-card--primary {
-  background: linear-gradient(135deg, #faf5ff 0%, #fff 100%);
-  border-color: #ddd6fe;
-}
-
-.iihub-card--ghost {
-  background: #f8fafc;
-}
-
-.iihub-card__label {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #5b21b6;
-}
-
-.iihub-card--primary .iihub-card__label {
+.iihub-quick-nav__link {
   color: #5a1f94;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.2rem 0.45rem;
+  margin: 0;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
-.iihub-card__hint {
-  font-size: 0.8rem;
-  color: #64748b;
-  line-height: 1.35;
+.iihub-quick-nav__link:hover {
+  background: rgba(90, 31, 148, 0.1);
+  text-decoration: underline;
 }
 
 .iihub-sidebar-help h2 {
@@ -536,29 +498,20 @@ body.dashboard .iihub-quick-actions .iihub-card {
     color: #94a3b8;
   }
 
-  .iihub-card {
-    background: #1e293b;
+  .iihub-quick-nav {
+    background: rgba(30, 41, 59, 0.65);
     border-color: #334155;
-    color: #f1f5f9 !important;
   }
 
-  .iihub-card:hover {
-    border-color: #7c3aed;
-  }
-
-  .iihub-card__label {
-    color: #e9d5ff !important;
-  }
-
-  .iihub-card__hint {
+  .iihub-quick-nav__heading {
     color: #94a3b8;
   }
 
-  .iihub-card--primary {
-    background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+  .iihub-quick-nav__link {
+    color: #c4b5fd;
   }
 
-  .iihub-card--ghost {
-    background: #0f172a;
+  .iihub-quick-nav__link:hover {
+    background: rgba(124, 58, 237, 0.2);
   }
 }

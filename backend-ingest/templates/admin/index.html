@@ -15,28 +15,16 @@
 
 {% block content %}
 <div class="iihub-dashboard-top">
-<section class="iihub-quick-actions" aria-label="{% translate 'Acciones rápidas' %}">
-  <h2 class="iihub-quick-actions__title">{% translate "Acciones rápidas" %}</h2>
-  <div class="iihub-quick-grid">
-    <a href="{% url 'upload_policies' %}" class="iihub-card iihub-card--primary">
-      <span class="iihub-card__label">{% translate "Carga de pólizas" %}</span>
-      <span class="iihub-card__hint">CSV / Excel · cohortes y KPI</span>
-    </a>
-    <a href="{% url 'upload_claims' %}" class="iihub-card">
-      <span class="iihub-card__label">{% translate "Carga de siniestros" %}</span>
-      <span class="iihub-card__hint">{% translate "Enlazados a pólizas existentes" %}</span>
-    </a>
+<section class="iihub-quick-actions" aria-labelledby="iihub-quick-actions-heading">
+  <nav class="iihub-quick-nav" aria-label="{% translate 'Acciones rápidas' %}">
+    <h2 id="iihub-quick-actions-heading" class="iihub-quick-nav__heading">{% translate "Acciones rápidas" %}</h2>
+    <a href="{% url 'upload_policies' %}" class="iihub-quick-nav__link" title="{% translate 'CSV / Excel · cohortes y KPI' %}">{% translate "Carga de pólizas" %}</a>
+    <a href="{% url 'upload_claims' %}" class="iihub-quick-nav__link" title="{% translate 'Enlazados a pólizas existentes' %}">{% translate "Carga de siniestros" %}</a>
     {% if reflex_portal_url %}
-    <a href="{{ reflex_portal_url }}" class="iihub-card iihub-card--ghost" target="_blank" rel="noopener noreferrer">
-      <span class="iihub-card__label">{% translate "Portal Reflex" %}</span>
-      <span class="iihub-card__hint">{% translate "KPI y cartera (solo lectura)" %}</span>
-    </a>
+    <a href="{{ reflex_portal_url }}" class="iihub-quick-nav__link" target="_blank" rel="noopener noreferrer" title="{% translate 'KPI y cartera (solo lectura)' %}">{% translate "Portal Reflex" %}</a>
     {% endif %}
-    <a href="{% url 'data_model_doc' %}" class="iihub-card iihub-card--ghost">
-      <span class="iihub-card__label">{% translate "Modelo de datos" %}</span>
-      <span class="iihub-card__hint">{% translate "Cómo se organizan los datos (con detalle técnico opcional)" %}</span>
-    </a>
-  </div>
+    <a href="{% url 'data_model_doc' %}" class="iihub-quick-nav__link" title="{% translate 'Cómo se organizan los datos (con detalle técnico opcional)' %}">{% translate "Modelo de datos" %}</a>
+  </nav>
 </section>
 
 <div id="content-main">
