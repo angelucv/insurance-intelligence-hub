@@ -6,6 +6,7 @@ import pytest
 from django.db import connection
 
 _HUB_DDL = """
+DROP TABLE IF EXISTS policy_claims;
 DROP TABLE IF EXISTS policies;
 DROP TABLE IF EXISTS upload_batches;
 CREATE TABLE upload_batches (
@@ -28,6 +29,19 @@ CREATE TABLE policies (
   CHECK (issue_age >= 0 AND issue_age <= 110),
   CHECK (annual_premium > 0),
   CHECK (status IN ('active', 'lapsed'))
+);
+CREATE TABLE policy_claims (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  batch_id TEXT REFERENCES upload_batches(id) ON DELETE SET NULL,
+  claim_id TEXT NOT NULL UNIQUE,
+  policy_id TEXT NOT NULL REFERENCES policies(policy_id),
+  loss_date TEXT NOT NULL,
+  reported_amount_bs REAL NOT NULL DEFAULT 0,
+  paid_amount_bs REAL NOT NULL DEFAULT 0,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  CHECK (status IN ('reported', 'adjusted', 'paid', 'closed', 'rejected')),
+  CHECK (reported_amount_bs >= 0 AND paid_amount_bs >= 0)
 );
 """
 

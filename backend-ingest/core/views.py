@@ -8,8 +8,8 @@ from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.template.response import TemplateResponse
 
-from core.forms import PolicyFileForm
-from core.ingest_service import ingest_policies_file
+from core.forms import ClaimFileForm, PolicyFileForm
+from core.ingest_service import ingest_claims_file, ingest_policies_file
 
 
 @staff_member_required
@@ -34,3 +34,26 @@ def upload_policies(request):  # noqa: ANN001
             except Exception as e:
                 context["error"] = str(e)
     return TemplateResponse(request, "admin/upload_policies.html", context)
+
+
+@staff_member_required
+def upload_claims(request):  # noqa: ANN001
+    context = {
+        **admin.site.each_context(request),
+        "title": "Carga de siniestros (CSV / Excel)",
+        "form": ClaimFileForm(),
+        "error": None,
+        "result_json": None,
+    }
+    if request.method == "POST":
+        form = ClaimFileForm(request.POST, request.FILES)
+        context["form"] = form
+        if form.is_valid():
+            f = request.FILES["file"]
+            content = f.read()
+            try:
+                result = ingest_claims_file(content, f.name, source="django")
+                context["result_json"] = json.dumps(result, indent=2, ensure_ascii=False)
+            except Exception as e:
+                context["error"] = str(e)
+    return TemplateResponse(request, "admin/upload_claims.html", context)

@@ -8,7 +8,12 @@ import pytest
 from contracts.policy import PolicyRow
 from django.db import connection
 
-from core.ingest_service import _normalize_columns, _read_dataframe, ingest_policies_file
+from core.ingest_service import (
+    _normalize_columns,
+    _read_dataframe,
+    ingest_claims_file,
+    ingest_policies_file,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SAMPLE_CSV = REPO_ROOT / "docs" / "sample-policies.csv"
@@ -68,3 +73,32 @@ def test_ingest_second_upload_skips_duplicates(hub_schema):
     with connection.cursor() as cursor:
         cursor.execute("SELECT COUNT(*) FROM policies")
         assert cursor.fetchone()[0] == 5
+
+
+@pytest.mark.django_db
+def test_ingest_claims_after_policies(hub_schema):
+    raw = SAMPLE_CSV.read_bytes()
+    ingest_policies_file(raw, "sample-policies.csv", source="django")
+    csv_claims = (
+        b"claim_id,policy_id,loss_date,status,reported_amount_bs,paid_amount_bs\n"
+        b"CLM-1,DEMO-001,2024-01-15,paid,1000,500.00\n"
+    )
+    out = ingest_claims_file(csv_claims, "claims.csv", source="django")
+    assert out["inserted"] == 1
+    assert out["rows_valid"] == 1
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM policy_claims")
+        assert cursor.fetchone()[0] == 1
+
+
+@pytest.mark.django_db
+def test_ingest_claims_unknown_policy_errors(hub_schema):
+    raw = SAMPLE_CSV.read_bytes()
+    ingest_policies_file(raw, "sample-policies.csv", source="django")
+    csv_claims = (
+        b"claim_id,policy_id,loss_date,status\n"
+        b"CLM-X,NOPE-999,2024-01-15,reported\n"
+    )
+    out = ingest_claims_file(csv_claims, "claims.csv", source="django")
+    assert out["inserted"] == 0
+    assert out["errors"]

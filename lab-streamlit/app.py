@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,19 @@ def _admin_upload_hint() -> str:
     return "/admin/upload-policies/"
 
 
+def _admin_upload_claims_hint() -> str:
+    try:
+        if "DJANGO_ADMIN_BASE_URL" in st.secrets:
+            u = str(st.secrets["DJANGO_ADMIN_BASE_URL"]).rstrip("/")
+            return f"{u}/admin/upload-claims/"
+    except FileNotFoundError:
+        pass
+    env_u = os.environ.get("DJANGO_ADMIN_BASE_URL")
+    if env_u:
+        return f"{env_u.rstrip('/')}/admin/upload-claims/"
+    return "/admin/upload-claims/"
+
+
 def _portal_reflex_url() -> str | None:
     try:
         if "PORTAL_REFLEX_URL" in st.secrets:
@@ -119,6 +133,45 @@ def _merge_market_primas(
     return m
 
 
+def _df_market_points(payload: dict[str, Any]) -> pd.DataFrame:
+    pts = payload.get("points") or []
+    if not pts:
+        return pd.DataFrame()
+    df = pd.DataFrame(pts)
+    if df.empty:
+        return df
+    df["periodo"] = (
+        df["period_year"].astype(int).astype(str)
+        + "-"
+        + df["period_month"].astype(int).astype(str).str.zfill(2)
+    )
+    return df
+
+
+_RESUMEN_METRIC_LABELS: dict[str, str] = {
+    "primas_netas_thousands_bs": "Primas netas",
+    "siniestros_pagados_thousands_bs": "Siniestros pagados",
+    "reservas_psp_brutas_thousands_bs": "Reservas PSP brutas",
+    "reservas_psp_netas_reaseg_thousands_bs": "Reservas PSP netas reaseg.",
+    "siniestros_totales_thousands_bs": "Siniestros totales",
+    "comisiones_thousands_bs": "Comisiones",
+    "gastos_adquisicion_thousands_bs": "Gastos adquisición",
+    "gastos_administracion_thousands_bs": "Gastos administración",
+    "loss_ratio_proxy": "Ratio siniestros/primas",
+    "comision_ratio_proxy": "Ratio comisiones/primas",
+    "gasto_adm_ratio_proxy": "Ratio gasto adm./primas",
+}
+
+_CUADRO_METRIC_LABELS: dict[str, str] = {
+    "primas_netas_thousands_bs": "Primas (cuadro)",
+    "resultado_tecnico_bruto_thousands_bs": "Resultado técnico bruto",
+    "resultado_reaseguro_cedido_thousands_bs": "Resultado reaseguro cedido",
+    "resultado_tecnico_neto_thousands_bs": "Resultado técnico neto",
+    "resultado_gestion_general_thousands_bs": "Resultado gestión general",
+    "saldo_operaciones_thousands_bs": "Saldo operaciones",
+}
+
+
 def _fetch_kpi(
     base: str,
     cohort_year: int,
@@ -150,6 +203,7 @@ with ctr:
 
 base = _api_base()
 upload_path = _admin_upload_hint()
+upload_claims_path = _admin_upload_claims_hint()
 portal = _portal_reflex_url()
 
 st.markdown(
@@ -158,6 +212,10 @@ st.markdown(
       <a href="{upload_path}" target="_blank" rel="noopener noreferrer"
          style="{_BTN_STYLE.format(bg=_BRAND_PURPLE)}">
         Carga de pólizas (Admin)
+      </a>
+      <a href="{upload_claims_path}" target="_blank" rel="noopener noreferrer"
+         style="{_BTN_SECONDARY.format(c=_BRAND_PURPLE)}">
+        Carga de siniestros (Admin)
       </a>
       {f'<a href="{portal}" target="_blank" rel="noopener noreferrer" style="{_BTN_SECONDARY.format(c=_BRAND_PURPLE)}">Portal ejecutivo (Reflex)</a>' if portal else ""}
     </div>
@@ -237,93 +295,306 @@ with tab_demo:
     )
 
 with tab_mercado:
-    st.subheader("Primas netas: La Fe vs total de mercado")
     st.caption(
-        "Datos según cuadro resumen SUDEASEG cargado en el hub. Unidades: miles de bolívares. "
-        "La Fe en el eje izquierdo; total de mercado en el eje derecho. "
+        "SUDEASEG en Postgres (API compute). Miles de bolívares salvo ratios. "
         "Modo mensual = flujo del mes; YTD = acumulado a cierre de mes."
     )
     mc1, mc2, mc3 = st.columns(3)
     with mc1:
-        m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1)
+        m_from = st.number_input("Desde año", min_value=2000, max_value=2100, value=2023, step=1, key="m_from")
     with mc2:
-        m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1)
+        m_to = st.number_input("Hasta año", min_value=2000, max_value=2100, value=2026, step=1, key="m_to")
     with mc3:
-        m_mode = st.selectbox("Modo", options=["monthly_flow", "ytd"], format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)")
+        m_mode = st.selectbox(
+            "Modo",
+            options=["monthly_flow", "ytd"],
+            format_func=lambda x: "Flujo mensual" if x == "monthly_flow" else "YTD (cierre de mes)",
+            key="m_mode",
+        )
 
     if m_from > m_to:
         st.warning("Ajusta el rango de años (desde ≤ hasta).")
     else:
-        try:
-            la_payload = _fetch_market_series(
-                base,
-                "/api/v1/market/la-fe/resumen-series",
-                int(m_from),
-                int(m_to),
-                str(m_mode),
-            )
-            tot_payload = _fetch_market_series(
-                base,
-                "/api/v1/market/resumen/totals-series",
-                int(m_from),
-                int(m_to),
-                str(m_mode),
-            )
-        except Exception as e:
-            st.error(
-                "No se pudieron obtener las series de mercado. "
-                "Comprueba que la API compute tenga DATABASE_URL y las migraciones SUDEASEG aplicadas. "
-                f"({e})"
-            )
-        else:
-            merged = _merge_market_primas(la_payload, tot_payload)
-            if merged.empty:
-                st.info("No hay puntos en el rango elegido o faltan datos en la tabla de mercado.")
-            else:
-                fig_m = make_subplots(specs=[[{"secondary_y": True}]])
-                fig_m.add_trace(
-                    go.Scatter(
-                        x=merged["periodo"],
-                        y=merged["primas_la_fe_thousands_bs"],
-                        name="La Fe (eje izq.)",
-                        mode="lines+markers",
-                        line={"color": _BRAND_PURPLE},
-                    ),
-                    secondary_y=False,
-                )
-                fig_m.add_trace(
-                    go.Scatter(
-                        x=merged["periodo"],
-                        y=merged["primas_mercado_thousands_bs"],
-                        name="Mercado total (eje der.)",
-                        mode="lines+markers",
-                        line={"color": _MARKET_TOTAL_LINE},
-                    ),
-                    secondary_y=True,
-                )
-                fig_m.update_xaxes(title_text="Período (año-mes)")
-                fig_m.update_yaxes(title_text="La Fe · miles de Bs.", secondary_y=False)
-                fig_m.update_yaxes(title_text="Mercado total · miles de Bs.", secondary_y=True)
-                fig_m.update_layout(
-                    height=420,
-                    margin=dict(l=24, r=56, t=48, b=24),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                    hovermode="x unified",
-                )
-                st.plotly_chart(fig_m, use_container_width=True)
+        mt1, mt2, mt3, mt4 = st.tabs(
+            ["Primas vs mercado", "Último cierre", "Métricas resumen", "Cuadro de resultados"],
+        )
 
-                st.subheader("Detalle y exportación")
-                st.dataframe(merged, use_container_width=True, hide_index=True)
-                csv_bytes = merged.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Descargar tabla fusionada (CSV)",
-                    data=csv_bytes,
-                    file_name="market_la_fe_vs_totales.csv",
-                    mime="text/csv",
+        with mt1:
+            st.subheader("Primas netas: La Fe vs total de mercado")
+            try:
+                la_payload = _fetch_market_series(
+                    base,
+                    "/api/v1/market/la-fe/resumen-series",
+                    int(m_from),
+                    int(m_to),
+                    str(m_mode),
                 )
-                with st.expander("Notas de filtro (API)"):
-                    st.write(la_payload.get("empresa_filter_note", ""))
-                    st.write(tot_payload.get("empresa_filter_note", ""))
+                tot_payload = _fetch_market_series(
+                    base,
+                    "/api/v1/market/resumen/totals-series",
+                    int(m_from),
+                    int(m_to),
+                    str(m_mode),
+                )
+            except Exception as e:
+                st.error(
+                    "No se pudieron obtener las series de mercado. "
+                    "Comprueba DATABASE_URL y migraciones SUDEASEG. "
+                    f"({e})"
+                )
+            else:
+                merged = _merge_market_primas(la_payload, tot_payload)
+                if merged.empty:
+                    st.info("No hay puntos en el rango elegido o faltan datos en la tabla de mercado.")
+                else:
+                    fig_m = make_subplots(specs=[[{"secondary_y": True}]])
+                    fig_m.add_trace(
+                        go.Scatter(
+                            x=merged["periodo"],
+                            y=merged["primas_la_fe_thousands_bs"],
+                            name="La Fe (eje izq.)",
+                            mode="lines+markers",
+                            line={"color": _BRAND_PURPLE},
+                        ),
+                        secondary_y=False,
+                    )
+                    fig_m.add_trace(
+                        go.Scatter(
+                            x=merged["periodo"],
+                            y=merged["primas_mercado_thousands_bs"],
+                            name="Mercado total (eje der.)",
+                            mode="lines+markers",
+                            line={"color": _MARKET_TOTAL_LINE},
+                        ),
+                        secondary_y=True,
+                    )
+                    fig_m.update_xaxes(title_text="Período (año-mes)")
+                    fig_m.update_yaxes(title_text="La Fe · miles de Bs.", secondary_y=False)
+                    fig_m.update_yaxes(title_text="Mercado total · miles de Bs.", secondary_y=True)
+                    fig_m.update_layout(
+                        height=420,
+                        margin=dict(l=24, r=56, t=48, b=24),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                        hovermode="x unified",
+                    )
+                    st.plotly_chart(fig_m, use_container_width=True)
+                    st.dataframe(merged, use_container_width=True, hide_index=True)
+                    st.download_button(
+                        "Descargar tabla fusionada (CSV)",
+                        data=merged.to_csv(index=False).encode("utf-8"),
+                        file_name="market_la_fe_vs_totales.csv",
+                        mime="text/csv",
+                    )
+                    with st.expander("Notas de filtro (API)"):
+                        st.write(la_payload.get("empresa_filter_note", ""))
+                        st.write(tot_payload.get("empresa_filter_note", ""))
+
+        with mt2:
+            st.subheader("Último cierre con dato La Fe (YTD a ese mes)")
+            try:
+                snap_r = requests.get(f"{base}/api/v1/market/la-fe/snapshot-latest", timeout=60)
+                snap_r.raise_for_status()
+                snap = snap_r.json()
+            except Exception as e:
+                st.warning(f"No hay snapshot o la API falló: {e}")
+            else:
+                py, pm = snap["period_year"], snap["period_month"]
+                st.markdown(f"**Cierre:** {py}-{pm:02d} · Miles de Bs. (ratios como fracción)")
+                lf = snap.get("la_fe") or {}
+                mk = snap.get("mercado_total") or {}
+                c1, c2, c3, c4 = st.columns(4)
+                def _mnum(x: Any, fmt: str = ",.2f") -> str:
+                    if x is None:
+                        return "—"
+                    return f"{float(x):{fmt}}"
+
+                c1.metric("Primas YTD La Fe", _mnum(lf.get("primas_ytd")))
+                c2.metric("Siniestros tot. La Fe", _mnum(lf.get("siniestros_totales_ytd")))
+                lr_lf = lf.get("loss_ratio_ytd")
+                c3.metric(
+                    "Loss ratio La Fe",
+                    f"{float(lr_lf) * 100:.2f} %" if lr_lf is not None else "—",
+                )
+                cq = snap.get("cuota_mercado_primas_pct")
+                c4.metric("Cuota primas", f"{float(cq):.3f} %" if cq is not None else "—")
+                c5, c6, c7, c8 = st.columns(4)
+                c5.metric("Comisiones YTD La Fe", _mnum(lf.get("comisiones_ytd")))
+                c6.metric("Gasto adm. YTD La Fe", _mnum(lf.get("gastos_admin_ytd")))
+                c7.metric("Primas YTD mercado", _mnum(mk.get("primas_ytd")))
+                lr_mk = mk.get("loss_ratio_ytd")
+                c8.metric(
+                    "Loss ratio mercado",
+                    f"{float(lr_mk) * 100:.2f} %" if lr_mk is not None else "—",
+                )
+                st.caption(snap.get("empresa_filter_note", ""))
+                st.download_button(
+                    "Descargar snapshot (JSON)",
+                    data=json.dumps(snap, indent=2, ensure_ascii=False).encode("utf-8"),
+                    file_name="market_la_fe_snapshot_latest.json",
+                    mime="application/json",
+                )
+
+        with mt3:
+            st.subheader("Serie extendida — resumen por empresa (La Fe)")
+            try:
+                la_ext = _fetch_market_series(
+                    base,
+                    "/api/v1/market/la-fe/resumen-extended",
+                    int(m_from),
+                    int(m_to),
+                    str(m_mode),
+                )
+                tot_ext = _fetch_market_series(
+                    base,
+                    "/api/v1/market/resumen/totals-extended",
+                    int(m_from),
+                    int(m_to),
+                    str(m_mode),
+                )
+            except Exception as e:
+                st.error(f"No se pudieron cargar series extendidas: {e}")
+            else:
+                df_lf = _df_market_points(la_ext)
+                df_mk = _df_market_points(tot_ext)
+                if df_lf.empty:
+                    st.info("Sin puntos extendidos en el rango.")
+                else:
+                    metric_keys = list(_RESUMEN_METRIC_LABELS.keys())
+                    picked = st.multiselect(
+                        "Métricas a graficar (La Fe)",
+                        options=metric_keys,
+                        default=["primas_netas_thousands_bs", "siniestros_totales_thousands_bs", "loss_ratio_proxy"],
+                        format_func=lambda k: _RESUMEN_METRIC_LABELS.get(k, k),
+                    )
+                    fig_e = go.Figure()
+                    for k in picked:
+                        if k in df_lf.columns:
+                            fig_e.add_trace(
+                                go.Scatter(
+                                    x=df_lf["periodo"],
+                                    y=df_lf[k],
+                                    name=_RESUMEN_METRIC_LABELS.get(k, k),
+                                    mode="lines+markers",
+                                )
+                            )
+                    fig_e.update_layout(
+                        height=440,
+                        xaxis_title="Período",
+                        legend=dict(orientation="h", y=1.1),
+                        hovermode="x unified",
+                    )
+                    st.plotly_chart(fig_e, use_container_width=True)
+                    compare = st.selectbox(
+                        "Superponer total mercado (misma métrica)",
+                        options=["(ninguna)"] + metric_keys,
+                        format_func=lambda k: "(ninguna)" if k == "(ninguna)" else _RESUMEN_METRIC_LABELS.get(k, k),
+                    )
+                    if compare != "(ninguna)" and not df_mk.empty and compare in df_mk.columns:
+                        fig_c = go.Figure()
+                        fig_c.add_trace(
+                            go.Scatter(
+                                x=df_lf["periodo"],
+                                y=df_lf[compare],
+                                name=f"La Fe — {_RESUMEN_METRIC_LABELS.get(compare, compare)}",
+                                mode="lines+markers",
+                                line={"color": _BRAND_PURPLE},
+                            )
+                        )
+                        fig_c.add_trace(
+                            go.Scatter(
+                                x=df_mk["periodo"],
+                                y=df_mk[compare],
+                                name=f"Mercado — {_RESUMEN_METRIC_LABELS.get(compare, compare)}",
+                                mode="lines+markers",
+                                line={"color": _MARKET_TOTAL_LINE},
+                            )
+                        )
+                        fig_c.update_layout(height=380, hovermode="x unified")
+                        st.plotly_chart(fig_c, use_container_width=True)
+                    st.subheader("Tablas y CSV")
+                    cta, ctb = st.columns(2)
+                    with cta:
+                        st.markdown("**La Fe**")
+                        st.dataframe(df_lf, use_container_width=True, hide_index=True)
+                        st.download_button(
+                            "CSV La Fe (extendido)",
+                            df_lf.to_csv(index=False).encode("utf-8"),
+                            "market_la_fe_resumen_extended.csv",
+                            mime="text/csv",
+                            key="dl_lf_ext",
+                        )
+                    with ctb:
+                        st.markdown("**Mercado (suma)**")
+                        st.dataframe(df_mk, use_container_width=True, hide_index=True)
+                        st.download_button(
+                            "CSV mercado (extendido)",
+                            df_mk.to_csv(index=False).encode("utf-8"),
+                            "market_totals_resumen_extended.csv",
+                            mime="text/csv",
+                            key="dl_mk_ext",
+                        )
+
+        with mt4:
+            st.subheader("Cuadro de resultados — La Fe vs total mercado")
+            try:
+                la_c = _fetch_market_series(
+                    base,
+                    "/api/v1/market/la-fe/cuadro-series",
+                    int(m_from),
+                    int(m_to),
+                    str(m_mode),
+                )
+                tot_c = _fetch_market_series(
+                    base,
+                    "/api/v1/market/cuadro/totals-series",
+                    int(m_from),
+                    int(m_to),
+                    str(m_mode),
+                )
+            except Exception as e:
+                st.error(f"No se pudieron cargar series de cuadro: {e}")
+            else:
+                df_lfc = _df_market_points(la_c)
+                df_ttc = _df_market_points(tot_c)
+                if df_lfc.empty:
+                    st.info("Sin datos de cuadro para La Fe en el rango (¿ETL cuadro cargado?).")
+                else:
+                    cuad_pick = st.multiselect(
+                        "Líneas (La Fe)",
+                        options=list(_CUADRO_METRIC_LABELS.keys()),
+                        default=["resultado_tecnico_neto_thousands_bs", "saldo_operaciones_thousands_bs"],
+                        format_func=lambda k: _CUADRO_METRIC_LABELS.get(k, k),
+                    )
+                    fig_c2 = go.Figure()
+                    for k in cuad_pick:
+                        if k in df_lfc.columns:
+                            fig_c2.add_trace(
+                                go.Scatter(
+                                    x=df_lfc["periodo"],
+                                    y=df_lfc[k],
+                                    name=_CUADRO_METRIC_LABELS.get(k, k),
+                                    mode="lines+markers",
+                                )
+                            )
+                    fig_c2.update_layout(height=440, hovermode="x unified")
+                    st.plotly_chart(fig_c2, use_container_width=True)
+                    st.dataframe(df_lfc, use_container_width=True, hide_index=True)
+                    st.download_button(
+                        "CSV cuadro La Fe",
+                        df_lfc.to_csv(index=False).encode("utf-8"),
+                        "market_la_fe_cuadro.csv",
+                        mime="text/csv",
+                        key="dl_cuad_lf",
+                    )
+                    if not df_ttc.empty:
+                        st.dataframe(df_ttc, use_container_width=True, hide_index=True)
+                        st.download_button(
+                            "CSV cuadro mercado (suma)",
+                            df_ttc.to_csv(index=False).encode("utf-8"),
+                            "market_cuadro_totals.csv",
+                            mime="text/csv",
+                            key="dl_cuad_mk",
+                        )
 
 st.caption(
     "Seguros La Fe · RIF J-000467382 · SUDEASEG N.º 62 · Insurance Intelligence Hub (demo técnico)."

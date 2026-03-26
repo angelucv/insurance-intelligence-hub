@@ -4,7 +4,7 @@
 
 - **Usuarios y sesiones** vía Django Admin (`/admin/`).
 - **Listado de pólizas** (modelo no gestionado sobre la tabla `policies` creada en Supabase).
-- **Carga de CSV/XLSX** en `/admin/upload-policies/` (también enlace **“Carga de pólizas (CSV / Excel)”** en la página de inicio del Admin tras iniciar sesión).
+- **Carga de pólizas** CSV/XLSX en `/admin/upload-policies/` y **carga de siniestros** en `/admin/upload-claims/` (enlaces en el inicio del Admin). Siniestros: columnas `claim_id`, `policy_id`, `loss_date`, `status`; opcionales `reported_amount_bs`, `paid_amount_bs`. El `policy_id` debe existir en `policies` (tras migración `004_policy_claims.sql`).
 
 ## Variables de entorno
 

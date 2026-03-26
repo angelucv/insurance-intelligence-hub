@@ -20,11 +20,26 @@ from app.deps import get_db, verify_ingest_key
 from app.ingest_service import ingest_policies_bytes
 from app.kpi_service import kpi_summary_payload
 from app.market_service import (
+    la_fe_cuadro_series,
+    la_fe_market_snapshot_latest,
+    la_fe_resumen_extended_series,
     la_fe_resumen_series,
+    market_cuadro_totals_series,
+    market_resumen_totals_extended_series,
     market_resumen_totals_series,
     sanitize_empresa_norm_fragment,
 )
-from app.schemas import IngestResult, KpiSummary, MarketResumenSeries, MarketSeriesPoint
+from app.schemas import (
+    IngestResult,
+    KpiSummary,
+    MarketCuadroPoint,
+    MarketCuadroSeries,
+    MarketLaFeSnapshot,
+    MarketResumenExtendedPoint,
+    MarketResumenExtendedSeries,
+    MarketResumenSeries,
+    MarketSeriesPoint,
+)
 
 
 @asynccontextmanager
@@ -85,6 +100,11 @@ def root() -> dict[str, str]:
         "kpi": "/api/v1/kpi/summary",
         "market_la_fe": "/api/v1/market/la-fe/resumen-series",
         "market_totals": "/api/v1/market/resumen/totals-series",
+        "market_la_fe_resumen_extended": "/api/v1/market/la-fe/resumen-extended",
+        "market_totals_resumen_extended": "/api/v1/market/resumen/totals-extended",
+        "market_la_fe_cuadro": "/api/v1/market/la-fe/cuadro-series",
+        "market_cuadro_totals": "/api/v1/market/cuadro/totals-series",
+        "market_la_fe_snapshot": "/api/v1/market/la-fe/snapshot-latest",
     }
 
 
@@ -188,6 +208,148 @@ def market_resumen_totals_series_ep(
         empresa_filter_note="Suma de todas las filas por (año, mes) en la tabla cargada.",
         points=[MarketSeriesPoint.model_validate(p) for p in rows],
     )
+
+
+@app.get("/api/v1/market/la-fe/resumen-extended", response_model=MarketResumenExtendedSeries)
+def market_la_fe_resumen_extended(
+    from_year: int = 2023,
+    to_year: int = 2026,
+    mode: str = "monthly_flow",
+    empresa_norm_fragment: str = "fe c.a.",
+    db: Session | None = Depends(get_db),
+) -> MarketResumenExtendedSeries:
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    if mode not in ("ytd", "monthly_flow"):
+        raise HTTPException(status_code=400, detail="mode debe ser ytd o monthly_flow")
+    try:
+        rows = la_fe_resumen_extended_series(
+            db,
+            from_year=from_year,
+            to_year=to_year,
+            mode=mode,  # type: ignore[arg-type]
+            empresa_norm_fragment=empresa_norm_fragment,
+        )
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+    gran = "ytd_eom" if mode == "ytd" else "monthly_flow"
+    note = (
+        "empresa_nombre_norm LIKE '%…%' AND '%seguros%' (fragmento: "
+        f"{sanitize_empresa_norm_fragment(empresa_norm_fragment)!r})"
+    )
+    return MarketResumenExtendedSeries(
+        granularity=gran,  # type: ignore[arg-type]
+        empresa_filter_note=note,
+        points=[MarketResumenExtendedPoint.model_validate(p) for p in rows],
+    )
+
+
+@app.get("/api/v1/market/resumen/totals-extended", response_model=MarketResumenExtendedSeries)
+def market_resumen_totals_extended_ep(
+    from_year: int = 2023,
+    to_year: int = 2026,
+    mode: str = "monthly_flow",
+    db: Session | None = Depends(get_db),
+) -> MarketResumenExtendedSeries:
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    if mode not in ("ytd", "monthly_flow"):
+        raise HTTPException(status_code=400, detail="mode debe ser ytd o monthly_flow")
+    try:
+        rows = market_resumen_totals_extended_series(
+            db,
+            from_year=from_year,
+            to_year=to_year,
+            mode=mode,  # type: ignore[arg-type]
+        )
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+    gran = "ytd_eom" if mode == "ytd" else "monthly_flow"
+    return MarketResumenExtendedSeries(
+        granularity=gran,  # type: ignore[arg-type]
+        source="market_sudeaseg_resumen_empresa:sum",
+        empresa_filter_note="Suma de todas las filas por (año, mes) en la tabla cargada.",
+        points=[MarketResumenExtendedPoint.model_validate(p) for p in rows],
+    )
+
+
+@app.get("/api/v1/market/la-fe/cuadro-series", response_model=MarketCuadroSeries)
+def market_la_fe_cuadro_series_ep(
+    from_year: int = 2023,
+    to_year: int = 2026,
+    mode: str = "monthly_flow",
+    empresa_norm_fragment: str = "fe c.a.",
+    db: Session | None = Depends(get_db),
+) -> MarketCuadroSeries:
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    if mode not in ("ytd", "monthly_flow"):
+        raise HTTPException(status_code=400, detail="mode debe ser ytd o monthly_flow")
+    try:
+        rows = la_fe_cuadro_series(
+            db,
+            from_year=from_year,
+            to_year=to_year,
+            mode=mode,  # type: ignore[arg-type]
+            empresa_norm_fragment=empresa_norm_fragment,
+        )
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+    gran = "ytd_eom" if mode == "ytd" else "monthly_flow"
+    note = (
+        "empresa_nombre_norm LIKE '%…%' AND '%seguros%' (fragmento: "
+        f"{sanitize_empresa_norm_fragment(empresa_norm_fragment)!r})"
+    )
+    return MarketCuadroSeries(
+        granularity=gran,  # type: ignore[arg-type]
+        empresa_filter_note=note,
+        points=[MarketCuadroPoint.model_validate(p) for p in rows],
+    )
+
+
+@app.get("/api/v1/market/cuadro/totals-series", response_model=MarketCuadroSeries)
+def market_cuadro_totals_series_ep(
+    from_year: int = 2023,
+    to_year: int = 2026,
+    mode: str = "monthly_flow",
+    db: Session | None = Depends(get_db),
+) -> MarketCuadroSeries:
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    if mode not in ("ytd", "monthly_flow"):
+        raise HTTPException(status_code=400, detail="mode debe ser ytd o monthly_flow")
+    try:
+        rows = market_cuadro_totals_series(
+            db,
+            from_year=from_year,
+            to_year=to_year,
+            mode=mode,  # type: ignore[arg-type]
+        )
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+    gran = "ytd_eom" if mode == "ytd" else "monthly_flow"
+    return MarketCuadroSeries(
+        granularity=gran,  # type: ignore[arg-type]
+        source="market_sudeaseg_cuadro_resultados:sum",
+        empresa_filter_note="Suma de todas las filas por (año, mes) en cuadro de resultados.",
+        points=[MarketCuadroPoint.model_validate(p) for p in rows],
+    )
+
+
+@app.get("/api/v1/market/la-fe/snapshot-latest", response_model=MarketLaFeSnapshot)
+def market_la_fe_snapshot_latest_ep(
+    empresa_norm_fragment: str = "fe c.a.",
+    db: Session | None = Depends(get_db),
+) -> MarketLaFeSnapshot:
+    if db is None:
+        raise HTTPException(status_code=503, detail="Base de datos no configurada (DATABASE_URL)")
+    try:
+        raw = la_fe_market_snapshot_latest(db, empresa_norm_fragment=empresa_norm_fragment)
+    except ProgrammingError as e:
+        raise _market_db_error(e) from e
+    if not raw:
+        raise HTTPException(status_code=404, detail="Sin datos La Fe en resumen SUDEASEG.")
+    return MarketLaFeSnapshot.model_validate(raw)
 
 
 @app.get("/api/v1/kpi/summary", response_model=KpiSummary)

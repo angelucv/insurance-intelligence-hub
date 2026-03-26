@@ -153,21 +153,23 @@ Referencia para diseñar **endpoints**, **contratos JSON** y **pantallas** sin d
 - [x] `GET /api/v1/market/la-fe/resumen-series` — `mode` (`ytd` | `monthly_flow`), `from_year`, `to_year`, `empresa_norm_fragment`.
 - [x] `GET /api/v1/market/resumen/totals-series` — suma mercado (misma granularidad).
 - [ ] `GET /api/v1/market/benchmarks` — mediana / ranking La Fe (opcional).
-- [ ] `GET /api/v1/market/cuadro/la-fe-series` — series del cuadro de resultados.
+- [x] `GET /api/v1/market/la-fe/resumen-extended` — resumen completo La Fe (YTD / flujo mensual).
+- [x] `GET /api/v1/market/resumen/totals-extended` — suma mercado (mismas magnitudes).
+- [x] `GET /api/v1/market/la-fe/cuadro-series` y `GET /api/v1/market/cuadro/totals-series` — cuadro de resultados.
+- [x] `GET /api/v1/market/la-fe/snapshot-latest` — último cierre YTD + cuota primas.
 - [ ] Reutilizar `/api/v1/kpi/summary` para demo; opcional `GET .../bridge` que devuelva texto comparativo parametrizado.
 
 ### Reflex (fase 1)
 
-- [ ] Bloque “Referencia SUDEASEG — La Fe”: 2 líneas (primas `_mes`, ratio proxy `_mes` o YTD).
-- [ ] Tarjetas YTD último mes disponible: primas, siniestros totales, ratio.
-- [ ] Enlace destacado a Streamlit; KPI cohorte breve (existente).
+- [x] Bloque “Referencia SUDEASEG — La Fe”: primas mensuales (eje dual) + líneas de loss ratio La Fe vs mercado.
+- [x] Tarjetas último cierre (`snapshot-latest`): primas, siniestros, ratios, cuota, comisiones, gasto adm.
+- [x] Enlace a carga de siniestros (Admin) + laboratorio; KPI cohorte (existente).
 
 ### Streamlit (fase 1)
 
-- [ ] Pestaña “Mercado SUDEASEG”: selector métrica, modo YTD vs mensual, multi-año, gráfico + tabla.
-- [ ] Pestaña “La Fe vs mercado”: cuota + línea comparativa.
-- [ ] Pestaña “Cuadro de resultados”: series seleccionables + waterfall para un mes.
-- [ ] Pestaña “Demo cohorte” (actual) + nota metodológica.
+- [x] Pestaña “Mercado SUDEASEG” con subpestañas: primas vs mercado, último cierre, métricas resumen extendidas, cuadro de resultados + CSV/JSON.
+- [ ] Waterfall cuadro para un mes puntual (pendiente).
+- [x] Pestaña “Cohorte demo” (actual) + nota metodológica vía `data_note` API.
 
 ### Fase 2 (según prioridad)
 
