@@ -705,7 +705,9 @@ class State(rx.State):
                 self.cartera_donut_ok = True
 
             self.busy = False
-            asyncio.create_task(self._load_portfolio_charts_async(year))
+            # No usar asyncio.create_task: en Reflex el handler termina y la tarea en segundo plano
+            # puede no ejecutarse o no actualizar estado → «Cargando…» infinito en gráficos de cartera.
+            await self._load_portfolio_charts_async(year)
         except Exception as e:  # noqa: BLE001
             self.kpi_load_failed = True
             self.note = f"No se pudieron cargar los indicadores. Intente de nuevo en unos minutos. ({e})"
