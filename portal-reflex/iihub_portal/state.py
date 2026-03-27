@@ -33,12 +33,46 @@ _HTTP_TIMEOUT = httpx.Timeout(90.0, connect=15.0)
 _HTTP_LIMITS = httpx.Limits(max_keepalive_connections=20, max_connections=30)
 
 
-class State(rx.State):
-    """URLs de despliegue en state: se rellenan en el servidor con on_load (no en tiempo de build)."""
+def _django_admin_base_from_env() -> str:
+    """Base pública del Django Admin (sin barra final). Varias claves por compatibilidad con hosting."""
+    for key in (
+        "DJANGO_ADMIN_BASE_URL",
+        "ADMIN_BASE_URL",
+        "PUBLIC_DJANGO_ADMIN_URL",
+    ):
+        v = os.environ.get(key, "").strip().rstrip("/")
+        if v:
+            return v
+    return ""
 
-    admin_upload_url: str = "http://127.0.0.1:8080/admin/upload-policies/"
-    admin_claims_upload_url: str = "http://127.0.0.1:8080/admin/upload-claims/"
-    streamlit_lab_url: str = "http://127.0.0.1:8501"
+
+def _streamlit_lab_from_env() -> str:
+    return os.environ.get("STREAMLIT_LAB_URL", "").strip().rstrip("/")
+
+
+def public_link_urls_from_env() -> tuple[str, str, str]:
+    """URLs de Admin (carga CSV) y Streamlit: mismos valores en import y en hydrate_urls."""
+    ab = _django_admin_base_from_env()
+    if ab:
+        policies = f"{ab}/admin/upload-policies/"
+        claims = f"{ab}/admin/upload-claims/"
+    else:
+        policies = "http://127.0.0.1:8080/admin/upload-policies/"
+        claims = "http://127.0.0.1:8080/admin/upload-claims/"
+    sl = _streamlit_lab_from_env()
+    streamlit = sl if sl else "http://127.0.0.1:8501"
+    return policies, claims, streamlit
+
+
+_INIT_POLICIES_URL, _INIT_CLAIMS_URL, _INIT_STREAMLIT_URL = public_link_urls_from_env()
+
+
+class State(rx.State):
+    """URLs de despliegue: por defecto leen env al arrancar el proceso; hydrate_urls las refresca."""
+
+    admin_upload_url: str = _INIT_POLICIES_URL
+    admin_claims_upload_url: str = _INIT_CLAIMS_URL
+    streamlit_lab_url: str = _INIT_STREAMLIT_URL
 
     input_year: str = "2025"
     input_month: str = "01"
@@ -245,18 +279,6 @@ class State(rx.State):
     def portfolio_box_status_figure(self) -> PlotlyFigure:
         return self._portfolio_figure("box_status")
 
-    def _django_admin_base_url(self) -> str:
-        """Base pública del Django Admin (sin barra final). Varias claves por compatibilidad con hosting."""
-        for key in (
-            "DJANGO_ADMIN_BASE_URL",
-            "ADMIN_BASE_URL",
-            "PUBLIC_DJANGO_ADMIN_URL",
-        ):
-            v = os.environ.get(key, "").strip().rstrip("/")
-            if v:
-                return v
-        return ""
-
     async def hydrate_urls(self):
         """Lee variables de entorno en runtime (Reflex Cloud / servidor)."""
         from datetime import datetime
@@ -265,19 +287,10 @@ class State(rx.State):
         self.input_year = str(now.year)
         self.input_month = f"{now.month:02d}"
 
-        ab = self._django_admin_base_url()
-        if ab:
-            self.admin_upload_url = f"{ab}/admin/upload-policies/"
-            self.admin_claims_upload_url = f"{ab}/admin/upload-claims/"
-        else:
-            self.admin_upload_url = "http://127.0.0.1:8080/admin/upload-policies/"
-            self.admin_claims_upload_url = "http://127.0.0.1:8080/admin/upload-claims/"
-
-        sl = os.environ.get("STREAMLIT_LAB_URL", "").strip().rstrip("/")
-        if sl:
-            self.streamlit_lab_url = sl
-        else:
-            self.streamlit_lab_url = "http://127.0.0.1:8501"
+        p, c, s = public_link_urls_from_env()
+        self.admin_upload_url = p
+        self.admin_claims_upload_url = c
+        self.streamlit_lab_url = s
 
         fy = os.environ.get("MARKET_PREVIEW_FROM_YEAR", "").strip()
         ty = os.environ.get("MARKET_PREVIEW_TO_YEAR", "").strip()
