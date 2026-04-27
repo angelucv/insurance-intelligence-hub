@@ -135,9 +135,9 @@ def render_pygwalker_streamlit(df: pd.DataFrame, *, key: str, table_label: str =
             from pygwalker.api.streamlit import StreamlitRenderer
         except ImportError:
             st.warning(
-                "El **explorador visual interactivo** no está disponible en este entorno (falta el paquete opcional del lienzo). "
+                "El **explorador visual interactivo** no está disponible porque falta el paquete **pygwalker** en este entorno. "
                 "Use la sección **Tabla de datos** debajo para revisar y exportar CSV. "
-                "Si administra el despliegue: añada la dependencia opcional del explorador en `requirements` o equivalente."
+                "Si administra el despliegue: agregue `pygwalker>=0.4.0,<0.6` en `lab-streamlit/requirements.txt` y redepliegue."
             )
         else:
             gid = _stable_gid(key, table_label) if table_label else key
