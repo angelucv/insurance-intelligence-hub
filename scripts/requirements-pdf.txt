@@ -1,0 +1,2 @@
+# Generación de PDF de documentación (requerimientos BI La Fe)
+xhtml2pdf>=0.2.16

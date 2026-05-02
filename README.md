@@ -98,6 +98,7 @@ CSV de prueba: [`docs/sample-policies.csv`](docs/sample-policies.csv).
 
 ## Documentación
 
+- **Levantamiento de procesos y minutas (BI cobranza):** repositorio aparte [`la-fe-bi-lev-procesos`](../la-fe-bi-lev-procesos); puntero en [`docs/levantamiento-procesos-bi-la-fe.md`](docs/levantamiento-procesos-bi-la-fe.md).
 - [`docs/architecture.md`](docs/architecture.md) — vista neutra por componente.
 - [`docs/ecosystem.md`](docs/ecosystem.md) — cómo se conectan Django, API, Supabase, Reflex y Streamlit.
 - [`docs/sudeaseg-data-scope.md`](docs/sudeaseg-data-scope.md) — mercado SUDEASEG, migración `002` y comando ETL.

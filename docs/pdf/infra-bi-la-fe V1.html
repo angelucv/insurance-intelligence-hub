@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Requerimientos integrales de infraestructura de BI — Cobranza | Seguros La Fe</title>
+  <!-- Estilos solo pantalla: marco legible al abrir el HTML en el navegador -->
+  <style media="screen">
+    html { background: #e8eaed; }
+    body {
+      margin: 0;
+      padding: 24px 32px 40px;
+    }
+    .doc-shell {
+      max-width: 920px;
+      margin: 0 auto;
+      background: #ffffff;
+      box-shadow: 0 2px 12px rgba(17, 24, 39, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .content-pad {
+      padding-left: 40px !important;
+      padding-right: 40px !important;
+      padding-top: 28px !important;
+      padding-bottom: 36px !important;
+    }
+  </style>
+  <style>
+    /* Base compartida: navegador y PDF (xhtml2pdf suele ignorar media=screen) */
+    @page {
+      size: A4;
+      margin: 16mm 12mm 18mm 12mm;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.5;
+      color: #111827;
+    }
+    .doc-shell {
+      width: 100%;
+      max-width: none;
+    }
+    /*
+      Portada: un solo bloque DIV (evita que xhtml2pdf trocee tablas en cajas vacías).
+      Logo sobre pastilla blanca = contraste correcto sobre morado corporativo.
+    */
+    .cover-solid {
+      background-color: #7029B3;
+      color: #ffffff;
+      padding: 22px 32px 24px 32px;
+      margin: 0 0 16px 0;
+    }
+    .logo-pill {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 10px 16px 12px 16px;
+      display: inline-block;
+      margin: 0 0 14px 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .logo-pill img {
+      height: 40px;
+      width: auto;
+      display: block;
+      border: none;
+    }
+    p.cover-title {
+      font-size: 18pt;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      line-height: 1.2;
+      color: #ffffff;
+    }
+    .cover-solid .subtitle {
+      font-size: 10.5pt;
+      opacity: 0.95;
+      margin: 0 0 14px 0;
+      color: #ffffff;
+    }
+    .cover-meta {
+      font-size: 9.3pt;
+      opacity: 0.92;
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
+      padding-top: 12px;
+      margin: 0;
+      color: #ffffff;
+    }
+    .cover-meta strong {
+      opacity: 1;
+      color: #ffffff;
+    }
+    .brand-line {
+      font-size: 8.6pt;
+      margin: 12px 0 0 0;
+      opacity: 0.9;
+      line-height: 1.45;
+      color: #ffffff;
+    }
+    .content-pad {
+      padding: 18px 4px 24px 4px;
+      width: 100%;
+    }
+    .author-box {
+      background: #FAF5FF;
+      border: 1px solid #E9D5FF;
+      border-left: 4px solid #7029B3;
+      padding: 12px 14px;
+      margin: 14px 0 18px 0;
+      font-size: 10pt;
+    }
+    .author-box strong { color: #5a1f94; }
+    h2 {
+      font-size: 12pt;
+      color: #5a1f94;
+      border-left: 4px solid #7029B3;
+      padding-left: 11px;
+      margin: 22px 0 10px 0;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 10.5pt;
+      color: #374151;
+      margin: 16px 0 7px 0;
+      page-break-after: avoid;
+    }
+    p { margin: 0 0 9px 0; text-align: justify; }
+    ul { margin: 6px 0 12px 20px; padding: 0; }
+    li { margin-bottom: 5px; }
+    .meta-pill {
+      display: inline-block;
+      background: #F3E8FF;
+      color: #5a1f94;
+      font-size: 9pt;
+      padding: 4px 11px;
+      border-radius: 4px;
+      margin-right: 8px;
+      margin-bottom: 7px;
+    }
+    .glossary-note {
+      font-size: 9.2pt;
+      color: #4B5563;
+      background: #F9FAFB;
+      padding: 10px 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      border: 1px solid #E5E7EB;
+    }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.3pt;
+      margin: 10px 0 14px 0;
+      page-break-inside: avoid;
+    }
+    /* Tablas largas (glosario): permitir cortes entre filas para no generar huecos antes del pie */
+    table.data.glossary {
+      page-break-inside: auto !important;
+    }
+    table.data th {
+      background-color: #5a1f94;
+      color: #fff;
+      font-weight: 600;
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid #5a1f94;
+    }
+    table.data td {
+      border: 1px solid #E5E7EB;
+      padding: 7px 10px;
+      vertical-align: top;
+    }
+    table.data tr:nth-child(even) td { background: #FAFAFA; }
+    table.data.glossary td:first-child {
+      font-weight: 600;
+      color: #5a1f94;
+      width: 26%;
+    }
+    pre.arch {
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 8pt;
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-left: 3px solid #7029B3;
+      padding: 11px 13px;
+      white-space: pre-wrap;
+      margin: 10px 0 14px 0;
+      line-height: 1.38;
+    }
+    .checklist td:first-child { width: 28px; text-align: center; font-weight: bold; color: #7029B3; }
+    .footer-note {
+      font-size: 8.5pt;
+      color: #6B7280;
+      font-style: italic;
+      margin: 0 0 0 0;
+      padding: 0;
+      border: none;
+    }
+    .document-footer {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #E5E7EB;
+    }
+    /* Pie como última fila de la tabla (evita hueco entre </table> y bloque hermano en impresión Chromium) */
+    .glossary-section tr.glossary-doc-footer td {
+      border: none !important;
+      padding: 10px 8px 6px 8px !important;
+      background: #ffffff !important;
+      font-weight: normal !important;
+      color: #111827 !important;
+      width: auto !important;
+      vertical-align: top;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-before: avoid;
+      break-before: avoid;
+    }
+    .glossary-section tr.glossary-doc-footer .document-footer {
+      margin-top: 0;
+      padding-top: 10px;
+      border-top: 1px solid #E5E7EB;
+    }
+    .company-footer {
+      font-size: 8.5pt;
+      color: #6B7280;
+      text-align: center;
+      line-height: 1.45;
+      margin-top: 14px;
+    }
+    @media print {
+      html, body, .doc-shell, .content-pad, .content-main {
+        min-height: 0 !important;
+        height: auto !important;
+      }
+      /* Menos aire en portada / metadatos para aprovechar la 1.ª página */
+      .cover-solid {
+        padding: 18px 28px 20px 28px;
+      }
+      .cover-solid .subtitle {
+        margin-bottom: 10px;
+      }
+      .author-box {
+        margin: 10px 0 10px 0;
+        padding: 10px 12px;
+      }
+      .content-pad {
+        padding-top: 12px !important;
+      }
+      table.version-history {
+        margin: 0 0 8px 0;
+      }
+      .version-history-heading {
+        margin: 8px 0 5px 0;
+      }
+      .doc-toc {
+        margin: 8px 0 12px 0;
+        padding: 10px 12px 12px 12px;
+        /* Evita el “medio página en blanco”: antes el índice entero saltaba de página */
+        page-break-inside: auto;
+        break-inside: auto;
+      }
+      /* Índice en dos columnas: menos alto, más probabilidad de caber tras la portada */
+      .doc-toc ul {
+        column-count: 2;
+        column-gap: 18px;
+      }
+      .doc-toc li {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+      }
+    }
+    .doc-toc {
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      background: #FAFAFA;
+      padding: 12px 14px 14px 14px;
+      margin: 14px 0 18px 0;
+      /* En pantalla puede mantenerse compacto; en @media print se fuerza auto */
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+    .doc-toc .toc-title {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #5a1f94;
+      margin: 0 0 10px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #E5E7EB;
+      column-span: all;
+    }
+    .doc-toc ul { margin: 0; padding-left: 18px; }
+    .doc-toc li { margin-bottom: 4px; font-size: 9.5pt; line-height: 1.4; }
+    .doc-toc a { color: #5a1f94; text-decoration: none; }
+    .doc-toc a:hover { text-decoration: underline; }
+    .version-history-heading {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #5a1f94;
+      margin: 12px 0 6px 0;
+      page-break-after: avoid;
+    }
+    table.version-history {
+      font-size: 9pt;
+      margin: 0 0 18px 0;
+      page-break-inside: avoid;
+    }
+    table.version-history th { background: #F3E8FF; color: #5a1f94; }
+    .deploy-intro { font-size: 9.2pt; color: #4B5563; margin: 0 0 10px 0; }
+    .deploy-diagram {
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 12px;
+      background: #FFFBFE;
+      margin: 0 0 14px 0;
+      page-break-inside: avoid;
+    }
+    .deploy-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: stretch;
+      margin: 4px 0;
+    }
+    .deploy-box {
+      border: 1px solid #C4B5FD;
+      background: #FAF5FF;
+      border-radius: 6px;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 9pt;
+      line-height: 1.35;
+      flex: 1 1 130px;
+      max-width: 240px;
+    }
+    .deploy-box-wide {
+      flex: 1 1 100%;
+      max-width: 520px;
+    }
+    .deploy-arrow {
+      text-align: center;
+      color: #7029B3;
+      font-weight: bold;
+      line-height: 1.2;
+      margin: 2px 0;
+      font-size: 11pt;
+    }
+    .sig-table th { width: 26%; }
+    /* Anexo glosario al final: evita título huérfano lejos de la tabla */
+    .glossary-section {
+      margin-top: 28px;
+      padding-top: 8px;
+      border-top: 1px solid #E5E7EB;
+    }
+    .glossary-section h2 {
+      page-break-after: avoid;
+    }
+    .glossary-section .glossary-note {
+      page-break-after: avoid;
+    }
+    .glossary-section table.data {
+      page-break-inside: auto !important;
+      margin-bottom: 0;
+    }
+    .glossary-section table.data tr {
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+
+<div class="doc-shell">
+
+  <div class="cover-solid">
+    <div class="logo-pill">
+      <img src="assets/logo-seguros-la-fe.png" alt="Seguros La Fe" />
+    </div>
+    <p class="cover-title">Requerimientos integrales de infraestructura de BI</p>
+    <p class="subtitle"><strong>Fase inicial:</strong> tableros y análisis orientados al <strong>seguimiento de la cobranza</strong> sobre la cartera de las líneas que hoy comercializa La Fe (<strong>funerario</strong>, <strong>vida AP</strong> y <strong>RCV</strong>). <strong>Etapas posteriores:</strong> se espera ampliar el BI a <strong>otras áreas</strong> de forma escalonada; la infraestructura debe estar planteada para ese crecimiento. Este documento explica, en lenguaje claro, qué se necesita de tecnología y por qué, sin poner en riesgo el sistema operativo diario.</p>
+    <div class="cover-meta">
+      <strong>Fecha</strong> 14/04/2026 · <strong>Versión</strong> 1.1 · <strong>Estado</strong> Propuesta para validación por sistemas
+    </div>
+    <p class="brand-line">Seguros La Fe · Más de 60 años de trayectoria · Una empresa de la Organización Vallés</p>
+  </div>
+
+  <div class="content-pad">
+
+  <div class="content-main">
+
+  <div class="author-box">
+    <strong>Elaborado por:</strong> Angel Colmenares<br />
+    <strong>Cargo:</strong> Coordinador Estadístico<br />
+    <strong>Nota:</strong> este documento resume, en lenguaje accesible, qué debe facilitar el área de tecnología para desplegar el proyecto de BI en cobranza de forma segura y sostenible; el autor no es especialista en administración de servidores. Los requerimientos son una <strong>propuesta base</strong>, abiertos a <strong>ajuste y mejora</strong> con los aportes de los <strong>especialistas de cada ámbito</strong> de la compañía (tecnología, seguridad, negocio, cumplimiento, etc.), sin sustituir el criterio ni la responsabilidad formal de cada dominio.
+  </div>
+
+  <p>
+    <span class="meta-pill">Documento único</span>
+    <span class="meta-pill">Uso interno</span>
+    <span class="meta-pill">Lectura mixta</span> (equipos técnicos y de negocio)
+  </p>
+
+  <p class="version-history-heading">Historial de versiones</p>
+  <table class="data version-history">
+    <tr><th>Versión</th><th>Fecha</th><th>Elaboración / revisión</th><th>Cambio principal</th></tr>
+    <tr><td>1.1</td><td>14/04/2026</td><td>Angel Colmenares</td><td>Documento integral para validación por sistemas: infraestructura BI cobranza, índice, historial y diagrama de despliegue.</td></tr>
+  </table>
+
+  <nav class="doc-toc" aria-label="Índice">
+    <p class="toc-title">Índice</p>
+    <ul>
+      <li><a href="#sec-justificacion">Qué se solicita y justificación (en breve)</a></li>
+      <li><a href="#sec-1">1. Objetivo</a></li>
+      <li><a href="#sec-2">2. Principios de arquitectura</a></li>
+      <li><a href="#sec-3">3. Alcance funcional (fase inicial)</a></li>
+      <li><a href="#sec-4">4. Arquitectura lógica objetivo</a> — <a href="#sec-4-1">4.1 Diagrama de despliegue</a></li>
+      <li><a href="#sec-5">5. Infraestructura de aplicaciones (servidor de apps)</a></li>
+      <li><a href="#sec-6">6. Base de datos y datos</a></li>
+      <li><a href="#sec-7">7. Aplicación (stack de desarrollo)</a></li>
+      <li><a href="#sec-8">8. Desarrollo, repositorio e integración continua</a></li>
+      <li><a href="#sec-9">9. Red y seguridad</a></li>
+      <li><a href="#sec-10">10. Entornos</a></li>
+      <li><a href="#sec-11">11. Roles y responsabilidades</a></li>
+      <li><a href="#sec-12">12. Entregables esperados del área de tecnología (checklist)</a></li>
+      <li><a href="#sec-13">13. Supuestos y puntos abiertos</a></li>
+      <li><a href="#sec-14">14. Planificación indicativa (un recurso a tiempo parcial) y fases posteriores</a></li>
+      <li><a href="#sec-anexo-a">Anexo A. Glosario</a></li>
+    </ul>
+  </nav>
+
+  <h2 id="sec-justificacion">Qué se solicita y justificación (en breve)</h2>
+  <p>La compañía dispone de un <strong>core de seguros (Sirweb)</strong> y de su <strong>base de datos</strong>, donde vive la información operativa diaria. Hoy la oferta se concentra en <strong>funerario</strong>, <strong>vida AP</strong> y <strong>RCV</strong>. En esta primera etapa el área de cobranza necesita <strong>indicadores y reportes centrados en el seguimiento de la cobranza</strong> (mora, vencimientos, cartera y demás métricas que defina negocio sobre esas líneas) en formato de <strong>inteligencia de negocio (BI)</strong>: gráficos, tablas y filtros que apoyen el día a día, sin depender solo de extractos manuales.</p>
+  <p>Para lograrlo sin sobrecargar ni poner en riesgo el sistema transaccional, se requiere un <strong>entorno separado</strong> donde puedan ejecutarse las aplicaciones (pantallas en <strong>Streamlit</strong> —propuesta de quien elabora este documento para la interfaz—, más una <strong>API en Python</strong> que concentre las reglas y los números) y donde exista un <strong>lugar autorizado para guardar tablas intermedias</strong> (resultados de cálculos, agregados) que no deben escribirse sobre la base de solo lectura que suelen dar las réplicas.</p>
+  <p>La <strong>justificación</strong> es triple: <strong>(1) continuidad operativa</strong> — el core sigue atendiendo la operación aseguradora del día a día sin ralentizarse por consultas pesadas de analítica; <strong>(2) seguridad y gobierno del dato</strong> — accesos acotados, HTTPS, red interna o VPN, y políticas de acceso acordadas (p. ej. SSO en fases posteriores); <strong>(3) evolución por fases</strong> — el mismo esquema técnico puede incorporar <strong>más KPIs</strong> y, más adelante, <strong>BI en otras áreas</strong> de la compañía de forma escalonada, evitando fragmentar la plataforma.</p>
+  <p>Lo que sigue detalla <strong>qué infraestructura concreta</strong> se pide (servidor, Docker, bases de datos, red). Al <strong>final del documento</strong> se incluye un <strong>anexo con glosario</strong> para quienes no trabajan a diario con estos términos.</p>
+
+  <h2 id="sec-1">1. Objetivo</h2>
+  <p>Disponer de un entorno <strong>estable, seguro y escalable</strong> para:</p>
+  <ul>
+    <li>Tableros y análisis con <strong>Streamlit</strong> (propuesta de este documento). Cualquier otro front o marco equivalente sería <strong>cambio explícito</strong> acordado con el área de tecnología. <strong>Énfasis inicial en cobranza</strong> y posibilidad de ampliar a otras áreas según roadmap.</li>
+    <li><strong>API en Python</strong> (p. ej. FastAPI) como capa de métricas y reglas de negocio frente a los datos.</li>
+    <li><strong>No impactar</strong> el sistema transaccional del core (Sirweb): la lectura operativa de datos sensibles se hará por canales definidos por tecnología.</li>
+    <li><strong>Infraestructura dimensionada</strong> para crecer con el volumen de datos y la <strong>concurrencia de acceso</strong>, y para <strong>incorporar en etapas posteriores</strong> nuevos tableros o fuentes alineadas a otras áreas, sin obligar a rediseñar desde cero.</li>
+  </ul>
+
+  <h2 id="sec-2">2. Principios de arquitectura</h2>
+  <table class="data">
+    <tr><th>Principio</th><th>Descripción</th></tr>
+    <tr><td>Separación lectura/escritura del core</td><td>Las consultas de BI <strong>no</strong> deben ejecutarse contra el OLTP de producción en horarios o modos que afecten operación.</td></tr>
+    <tr><td>Solo lectura hacia el origen corporativo</td><td>Acceso a datos maestros vía <strong>réplica</strong>, <strong>vistas</strong> o <strong>esquema analítico</strong> provisto por sistemas.</td></tr>
+    <tr><td>Escritura solo en capa analítica propia</td><td>Tablas intermedias, agregados y caches viven en un <strong>destino con escritura</strong> bajo control del proyecto BI (sección 6).</td></tr>
+    <tr><td>Contenedores para aplicación</td><td>Despliegue con <strong>Docker</strong> (Compose u homólogo) sobre <strong>Ubuntu Server LTS</strong>.</td></tr>
+    <tr><td>Secretos y configuración</td><td>Variables por entorno; <strong>sin</strong> credenciales en repositorio; integración con estándar de la empresa.</td></tr>
+    <tr><td>Evolución por fases</td><td>La arquitectura debe permitir <strong>ampliar el BI</strong> a otras áreas y fuentes de datos <strong>de forma escalonada</strong>, con gobierno del dato y capacidad acordadas con tecnología.</td></tr>
+  </table>
+
+  <h2 id="sec-3">3. Alcance funcional (fase inicial)</h2>
+  <ul>
+    <li><strong>Contexto de cartera:</strong> la oferta comercial actual de La Fe se centra en <strong>funerario</strong>, <strong>vida AP</strong> y <strong>RCV</strong>; los indicadores de cobranza deben alinearse a esas líneas.</li>
+    <li><strong>Área y enfoque inicial:</strong> <strong>seguimiento de la cobranza</strong> (indicadores a definir con negocio: mora, vencimientos, cartera, cumplimiento, etc.).</li>
+    <li><strong>Roadmap:</strong> en <strong>etapas posteriores</strong> se incorporará BI para <strong>otras áreas</strong> de manera escalada; la infraestructura que se instancie debe contemplar ese crecimiento (capacidad, red, separación de entornos o esquemas según política).</li>
+    <li><strong>Tipo de uso:</strong> principalmente lectura y visualización; cualquier escritura hacia sistemas corporativos queda <strong>fuera de alcance</strong> salvo acuerdo explícito posterior.</li>
+  </ul>
+
+  <h2 id="sec-4">4. Arquitectura lógica objetivo</h2>
+  <pre class="arch">[ Usuarios autorizados ]
+         │
+         ▼
+[ HTTPS / DNS interno ] ──► [ Reverse proxy ]
+                                 │
+         ┌───────────────────────┼───────────────────────┐
+         ▼                       ▼                       ▼
+ [ Streamlit ]             [ API Python ]          (opcional futuro)
+         │                       │
+         └───────────┬───────────┘
+                     │
+                     ▼
+         [ Base analítica con ESCRITURA ]
+         (tablas intermedias, agregados, índices)
+                     │
+                     ▲
+                     │  ETL / jobs programados (solo lectura en origen)
+                     │
+         [ Réplica / vistas / esquema de lectura ]
+                     │
+                     ▼
+              [ Core / origen datos ]
+              (Sirweb — gestionado por tecnología)</pre>
+
+  <h3 id="sec-4-1">4.1 Diagrama de despliegue (servidor de aplicaciones)</h3>
+  <p class="deploy-intro">Complemento de la figura lógica anterior: distribución típica de componentes en la <strong>VM o servidor Ubuntu</strong> y flujo hacia el origen de datos.</p>
+  <div class="deploy-diagram" role="img" aria-label="Diagrama de despliegue: red, proxy, contenedores, base analítica y origen">
+    <div class="deploy-row">
+      <div class="deploy-box deploy-box-wide">Red corporativa / VPN / DNS interno</div>
+    </div>
+    <div class="deploy-arrow">▼</div>
+    <div class="deploy-row">
+      <div class="deploy-box deploy-box-wide"><strong>Proxy inverso</strong> (TLS, rutas a Streamlit y API)</div>
+    </div>
+    <div class="deploy-arrow">▼</div>
+    <div class="deploy-row">
+      <div class="deploy-box"><strong>Contenedor</strong><br />Streamlit</div>
+      <div class="deploy-box"><strong>Contenedor</strong><br />API (FastAPI)</div>
+      <div class="deploy-box"><strong>Jobs / servicio</strong><br />ETL programado</div>
+    </div>
+    <div class="deploy-arrow">▼</div>
+    <div class="deploy-row">
+      <div class="deploy-box"><strong>Base analítica</strong> (escritura)<br />PostgreSQL u homólogo</div>
+      <div class="deploy-box"><strong>Origen lectura</strong><br />Réplica / vistas → Core Sirweb</div>
+    </div>
+  </div>
+
+  <h2 id="sec-5">5. Infraestructura de aplicaciones (servidor de apps)</h2>
+  <h3>5.1 Sistema operativo</h3>
+  <p><strong>Ubuntu Server 22.04 LTS</strong> (64 bits), actualizado según política de parches de la empresa.</p>
+
+  <h3>5.2 Hardware orientativo (VM o físico dedicado)</h3>
+  <table class="data">
+    <tr><th>Recurso</th><th>Mínimo (piloto)</th><th>Recomendado</th></tr>
+    <tr><td>CPU</td><td>4 vCPU</td><td><strong>8 vCPU</strong></td></tr>
+    <tr><td>RAM</td><td>16 GB</td><td><strong>32 GB</strong></td></tr>
+    <tr><td>Disco</td><td>SSD <strong>200 GB</strong></td><td>SSD <strong>≥ 500 GB</strong></td></tr>
+    <tr><td>Red</td><td colspan="2">1 Gbps, IP fija en VLAN acordada</td></tr>
+  </table>
+  <p><em>Justificación disco:</em> SO, Docker, imágenes, entornos Python, logs, espacio para cachés locales si aplica política; margen de crecimiento.</p>
+
+  <h3>5.3 Software base en el servidor de apps</h3>
+  <table class="data">
+    <tr><th>Componente</th><th>Uso</th></tr>
+    <tr><td><strong>Docker</strong> + Docker Compose (o equivalente aprobado)</td><td>Contenedores de Streamlit, API y procesos batch si se empaquetan así.</td></tr>
+    <tr><td><strong>Python 3.11+</strong></td><td>Runtime alineado con imágenes base o venv si algún componente corre fuera de contenedor.</td></tr>
+    <tr><td><strong>Reverse proxy</strong> (p. ej. nginx)</td><td>Terminación TLS, enrutamiento a servicios, límites de tamaño de cuerpo.</td></tr>
+    <tr><td><strong>Certificados TLS</strong></td><td>Certificado corporativo / CA interna (no autofirmado en producción sin excepción documentada).</td></tr>
+  </table>
+
+  <h3>5.4 Instalación de dependencias y actualizaciones</h3>
+  <p>El área de tecnología debe definir <strong>un único mecanismo</strong>, acorde a la política de La Fe, para que el servidor obtenga <strong>paquetes Python</strong> e <strong>imágenes Docker</strong> de forma controlada (habitualmente <strong>salida vía proxy corporativo</strong> gestionado por sistemas). Si no hubiera salida a Internet, se aplicará el <strong>procedimiento acordado</strong> de importación de artefactos (entorno restringido o importación manual documentada, p. ej. air-gap). No se detallan aquí marcas o productos de repositorio: basta con que exista <strong>una vía clara y soportada</strong> por la empresa.</p>
+
+  <h3>5.5 Operación</h3>
+  <ul>
+    <li>Servicios con <strong>arranque automático</strong> y <strong>reinicio</strong> ante fallo.</li>
+    <li><strong>Logs</strong> con rotación; preferible integración con centralización de logs si existe.</li>
+    <li><strong>Backups:</strong> al menos configuración de despliegue y definiciones versionadas en Git; política de backup de volúmenes Docker acordada con sistemas.</li>
+  </ul>
+
+  <h3>5.6 Monitoreo y alertas</h3>
+  <p>Los <strong>logs</strong> y su rotación no bastan para enterarse a tiempo si algo falla: se requiere <strong>visibilidad proactiva</strong> antes de que el fallo se note al <strong>abrir el tablero</strong>. Se pide disponer de <strong>comprobaciones de salud</strong> (<em>health checks</em>) sobre al menos la API (Python), el front (Streamlit) y, si aplica, la correcta ejecución de los jobs ETL (p. ej. última corrida, duración anómala o códigos de error).</p>
+  <p>Cuando un servicio deja de responder o un job crítico no se ejecutó, el entorno debe poder <strong>notificar</strong> al <strong>equipo de desarrollo BI</strong> (y a sistemas si la política lo exige). Como mínimo suele bastar <strong>correo electrónico</strong> hacia una <strong>lista de destinatarios definida</strong> (p. ej. casillas del equipo y, si aplica, de guardia). La herramienta concreta (monitor, agente, integración) la define tecnología en línea con seguridad y coste.</p>
+
+  <h3>5.7 Continuidad operativa ante incidentes (RTO y RPO)</h3>
+  <p>La política de <strong>backups</strong> debe ir acompañada de <strong>objetivos negociados</strong> con negocio y tecnología sobre cuánto puede estar indisponible el BI y cuánta pérdida de datos es aceptable ante un incidente grave:</p>
+  <ul>
+    <li><strong>RTO</strong> (<em>Recovery Time Objective</em>, tiempo de recuperación objetivo): tiempo máximo aceptable para volver a tener operativos el tablero y la API tras una caída del servidor u otro evento; importa para la toma de decisiones en cobranza y ayuda a decidir si basta una VM o hace falta <strong>alta disponibilidad</strong>.</li>
+    <li><strong>RPO</strong> (<em>Recovery Point Objective</em>, punto de recuperación objetivo): antigüedad máxima aceptable de los datos recuperados; suele alinearse con la frecuencia de respaldo de la capa analítica y volúmenes.</li>
+  </ul>
+  <p>Los valores concretos de RTO y RPO se fijan con el área de tecnología y se revisan al crecer el <strong>uso</strong> y la criticidad.</p>
+
+  <h2 id="sec-6">6. Base de datos y datos</h2>
+  <h3>6.1 Lectura desde el entorno corporativo</h3>
+  <ul>
+    <li><strong>Réplica de solo lectura</strong>, <strong>vistas</strong> publicadas por sistemas, o <strong>esquema analítico</strong> alimentado por ellos.</li>
+    <li>Credenciales <strong>dedicadas</strong> al proyecto BI, <strong>mínimo privilegio</strong> (idealmente solo SELECT sobre objetos acordados).</li>
+    <li>Conectividad desde el servidor de apps (o desde el host de ETL) según reglas de firewall.</li>
+  </ul>
+
+  <h3>6.2 Escritura para tablas intermedias</h3>
+  <p>La réplica <strong>no</strong> admite creación de tablas propias del proyecto. <strong>Opción preferida:</strong> instancia <strong>PostgreSQL</strong> (u homólogo aprobado) con <strong>escritura</strong> en esquema dedicado a BI (idealmente <strong>servidor separado</strong> del servidor de aplicaciones). <strong>Opción alternativa (piloto):</strong> DuckDB / SQLite / Parquet en volumen persistente Docker, con acuerdo explícito sobre backup, tamaño y concurrencia.</p>
+  <p>Ante el <strong>volumen histórico potencial</strong> de datos de cobranza, el paso desde archivos locales o DuckDB/Parquet a un <strong>PostgreSQL dedicado</strong> debe basarse en <strong>criterios de salida del piloto</strong> acordados entre negocio, desarrollo BI y tecnología. A modo orientativo (los umbrales <strong>X</strong> e <strong>Y</strong> se definen en el proyecto):</p>
+  <ul>
+    <li>Cuando el almacenamiento o la capa analítica supere un tamaño de referencia (p. ej. <strong>X GB</strong>) o deje de cumplirse el rendimiento acordado.</li>
+    <li>Cuando la <strong>concurrencia</strong> (accesos simultáneos al tablero y a la API) supere un umbral de referencia (p. ej. más de <strong>Y</strong>) o haya picos sostenidos que degraden los tiempos de respuesta.</li>
+    <li>Cuando se requieran capacidades que el esquema de archivos locales no cubre bien (p. ej. integridad concurrente, auditoría, respaldos en caliente según política).</li>
+  </ul>
+
+  <h3>6.3 Separación app vs datos</h3>
+  <table class="data">
+    <tr><th>Escenario</th><th>Cuándo</th></tr>
+    <tr><td>Mismo host: app Docker + motor analítico en contenedor</td><td>Piloto pequeño, baja concurrencia; revisar al crecer datos o la carga de accesos.</td></tr>
+    <tr><td>Hosts separados: apps en un servidor, BD analítica en otro</td><td><strong>Escenario ideal</strong> para producción y crecimiento.</td></tr>
+  </table>
+
+  <h2 id="sec-7">7. Aplicación (stack de desarrollo)</h2>
+  <table class="data">
+    <tr><th>Capa</th><th>Tecnología propuesta</th></tr>
+    <tr><td>Interfaz BI</td><td><strong>Streamlit</strong></td></tr>
+    <tr><td>API de métricas / negocio</td><td><strong>FastAPI</strong> (Python)</td></tr>
+    <tr><td>Validación y contratos</td><td>Pydantic / paquetes compartidos en repositorio</td></tr>
+    <tr><td>Orquestación ETL ligero</td><td>Cron, systemd timers, o herramienta que apruebe sistemas</td></tr>
+  </table>
+  <p><em>Evolución futura:</em> otro front (p. ej. React) puede consumir la <strong>misma API</strong> sin cambiar el modelo de datos.</p>
+  <p><strong>Streamlit como capa de presentación:</strong> es la opción planteada en este documento para construir el tablero con rapidez en Python. El <strong>framework Streamlit no incluye de serie</strong> un modelo multiusuario corporativo (cuentas, roles o perfiles de aplicación); <strong>implementarlo sería desarrollo adicional</strong> sobre el marco. En esta fase el <strong>acceso</strong> a la URL del tablero se <strong>restringe por red corporativa, proxy y políticas acordadas</strong> (sección 8), sin asumir ese módulo dentro de la app.</p>
+
+  <h2 id="sec-8">8. Desarrollo, repositorio e integración continua</h2>
+  <p>Usar <strong>Git</strong> (p. ej. vía GitHub u otra forja aprobada) aporta <strong>control de versiones</strong> (historial de cambios, ramas, revisiones), <strong>trabajo colaborativo</strong> y posibilidad de <strong>integración y despliegue automatizados</strong>. No sustituye el almacén de datos de la empresa: solo concentra el <strong>código</strong> y la definición técnica del despliegue.</p>
+  <p>El trabajo diario se realiza en <strong>estaciones de desarrollo</strong> (p. ej. equipo de escritorio o portátil con capacidad equivalente; ver sección 10). El código se centraliza en un <strong>repositorio privado</strong> en la <strong>forja Git autorizada por la empresa</strong> (creado y mantenido por <strong>desarrollo BI</strong>, con <strong>accesos y política</strong> acordados con tecnología): API (FastAPI), tableros (Streamlit), contenedores y pruebas.</p>
+  <h3>8.1 Qué sí y qué no debe vivir en el repositorio</h3>
+  <p>En el repo <strong>no</strong> deben residir <strong>datos sensibles de negocio</strong> (cartera, pólizas, datos personales), <strong>volcados de bases de datos</strong>, ni <strong>credenciales</strong> en claro (contraseñas, tokens, claves API). Esos elementos permanecen en los <strong>servidores y bases autorizados</strong> o en <strong>gestores de secretos</strong> (sección 9). El repositorio guarda únicamente lo necesario para construir y ejecutar la aplicación: código, plantillas de configuración <em>sin</em> secretos, Dockerfile, compose y documentación. Así se reduce el riesgo aunque la forja esté en la nube, siempre en línea con la política de seguridad y cumplimiento de La Fe.</p>
+  <h3>8.2 Contenido mínimo esperado en el repositorio</h3>
+  <ul>
+    <li><strong>Dockerfile</strong> (uno por servicio o los que aplique): instrucciones para construir la imagen de la aplicación.</li>
+    <li><strong>docker-compose.yml</strong> (u homólogo): orquestación de contenedores en local o integración (app, API, motor analítico del piloto, etc.).</li>
+    <li><strong>.gitignore</strong>: reglas para no versionar secretos, credenciales, entornos locales ni artefactos generados.</li>
+    <li>Código fuente (<code>.py</code>), manifiesto de dependencias (<code>requirements.txt</code> o equivalente) y documentación breve de despliegue.</li>
+  </ul>
+  <h3>8.3 Despliegue automatizado (p. ej. GitHub Actions)</h3>
+  <p>Una forma eficiente de conectar el repositorio con los <strong>servidores Ubuntu</strong> es usar <strong>GitHub Actions</strong> (o pipeline equivalente en la forja elegida) para ejecutar, ante cambios en la rama acordada, verificaciones, construcción de imágenes y despliegue a integración o producción <strong>según política de La Fe</strong>. Si no se autoriza ejecución desde la nube hacia la red interna, se adoptará la variante aprobada (agente <em>self-hosted</em>, publicación de artefactos y despliegue manual supervisado, etc.).</p>
+
+  <h2 id="sec-9">9. Red y seguridad</h2>
+  <table class="data">
+    <tr><th>Tema</th><th>Requerimiento</th></tr>
+    <tr><td>Exposición</td><td>Sin publicación abierta a Internet para datos reales; acceso intranet y/o VPN según política.</td></tr>
+    <tr><td>Autenticación</td><td><strong>Fase inicial / piloto:</strong> suele bastar que el acceso al tablero esté <strong>acotado por red</strong> (intranet, VPN, IP permitidas) y políticas que defina tecnología, <strong>sin</strong> obligar desde el día uno a un SSO integrado al producto. <strong>Fases posteriores:</strong> integración con directorio / SSO (Azure AD, LDAP, etc.) o proxy con autenticación, cuando negocio y seguridad lo exijan.</td></tr>
+    <tr><td>Firewall</td><td>Reglas explícitas: tráfico desde <strong>redes o equipos autorizados</strong> → proxy → apps; salida apps → BD lectura y BD analítica.</td></tr>
+    <tr><td>Cuentas de servicio</td><td>Usuario de ejecución sin privilegios de administrador en el SO.</td></tr>
+    <tr><td>Secretos</td><td>Vault, secretos del orquestador, o mecanismo que use La Fe.</td></tr>
+  </table>
+
+  <h2 id="sec-10">10. Entornos</h2>
+  <table class="data">
+    <tr><th>Entorno</th><th>Propósito</th></tr>
+    <tr><td>Desarrollo</td><td>Estación de trabajo del desarrollador: <strong>equipo asignado</strong> (PC Core i7, 16 GB RAM) <strong>u ordenador portátil equivalente</strong> (p. ej. Intel Core i9-13900H, 16 GB RAM) para el mismo fin.</td></tr>
+    <tr><td>Integración / pruebas</td><td>Servidor o VM con datos anonimizados o subset cuando sea posible.</td></tr>
+    <tr><td>Producción</td><td>Servidor(es) descritos en este documento, datos reales, cambios controlados.</td></tr>
+  </table>
+
+  <h2 id="sec-11">11. Roles y responsabilidades</h2>
+  <table class="data">
+    <tr><th>Área</th><th>Responsabilidad</th></tr>
+    <tr><td>Tecnología / sistemas</td><td>VMs, red, firewall, TLS, réplica o acceso lectura, BD analítica con escritura, identidad, backups, monitoreo y alertas acordados, y <strong>política única</strong> de obtención de paquetes e imágenes (sección 5.4).</td></tr>
+    <tr><td>Desarrollo BI</td><td>Diseño de aplicación, API, ETL hacia capa analítica, repositorio, documentación de despliegue, no hardcodear secretos.</td></tr>
+    <tr><td>Negocio / cobranza</td><td>Definición de KPIs, validación funcional, uso autorizado.</td></tr>
+  </table>
+
+  <h2 id="sec-12">12. Entregables esperados del área de tecnología (checklist)</h2>
+  <table class="data checklist">
+    <tr><th>□</th><th>Entregable</th></tr>
+    <tr><td>□</td><td>VM(s) o servidor(es) con especificaciones de la sección 5.2, <strong>Ubuntu 22.04 LTS</strong>.</td></tr>
+    <tr><td>□</td><td><strong>Docker</strong> y mecanismo de despliegue acordado.</td></tr>
+    <tr><td>□</td><td><strong>Proxy inverso + HTTPS</strong> con certificado válido en el entorno corporativo.</td></tr>
+    <tr><td>□</td><td>Acceso <strong>lectura</strong> a datos de cobranza vía réplica/vistas/esquema (credenciales y firewall).</td></tr>
+    <tr><td>□</td><td><strong>Base de datos con escritura</strong> para esquema BI (preferible servidor dedicado) o aprobación explícita de alternativa DuckDB/Parquet con política de backup.</td></tr>
+    <tr><td>□</td><td><strong>Política definida</strong> para obtener paquetes Python e imágenes Docker (p. ej. proxy corporativo o, si no hay salida, procedimiento de importación acordado —sección 5.4).</td></tr>
+    <tr><td>□</td><td><strong>(Fase posterior, según política)</strong> Integración de <strong>autenticación</strong> al tablero con directorio / SSO — no requisito bloqueante para un <strong>piloto</strong> si ya existe control por red/VPN (definir con tecnología y seguridad).</td></tr>
+    <tr><td>□</td><td><strong>DNS interno</strong> para el servicio (nombre estable).</td></tr>
+    <tr><td>□</td><td><strong>Monitoreo y alertas:</strong> health checks (API, Streamlit, jobs ETL según diseño) y notificación proactiva (p. ej. correo a destinatarios acordados).</td></tr>
+    <tr><td>□</td><td><strong>RTO y RPO</strong> documentados y alineados con negocio (continuidad del tablero ante incidentes).</td></tr>
+    <tr><td>□</td><td><strong>Forja Git autorizada por la empresa</strong> con <strong>repositorio privado del proyecto</strong> (<strong>creado y mantenido por desarrollo BI</strong>; el área de tecnología facilita <strong>accesos y política</strong>). Lo que corre en el <strong>servidor</strong> de aplicaciones debe ser la <strong>réplica completa</strong> del desarrollo desplegado; el repositorio no sustituye al servidor: es el medio para <strong>incorporar cambios con agilidad</strong>, versionar el código y permitir que el desarrollador publique mejoras <strong>en cualquier momento</strong> (según ramas y política acordadas). Incluye Dockerfile, docker-compose (o equivalente), <code>.gitignore</code> y pipeline de integración/despliegue acordado (p. ej. GitHub Actions o alternativa interna).</td></tr>
+  </table>
+
+  <h2 id="sec-13">13. Supuestos y puntos abiertos</h2>
+  <ul>
+    <li>El modelo exacto de datos de cobranza y nombres de tablas/vistas lo define <strong>negocio + tecnología</strong> con el core Sirweb, alineado a las líneas <strong>funerario, vida AP y RCV</strong>.</li>
+    <li>La ampliación del BI a <strong>otras áreas</strong> y el calendario por fases lo acuerdan <strong>negocio y tecnología</strong>; la infraestructura descrita debe poder <strong>soportar esa evolución</strong> sin partir de cero en cada etapa.</li>
+    <li>El dimensionamiento fino puede ajustarse tras un <strong>piloto de carga</strong> y al incorporar nuevas áreas o mayor uso concurrente.</li>
+    <li>Cualquier cambio que implique <strong>escritura en sistemas transaccionales</strong> del core queda <strong>fuera</strong> de este documento hasta nuevo acuerdo.</li>
+  </ul>
+
+  <h2 id="sec-14">14. Planificación indicativa (un recurso a tiempo parcial) y fases posteriores</h2>
+  <p><strong>Advertencia:</strong> de <strong>carácter meramente orientativo</strong>. Lo que más condiciona el calendario suele ser <strong>infraestructura, datos y aprobaciones</strong>. El alcance del proyecto incluye <strong>desarrollar las consultas</strong> al origen de datos autorizado y los <strong>procesos ETL</strong> hacia la capa analítica (sección 6).</p>
+  <p><strong>Supuesto:</strong> <strong>un recurso a tiempo parcial</strong> asignado al proyecto; piloto acotado (cobranza; líneas funerario, vida AP y RCV); y colaboración oportuna del área de tecnología en accesos y despliegue. Un orden de magnitud razonable sería:</p>
+  <ul>
+    <li><strong>~1,5–2,5 meses:</strong> primer entregable en <strong>integración / pruebas</strong> (API + tablero inicial + ETL mínimo).</li>
+    <li><strong>~3–5 meses:</strong> <strong>piloto en producción</strong> con valor para el <strong>área de negocio</strong> (despliegue estable, alertas básicas; revisar sección 6.2).</li>
+    <li>Si sistemas o seguridad alargan los trámites, el calendario se desplaza <strong>sin relación</strong> con la dedicación del recurso.</li>
+  </ul>
+  <p>Definir por escrito un <strong>MVP</strong> del piloto (pantallas e indicadores) y la fecha objetivo de disponibilidad de datos ayuda a acotar estos plazos.</p>
+  <h3>14.1 Fases posteriores (solo esquema; sin fechas)</h3>
+  <ul>
+    <li><strong>Fase posterior 1 — Consolidación de cobranza:</strong> más KPIs y mayor uso del tablero, monitoreo y backups acordados, salto a motor analítico dedicado cuando proceda (sección 6.2).</li>
+    <li><strong>Fase posterior 2 — Otras áreas de BI:</strong> nuevos tableros y fuentes sobre la misma arquitectura, con permisos y gobierno del dato por ámbito.</li>
+    <li><strong>Fase posterior 3 — Madurez:</strong> autenticación corporativa si aplica, capacidad y continuidad alineadas a criticidad y RTO/RPO.</li>
+  </ul>
+
+  <h3>14.2 Seguimiento de avances (orientativo)</h3>
+  <p>Conviene acordar una <strong>cadencia de seguimiento</strong> entre desarrollo BI, tecnología y, cuando aplique, negocio; lo siguiente es <strong>meramente orientativo</strong> y no sustituye el calendario de reuniones que defina la empresa:</p>
+  <ul>
+    <li><strong>Fase de arranque</strong> (infraestructura y acceso a datos): <strong>sincronización semanal breve</strong> (p. ej. 15–30 minutos) o <strong>informe escrito</strong> de hecho / próximo paso / bloqueos.</li>
+    <li><strong>Revisión con lista de logros o demo corta</strong> aproximadamente cada <strong>dos semanas</strong>, como equilibrio entre visibilidad y carga administrativa.</li>
+    <li><strong>Reunión o informe mensual</strong> con dirección o negocio puede reservarse para <strong>alcance y prioridades</strong>, no para el detalle técnico cotidiano.</li>
+    <li>Si no hay novedades relevantes, la sesión semanal puede <strong>cancelarse o sustituirse por comunicación asíncrona</strong>.</li>
+  </ul>
+
+  <div class="glossary-section">
+  <h2 id="sec-anexo-a">Anexo A. Glosario — términos en lenguaje sencillo</h2>
+  <p class="glossary-note">Si alguna palabra le suena a “jerga”, use esta tabla como ayuda rápida. Cuando una sigla corresponde a un nombre en inglés, se indica entre paréntesis o en cursiva, sin recargar el texto. Del negocio a la tecnología que lo hace posible.</p>
+  <table class="data glossary">
+    <thead>
+    <tr><th>Término</th><th>Qué significa aquí</th></tr>
+    </thead>
+    <tbody>
+    <tr><td>BI / Inteligencia de negocio</td><td>En inglés se usa mucho <em>Business Intelligence</em>; aquí significa usar datos para medir y entender el negocio (indicadores, tableros, tendencias), no para reemplazar el sistema operativo de pólizas.</td></tr>
+    <tr><td>KPI</td><td>Siglas de <em>Key Performance Indicator</em> —indicador clave de rendimiento—. Por ejemplo: mora, vencimientos o montos según la cartera (funerario, vida AP, RCV). Se define con negocio y se calcula a partir de los datos autorizados.</td></tr>
+    <tr><td>Streamlit</td><td>Herramienta en <strong>Python</strong> para construir pantallas web de datos (gráficos, filtros) con rapidez; <strong>es la opción propuesta en este documento</strong> para el tablero. El <strong>marco no trae de fábrica</strong> gestión de cuentas de aplicación tipo producto multiusuario; <strong>añadirla implica desarrollo adicional</strong>. El acceso se combina con red, proxy y políticas (sección 8). En la fase inicial cubre el tablero de cobranza y, más adelante, otras áreas según el roadmap.</td></tr>
+    <tr><td>API (interfaz de programación)</td><td>Corresponde a <em>Application Programming Interface</em> (interfaz de programación de aplicaciones): un servicio que “sirve” números y reglas por la red interna; la pantalla pregunta y la API responde de forma ordenada. Aquí se propone <strong>FastAPI</strong> (framework de API en Python, nombre del proyecto).</td></tr>
+    <tr><td>Python</td><td>Lenguaje de programación en el que se desarrollarán las aplicaciones de análisis y la API; facilita análisis posteriores y integración con librerías de datos.</td></tr>
+    <tr><td>Docker / contenedor</td><td><em>Docker</em> es el nombre de la plataforma; en inglés <em>container</em> es el “contenedor” donde va empaquetada la app. Forma de empaquetar cada aplicación con todo lo que necesita para correr, igual en pruebas y en servidor, sin instalar “a mano” cada librería en el sistema operativo.</td></tr>
+    <tr><td>Ubuntu Server</td><td>Sistema operativo <strong>Linux</strong> orientado a servidores. La marca <strong>LTS</strong> viene de <em>Long-Term Support</em>: versión con soporte prolongado. Versión pedida: <strong>22.04 LTS</strong>.</td></tr>
+    <tr><td>Core / Sirweb</td><td><em>Core</em>, en jerga de sistemas, es el núcleo o sistema central. <strong>Sirweb</strong> es el sistema transaccional donde se registra la operación cotidiana. No es el lugar donde conviene ejecutar reportes pesados de BI.</td></tr>
+    <tr><td>OLTP</td><td>Siglas de <em>Online Transaction Processing</em> (procesamiento de transacciones en línea): tipo de uso de base de datos pensado para <strong>muchas operaciones del día a día</strong> (pagos, estados de cuenta). Debe mantenerse ágil.</td></tr>
+    <tr><td>Réplica (solo lectura)</td><td>Copia de los datos actualizada para <strong>consultar</strong>, sin mezclar con la escritura del core (en inglés suele decirse <em>read replica</em> o copia de solo lectura). Ideal para alimentar reportes sin tocar producción.</td></tr>
+    <tr><td>Base analítica (con escritura)</td><td>Otro motor de base de datos (o archivos controlados) donde el proyecto BI puede <strong>crear tablas propias</strong> de resumen; no sustituye al core.</td></tr>
+    <tr><td>ETL</td><td>Siglas de <em>Extract, Transform, Load</em> —extraer, transformar y cargar datos—: procesos que <strong>extraen</strong> datos del origen, los <strong>transforman</strong> y los <strong>cargan</strong> donde corresponda (por ejemplo, hacia la base analítica).</td></tr>
+    <tr><td>HTTPS / TLS</td><td><strong>HTTPS</strong> es HTTP con cifrado (<em>Hypertext Transfer Protocol Secure</em>); <strong>TLS</strong> es la capa criptográfica (<em>Transport Layer Security</em>, seguridad de la capa de transporte). Navegación cifrada; evita que datos sensibles circulen en claro por la red interna.</td></tr>
+    <tr><td>Proxy inverso</td><td>En inglés <em>reverse proxy</em>: componente delante de las aplicaciones que centraliza el acceso por nombre web, certificados y reglas de entrada.</td></tr>
+    <tr><td>DNS interno</td><td><strong>DNS</strong> son las siglas de <em>Domain Name System</em> (sistema de nombres de dominio): convierte nombres en direcciones. Aquí se refiere a un nombre estable para el servicio (por ejemplo <em>bi-cobranza.empresa</em>) en lugar de una dirección numérica difícil de recordar.</td></tr>
+    <tr><td>VPN / intranet</td><td><strong>VPN</strong> viene de <em>Virtual Private Network</em> (red privada virtual). La intranet es la red interna de la organización. Forma de acceder a sistemas internos solo desde redes o equipos autorizados, según política de La Fe.</td></tr>
+    <tr><td>SSO / directorio (LDAP, Azure AD, etc.)</td><td><strong>SSO</strong> es <em>Single Sign-On</em> (inicio de sesión único). <strong>LDAP</strong> son las siglas de <em>Lightweight Directory Access Protocol</em> (acceso ligero a directorios). “Azure AD” alude al directorio de Microsoft (hoy a menudo bajo la marca Entra ID). Inicio de sesión unificado con el usuario corporativo, en lugar de contraseñas sueltas por aplicación.</td></tr>
+    <tr><td>Firewall</td><td>Término inglés que en español se traduce por <em>cortafuegos</em>: reglas de red que permiten solo los caminos necesarios (por ejemplo, de la app hacia las bases de datos autorizadas).</td></tr>
+    <tr><td>VM (máquina virtual)</td><td>Siglas de <em>Virtual Machine</em>. “Computadora simulada” dentro del hardware de la empresa; permite asignar CPU, RAM y disco sin comprar un equipo físico nuevo en cada caso.</td></tr>
+    <tr><td>SSD</td><td>Siglas de <em>Solid-State Drive</em> (unidad de estado sólido). Disco rápido; recomendable para que consultas y aplicaciones respondan bien.</td></tr>
+    <tr><td>PostgreSQL</td><td>Base de datos relacional de uso muy extendido (nombre del proyecto de software libre); candidata habitual para la <strong>capa analítica con escritura</strong>.</td></tr>
+    <tr><td>PyPI / registry Docker</td><td><strong>PyPI</strong> es el <em>Python Package Index</em> (índice de paquetes de Python). Un <em>registry</em> de Docker es donde se publican las imágenes de contenedor. En la práctica, el área de tecnología define <strong>cómo</strong> el servidor accede a ellos (p. ej. proxy o repositorio interno), según la política de la empresa —sin fijar aquí marcas concretas.</td></tr>
+    <tr><td>RTO / RPO</td><td><strong>RTO</strong> (<em>Recovery Time Objective</em>): tiempo máximo aceptable para restaurar el servicio tras una caída. <strong>RPO</strong> (<em>Recovery Point Objective</em>): cuán “viejos” pueden ser los datos recuperados. Sirven para planificar backups y alta disponibilidad.</td></tr>
+    <tr><td>Health check</td><td>Comprobación automática de que un servicio “está vivo” (p. ej. la API responde, el front carga, un job terminó bien). Complementa los logs para detectar fallos antes de que el problema se manifieste en el tablero.</td></tr>
+    <tr><td>GitHub Actions</td><td>Servicio de <em>integración continua</em> en GitHub: ejecuta flujos (pruebas, construcción, despliegue) al hacer <em>push</em> o según cron; debe ajustarse a la política de red y seguridad de La Fe.</td></tr>
+    <tr class="glossary-doc-footer">
+      <td colspan="2">
+        <div class="document-footer">
+          <p class="footer-note">Documento para uso interno Seguros La Fe.</p>
+          <div class="company-footer">
+            <strong>Seguros La Fe, C.A.</strong> · RIF <strong>J-000467382</strong> · Inscripción en la SUDEASEG bajo el <strong>N.º 62</strong><br />
+            seguroslafe.com
+          </div>
+        </div>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+  </div><!-- .glossary-section -->
+
+  </div><!-- .content-main -->
+
+  </div><!-- .content-pad -->
+</div><!-- .doc-shell -->
+
+</body>
+</html>
